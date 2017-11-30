@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/examples/twist_and_pull/twist_and_pull.g

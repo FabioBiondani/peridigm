@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/DeformationGradient/DeformationGradient_NoLoad_gold.e

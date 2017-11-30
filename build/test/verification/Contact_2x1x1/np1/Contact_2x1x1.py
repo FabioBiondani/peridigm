@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/Contact_2x1x1/np1/Contact_2x1x1.py

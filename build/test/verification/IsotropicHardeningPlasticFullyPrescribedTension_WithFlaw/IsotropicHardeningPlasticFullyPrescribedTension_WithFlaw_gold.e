@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/IsotropicHardeningPlasticFullyPrescribedTension_WithFlaw/IsotropicHardeningPlasticFullyPrescribedTension_WithFlaw_gold.e

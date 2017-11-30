@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/NOX_QS/NOX_QS_MatrixFree_3x3Prec_np1/NOX_QS_MatrixFree_3x3Prec.py

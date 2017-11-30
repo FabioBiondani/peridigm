@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/DeformationGradient/SolidRotation_np1/DeformationGradient.g

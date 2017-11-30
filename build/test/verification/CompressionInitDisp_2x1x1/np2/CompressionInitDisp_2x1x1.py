@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/CompressionInitDisp_2x1x1/np2/CompressionInitDisp_2x1x1.py

@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/Contact_Cubes_Interaction_Blocks/np1/Contact_Cubes_Interaction_Blocks.g

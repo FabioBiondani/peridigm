@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/PrecrackedPlateTwoCracks/PrecrackedPlate_gold.e

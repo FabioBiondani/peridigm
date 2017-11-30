@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/Contact_Ring/np1/Contact_Ring.py

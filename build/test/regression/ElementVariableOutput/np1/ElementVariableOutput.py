@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/ElementVariableOutput/np1/ElementVariableOutput.py

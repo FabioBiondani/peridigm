@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/WaveInBar/np1/WaveInBar.g

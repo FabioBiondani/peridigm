@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw/ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw_gold.e

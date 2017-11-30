@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/Compression_NLCGQS_3x2x2/Compression_NLCGQS_3x2x2_gold.e

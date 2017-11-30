@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/ThermalExpansionBondFailure/ThermalExpansionBondFailure_gold.e

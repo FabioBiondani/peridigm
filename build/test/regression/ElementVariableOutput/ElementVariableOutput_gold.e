@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/ElementVariableOutput/ElementVariableOutput_gold.e

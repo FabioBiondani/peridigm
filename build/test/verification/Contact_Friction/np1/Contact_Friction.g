@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/Contact_Friction/np1/Contact_Friction.g

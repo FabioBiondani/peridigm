@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/regression/NOX_QS/NOX_QS_Newton_NoPrec_np1/NOX_QS_Newton_NoPrec.py

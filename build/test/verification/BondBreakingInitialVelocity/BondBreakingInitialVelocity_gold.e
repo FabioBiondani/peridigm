@@ -1,1 +1,0 @@
-/home/fabio/local/peridigm/test/verification/BondBreakingInitialVelocity/BondBreakingInitialVelocity_gold.e

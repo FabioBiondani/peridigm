@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/regression/MultipleOutputFiles/MultipleOutputFiles2_gold.h

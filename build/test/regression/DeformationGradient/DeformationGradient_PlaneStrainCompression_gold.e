@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/regression/DeformationGradient/DeformationGradient_PlaneStrainCompression_gold.e

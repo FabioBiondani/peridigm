@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/regression/NodalVariableOutput/np1/NodalVariableOutput.py

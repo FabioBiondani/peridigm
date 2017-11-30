@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/regression/Bar_TwoBlocks_OneMaterial_QS/Bar_gold.e

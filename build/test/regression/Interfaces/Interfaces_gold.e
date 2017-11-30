@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/regression/Interfaces/Interfaces_gold.e

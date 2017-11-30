@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/verification/CompressionInitDisp_2x1x1/CompressionInitDisp_2x1x1_gold.e

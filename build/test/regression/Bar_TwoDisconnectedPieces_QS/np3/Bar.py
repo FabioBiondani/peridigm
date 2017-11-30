@@ -1,0 +1,1 @@
+/home/fabio/local/peridigm/test/regression/Bar_TwoDisconnectedPieces_QS/np3/Bar.py

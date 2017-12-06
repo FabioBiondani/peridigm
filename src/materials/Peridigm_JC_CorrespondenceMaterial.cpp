@@ -45,7 +45,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Peridigm_ElasticPlasticCorrespondenceMaterial.hpp"
+#include "Peridigm_JC_CorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "elastic_plastic_correspondence.h"
 #include "material_utilities.h"

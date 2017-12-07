@@ -57,17 +57,29 @@ const ScalarT* cauchyStressN,
 ScalarT* cauchyStressNP1, 
 ScalarT* vonMisesStress,
 const ScalarT* equivalentPlasticStrainN,
+const ScalarT* accumulatedPlasticStrainN,
+const ScalarT* DamageN,
 ScalarT* equivalentPlasticStrainNP1,
+ScalarT* accumulatedPlasticStrainNP1,
+ScalarT* DamageNP1,
 const int numPoints, 
 const double bulkMod,
 const double shearMod,
-double yieldStress,
 const double dt,
-const double A,
-const double B,
-const double C
+const ScalarT* TemperatureN,
+const double MeltingTemperature,
+const double ReferenceTemperature,
+const double constA,
+const double constN,
+const double constB,
+const double constC,
+const double constM,
+const double constD1,
+const double constD2,
+const double constD3,
+const double constD4,
+const double constD5
 );
-
 }
 
 #endif // ELASTIC_PLASTIC_CORRESPONDENCE_H

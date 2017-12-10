@@ -103,17 +103,11 @@ const double constD5
   
   ScalarT strainInc[9];
   ScalarT deviatoricStrainInc[9];
-  ScalarT deviatoricStressN[9];
-  ScalarT deviatoricStressMagnitudeN;
 
   ScalarT deviatoricStressNP1[9];
   ScalarT deviatoricStressMagnitudeNP1;
 
-  ScalarT tempA[9];
-  ScalarT tempB[9];
-
   ScalarT dilatationInc;
-  ScalarT sphericalStressN;
   ScalarT sphericalStressNP1;
   ScalarT tempScalar;
   ScalarT yieldStressN;
@@ -173,7 +167,7 @@ const double constD5
       
       // calculate actual yield stress with previous equivalent plastic strain and damage (actual limit of elastic behaviour)
       // consider daps_dot=0
-      yieldStressN = (1-DaN)*(constA+constB*dapsN^constN)*(1+0)^constC*(1-hmlgT^constM);
+      yieldStressN = (1.0-*DaN)*(constA+constB*pow(*dapsN,constN))*pow(1.0+0.0,constC)*(1.0-pow(hmlgT,constM));
       
       //If true, the step is plastic and we need to return to the yield
       //surface.  
@@ -195,7 +189,7 @@ const double constD5
           // daps_dotNP1 = eqps_dotNP1*(1-DaNP1)
           // dapsNP1 = dapsN + (eqpsNP1-eqpsN)*(1-DaNP1) = dapsNP1[eqpsNP1,DaNP1]
           
-          // yieldStressNP1 = (1-DaNP1)*(constA+constB*dapsNP1^constN)*(1+daps_dotNP1)^constC*(1-hmlgT^constM) = yieldStressNP1[DaNP1,eqpsNP1]
+          // yieldStressNP1 = (1-DaNP1)*(constA+constB*dapsNP1^constN)*(1+daps_dotNP1)^constC*(1-pow(hmlgT,constM)) = yieldStressNP1[DaNP1,eqpsNP1]
           // scalarDeviatoricStrainInc = scalarDeviatoricEnergyDensity / deviatoricStressMagnitudeNP1
           // fun1 = scalarDeviatoricStrainInc - eqpsNP1 + eqpsN -1/(2*shearMod)*(sqrt(2/3)*yieldStressNP1-yieldStressN) = fun1[DaNP1,eqpsNP1] = 0
           
@@ -210,16 +204,16 @@ const double constD5
           
           // EXPRESS fun1 and fun2 function of UNKNOWNS DaNP1 and eqpsNP1
           
-          // fun1 = scalarDeviatoricStrainInc + eqpsN - eqpsNP1 + (yieldStressN - (2^(1/2)*3^(1/2)*(hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3)/(2*shearMod)
-          // fun2 = DaNP1 - DaN + (eqpsN - eqpsNP1)/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))*(constD5hmlgT + 1))
+          // fun1 = scalarDeviatoricStrainInc + eqpsN - eqpsNP1 + (yieldStressN - (pow(2.0,0.5)*pow(3.0,0.5)*(pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3)/(2*shearMod)
+          // fun2 = DaNP1 - DaN + (eqpsN - eqpsNP1)/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))*(constD5hmlgT + 1))
           
           // DERIVE fun1 and fun2 wrt DaNP1 and eqpsNP1 to obtain the Jacobian for the Newton's method
           
-          // fun1_eqpsNP1 = ((2^(1/2)*3^(1/2)*constB*constN*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1)*(hmlgT^constM - 1)*(DaNP1 - 1)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3 + (2^(1/2)*3^(1/2)*constC*(hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC - 1))/(3*dt))/(2*shearMod) - 1
-          // fun1_DaNP1 = -((2^(1/2)*3^(1/2)*(hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3 + (2^(1/2)*3^(1/2)*constC*(hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(eqpsN - eqpsNP1)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC - 1))/(3*dt) + (2^(1/2)*3^(1/2)*constB*constN*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1)*(hmlgT^constM - 1)*(eqpsN - eqpsNP1)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3)/(2*shearMod)
+          // fun1_eqpsNP1 = ((pow(2.0,0.5)*pow(3.0,0.5)*constB*constN*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1)*(pow(hmlgT,constM) - 1)*(DaNP1 - 1)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3 + (pow(2.0,0.5)*pow(3.0,0.5)*constC*(pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC - 1))/(3*dt))/(2*shearMod) - 1
+          // fun1_DaNP1 = -((pow(2.0,0.5)*pow(3.0,0.5)*(pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3 + (pow(2.0,0.5)*pow(3.0,0.5)*constC*(pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(eqpsN - eqpsNP1)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC - 1))/(3*dt) + (pow(2.0,0.5)*pow(3.0,0.5)*constB*constN*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1)*(pow(hmlgT,constM) - 1)*(eqpsN - eqpsNP1)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)/3)/(2*shearMod)
           
-          // fun2_eqpsNP1 = - 1/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))*(constD5hmlgT + 1)) - (constD4*(eqpsN - eqpsNP1))/(dt*(1 - (eqpsN - eqpsNP1)/dt)^(constD4 + 1)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))*(constD5hmlgT + 1)) - (constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC))*((constC*constD3*sphericalStressNP1)/(dt*(hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC + 1)) + (constB*constD3*constN*sphericalStressNP1*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1))/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC))*(eqpsN - eqpsNP1))/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))^2*(constD5hmlgT + 1))
-          // fun2_DaNP1 = (constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC))*(eqpsN - eqpsNP1)*((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC) + (constC*constD3*sphericalStressNP1*(eqpsN - eqpsNP1))/(dt*(hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC + 1)) + (constB*constD3*constN*sphericalStressNP1*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1)*(eqpsN - eqpsNP1))/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)^2*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))^2*(constD5hmlgT + 1)) + 1
+          // fun2_eqpsNP1 = - 1/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))*(constD5hmlgT + 1)) - (constD4*(eqpsN - eqpsNP1))/(dt*(1 - (eqpsN - eqpsNP1)/dt)^(constD4 + 1)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))*(constD5hmlgT + 1)) - (constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC))*((constC*constD3*sphericalStressNP1)/(dt*(pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC + 1)) + (constB*constD3*constN*sphericalStressNP1*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1))/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC))*(eqpsN - eqpsNP1))/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))^2*(constD5hmlgT + 1))
+          // fun2_DaNP1 = (constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC))*(eqpsN - eqpsNP1)*((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)^2*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC) + (constC*constD3*sphericalStressNP1*(eqpsN - eqpsNP1))/(dt*(pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^(constC + 1)) + (constB*constD3*constN*sphericalStressNP1*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^(constN - 1)*(eqpsN - eqpsNP1))/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)^2*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))/((1 - (eqpsN - eqpsNP1)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1)*(constA + constB*(dapsN + (eqpsN - eqpsNP1)*(DaNP1 - 1))^constN)*(DaNP1 - 1)*(((eqpsN - eqpsNP1)*(DaNP1 - 1))/dt + 1)^constC)))^2*(constD5hmlgT + 1)) + 1
           
           
           // Avoid divide-by-zero
@@ -251,20 +245,20 @@ const double constD5
           ScalarT detM, invM11, invM12, invM21, invM22;
   
           
-          fun1 = scalarDeviatoricStrainInc + *eqpsN - eqps_it + (yieldStressN - (2^(1/2)*3^(1/2)*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)/3)/(2*shearMod);
+          fun1 = scalarDeviatoricStrainInc + *eqpsN - eqps_it + (yieldStressN - (pow(2.0,0.5)*pow(3.0,0.5)*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))/3.0)/(2.0*shearMod);
           
-          fun2 = Da_it - *DaN + (*eqpsN - eqps_it)/((1 - (*eqpsN - eqps_it)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))*(constD5*(hmlgT) + 1)) ;
+          fun2 = Da_it - *DaN + (*eqpsN - eqps_it)/(pow(1.0 - (*eqpsN - eqps_it)/dt,constD4)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))))*(constD5*(hmlgT) + 1.0)) ;
           
-          while ( ((fun1^2+fun2^2)^0.5) > 1e-7 ) {
+          while ( pow(pow(fun1,2.0)+pow(fun2,2.0),0.5) > 1e-7 ) {
               
-              fun1_eqps = ((2^(1/2)*3^(1/2)*constB*constN*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^(constN - 1)*(hmlgT^constM - 1)*(Da_it - 1)^2*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)/3 + (2^(1/2)*3^(1/2)*constC*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)^2*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^(constC - 1))/(3*dt))/(2*shearMod) - 1 ;
+              fun1_eqps = ((pow(2.0,0.5)*pow(3.0,0.5)*constB*constN*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN - 1.0)*(pow(hmlgT,constM) - 1.0)*pow(Da_it - 1.0,2.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))/3.0 + (pow(2.0,0.5)*pow(3.0,0.5)*constC*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*pow(Da_it - 1.0,2.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC - 1.0))/(3.0*dt))/(2.0*shearMod) - 1.0 ;
               
-              fun1_Da = -((2^(1/2)*3^(1/2)*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)/3 + (2^(1/2)*3^(1/2)*constC*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(*eqpsN - eqps_it)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^(constC - 1))/(3*dt) + (2^(1/2)*3^(1/2)*constB*constN*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^(constN - 1)*(hmlgT^constM - 1)*(*eqpsN - eqps_it)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)/3)/(2*shearMod) ;
+              fun1_Da = -((pow(2.0,0.5)*pow(3.0,0.5)*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))/3.0 + (pow(2.0,0.5)*pow(3.0,0.5)*constC*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(*eqpsN - eqps_it)*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC - 1.0))/(3.0*dt) + (pow(2.0,0.5)*pow(3.0,0.5)*constB*constN*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN - 1.0)*(pow(hmlgT,constM) - 1.0)*(*eqpsN - eqps_it)*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))/3.0)/(2.0*shearMod) ;
               
               
-              fun2_eqps = - 1/((1 - (*eqpsN - eqps_it)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))*(constD5*(hmlgT) + 1)) - (constD4*(*eqpsN - eqps_it))/(dt*(1 - (*eqpsN - eqps_it)/dt)^(constD4 + 1)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))*(constD5*(hmlgT) + 1)) - (constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC))*((constC*constD3*sphericalStressNP1)/(dt*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^(constC + 1)) + (constB*constD3*constN*sphericalStressNP1*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^(constN - 1))/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)^2*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC))*(*eqpsN - eqps_it))/((1 - (*eqpsN - eqps_it)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))^2*(constD5*(hmlgT) + 1)) ;
+              fun2_eqps = - 1.0/(pow(1.0 - (*eqpsN - eqps_it)/dt,constD4)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))))*(constD5*(hmlgT) + 1.0)) - (constD4*(*eqpsN - eqps_it))/(dt*pow(1.0 - (*eqpsN - eqps_it)/dt,constD4 + 1.0)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))))*(constD5*(hmlgT) + 1.0)) - (constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC)))*((constC*constD3*sphericalStressNP1)/(dt*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC + 1.0)) + (constB*constD3*constN*sphericalStressNP1*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN - 1.0))/((pow(hmlgT,constM) - 1.0)*pow(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN),2.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC)))*(*eqpsN - eqps_it))/(pow(1.0 - (*eqpsN - eqps_it)/dt,constD4)*pow(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))),2.0)*(constD5*(hmlgT) + 1.0)) ;
               
-              fun2_Da = (constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC))*(*eqpsN - eqps_it)*((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)^2*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC) + (constC*constD3*sphericalStressNP1*(*eqpsN - eqps_it))/(dt*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^(constC + 1)) + (constB*constD3*constN*sphericalStressNP1*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^(constN - 1)*(*eqpsN - eqps_it))/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)^2*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))/((1 - (*eqpsN - eqps_it)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))^2*(constD5*(hmlgT) + 1)) + 1 ;
+              fun2_Da = (constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC)))*(*eqpsN - eqps_it)*((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*pow(Da_it - 1.0,2.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC)) + (constC*constD3*sphericalStressNP1*(*eqpsN - eqps_it))/(dt*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC + 1.0)) + (constB*constD3*constN*sphericalStressNP1*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN - 1.0)*(*eqpsN - eqps_it))/((pow(hmlgT,constM) - 1.0)*pow(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN),2.0)*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))))/(pow(1.0 - (*eqpsN - eqps_it)/dt,constD4)*pow(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))),2.0)*(constD5*(hmlgT) + 1.0)) + 1.0 ;
               
               
               /* 
@@ -288,9 +282,9 @@ const double constD5
               
               
               // update fun1 and fun2 with the new value of eqps_it and Da_it
-              fun1 = scalarDeviatoricStrainInc + *eqpsN - eqps_it + (yieldStressN - (2^(1/2)*3^(1/2)*(hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)/3)/(2*shearMod);
+              fun1 = scalarDeviatoricStrainInc + *eqpsN - eqps_it + (yieldStressN - (pow(2.0,0.5)*pow(3.0,0.5)*(pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))/3.0)/(2.0*shearMod);
               
-              fun2 = Da_it - *DaN + (*eqpsN - eqps_it)/((1 - (*eqpsN - eqps_it)/dt)^constD4*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((hmlgT^constM - 1)*(constA + constB*(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1))^constN)*(Da_it - 1)*(((*eqpsN - eqps_it)*(Da_it - 1))/dt + 1)^constC)))*(constD5*(hmlgT) + 1));
+              fun2 = Da_it - *DaN + (*eqpsN - eqps_it)/(pow(1.0 - (*eqpsN - eqps_it)/dt,constD4)*(constD1 + constD2*exp((constD3*sphericalStressNP1)/((pow(hmlgT,constM) - 1.0)*(constA + constB*pow(*dapsN + (*eqpsN - eqps_it)*(Da_it - 1.0),constN))*(Da_it - 1.0)*pow(((*eqpsN - eqps_it)*(Da_it - 1.0))/dt + 1.0,constC))))*(constD5*(hmlgT) + 1.0));
               
           };
           if ((Da_it<=*DaN) && (eqps_it<=*eqpsN)) {
@@ -299,9 +293,9 @@ const double constD5
           else if ((Da_it>=*DaN) && (eqps_it>=*eqpsN)) {
               *eqpsNP1=eqps_it;
               *DaNP1=Da_it;
-              *dapsNP1 = *dapsN + (*eqpsNP1-*eqpsN)*(1-*DaNP1);
+              *dapsNP1 = *dapsN + (*eqpsNP1-*eqpsN)*(1.0-*DaNP1);
               daps_dotNP1 = (*dapsNP1-*dapsN)/dt;
-              yieldStressNP1 = (1-*DaNP1)*(constA+constB*(*dapsNP1)^constN)*(1+daps_dotNP1)^constC*(1-hmlgT^constM);
+              yieldStressNP1 = (1.0-*DaNP1)*(constA+constB*pow(*dapsNP1,constN))*pow(1.0+daps_dotNP1,constC)*(1.0-pow(hmlgT,constM));
               
               
               //For perfectly plastic deformations we just have a constant factor to 
@@ -374,7 +368,7 @@ const double constD2,
 const double constD3,
 const double constD4,
 const double constD5
-)
+);
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template void updateJohnsonCookCauchyStress<Sacado::Fad::DFad<double> >
@@ -393,7 +387,7 @@ const int numPoints,
 const double bulkMod,
 const double shearMod,
 const double dt,
-Sacado::Fad::DFad<double>* TemperatureN,
+const Sacado::Fad::DFad<double>* TemperatureN,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,

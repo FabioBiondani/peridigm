@@ -1,4 +1,4 @@
-//! \file Peridigm_ElasticPlasticCorrespondenceMaterial.hpp
+//! \file Peridigm_JC_CorrespondenceMaterial.hpp
 
 //@HEADER
 // ************************************************************************
@@ -45,24 +45,26 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_ELASTICPLASTICCORRESPONDENCEMATERIAL_HPP
-#define PERIDIGM_ELASTICPLASTICCORRESPONDENCEMATERIAL_HPP
+#ifndef PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
+#define PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
+#include "Peridigm_ThermalMaterial.hpp"
+#include <map>
 
 namespace PeridigmNS {
 
-  class ElasticPlasticCorrespondenceMaterial : public CorrespondenceMaterial{
+  class JC_CorrespondenceMaterial : public CorrespondenceMaterial{
   public:
 
 	//! Constructor.
-    ElasticPlasticCorrespondenceMaterial(const Teuchos::ParameterList & params);
+    JC_CorrespondenceMaterial(const Teuchos::ParameterList& params);
 
     //! Destructor.
-    virtual ~ElasticPlasticCorrespondenceMaterial();
+    virtual ~JC_CorrespondenceMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return("Plastic Correspondence"); }
+    virtual std::string Name() const { return("Johnson-Cook Correspondence"); }
 
     //! Initialize the derived class
     virtual void initialize(const double dt, 
@@ -83,14 +85,30 @@ namespace PeridigmNS {
   protected:
     
     // material properties
-    double m_yieldStress;
+    double m_MeltingTemperature;
+    double m_ReferenceTemperature;
+    double m_A;
+    double m_N;
+    double m_B;
+    double m_C;
+    double m_M;
+    double m_D1;
+    double m_D2;
+    double m_D3;
+    double m_D4;
+    double m_D5;
+    
+    
 
     // field spec ids for all relevant data
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
+    int m_accumulatedPlasticStrainFieldId;
+    int m_DamageFieldId;
+    int m_deltaTemperatureFieldId;
   };
 }
 
-#endif // PERIDIGM_ELASTICPLASTICCORRESPONDENCEMATERIAL_HPP
+#endif // PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP

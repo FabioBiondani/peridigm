@@ -50,6 +50,7 @@
 #include "material_utilities.h"
 #include <Sacado.hpp>
 #include <math.h>
+#include <iostream>
 
 namespace CORRESPONDENCE {
 
@@ -167,12 +168,13 @@ const double constD5
       
       // calculate actual yield stress with previous equivalent plastic strain and damage (actual limit of elastic behaviour)
       // consider daps_dot=0
-      yieldStressN = (1.0-*DaN)*(constA+constB*pow(*dapsN,constN))*pow(1.0+0.0,constC)*(1.0-pow(hmlgT,constM));
+      //yieldStressN = (1.0-*DaN)*(constA+constB*pow(*dapsN,constN))*pow(1.0+0.0,constC)*(1.0-pow(hmlgT,constM));
+      yieldStressN = constA;
       
       //If true, the step is plastic and we need to return to the yield
       //surface.  
       if(*vmStress > yieldStressN) {
-          
+          std::cout << "Yielding\n";
           // FIND PLASTIC STRAIN AND DAMAGE USING NEWTON'S METHOD
           
           
@@ -288,6 +290,7 @@ const double constD5
               
           };
           if ((Da_it<=*DaN) && (eqps_it<=*eqpsN)) {
+              std::cout << "Negative Delta Damage and delta plastic epsilon\n";
               // not damaged more
           }
           else if ((Da_it>=*DaN) && (eqps_it>=*eqpsN)) {
@@ -326,7 +329,8 @@ const double constD5
           }
           else {
           // error
-          };
+          std::cout << "Negative Delta Damage OR delta plastic epsilon ---- CRITICAL\n";
+        };
           
           
           

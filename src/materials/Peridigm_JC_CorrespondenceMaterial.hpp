@@ -107,6 +107,9 @@ namespace PeridigmNS {
     int m_equivalentPlasticStrainFieldId;
     int m_accumulatedPlasticStrainFieldId;
     int m_DamageFieldId;
+    int m_equivalentPlasticStrainDotFieldId;
+    int m_accumulatedPlasticStrainDotFieldId;
+    int m_DamageDotFieldId;
     int m_deltaTemperatureFieldId;
   };
 }

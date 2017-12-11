@@ -57,8 +57,9 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   : CorrespondenceMaterial(params),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),
-    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1), m_accumulatedPlasticStrainFieldId(-1),
-    m_DamageFieldId(-1),
+    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
+    m_equivalentPlasticStrainFieldId(-1),    m_accumulatedPlasticStrainFieldId(-1),    m_DamageFieldId(-1),
+    m_equivalentPlasticStrainDotFieldId(-1), m_accumulatedPlasticStrainDotFieldId(-1), m_DamageDotFieldId(-1),
     m_deltaTemperatureFieldId(-1)
 
 
@@ -80,10 +81,13 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
   m_unrotatedCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
-  m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
+  m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_accumulatedPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Accumulated_Plastic_Strain");
   m_DamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
+  m_equivalentPlasticStrainDotFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Time_Derived_Equivalent_Plastic_Strain");
+  m_accumulatedPlasticStrainDotFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Time_Derived_Accumulated_Plastic_Strain");
+  m_DamageDotFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Time_Derived_Damage");
   m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
   
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
@@ -92,6 +96,9 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
   m_fieldIds.push_back(m_accumulatedPlasticStrainFieldId);
   m_fieldIds.push_back(m_DamageFieldId);
+  m_fieldIds.push_back(m_equivalentPlasticStrainDotFieldId);
+  m_fieldIds.push_back(m_accumulatedPlasticStrainDotFieldId);
+  m_fieldIds.push_back(m_DamageDotFieldId);
   m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
@@ -113,13 +120,20 @@ PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
                                                   neighborhoodList,
                                                   dataManager);
 
-  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_DamageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_DamageFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+  dataManager.getData(m_equivalentPlasticStrainDotFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+  dataManager.getData(m_equivalentPlasticStrainDotFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+  dataManager.getData(m_accumulatedPlasticStrainDotFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+  dataManager.getData(m_accumulatedPlasticStrainDotFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+  dataManager.getData(m_DamageDotFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+  dataManager.getData(m_DamageDotFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
 }
@@ -138,8 +152,9 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
 
-  double *vonMisesStress;
-  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
+  double *vonMisesStressN, *vonMisesStressNP1;
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&vonMisesStressNP1);
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_N)->ExtractView(&vonMisesStressN);
   
   double *equivalentPlasticStrainN, *equivalentPlasticStrainNP1;
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
@@ -153,6 +168,18 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_DamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&DamageNP1);
   dataManager.getData(m_DamageFieldId, PeridigmField::STEP_N)->ExtractView(&DamageN);
 
+  double *Dot_equivalentPlasticStrainN, *Dot_equivalentPlasticStrainNP1;
+  dataManager.getData(m_equivalentPlasticStrainDotFieldId, PeridigmField::STEP_NP1)->ExtractView(&Dot_equivalentPlasticStrainNP1);
+  dataManager.getData(m_equivalentPlasticStrainDotFieldId, PeridigmField::STEP_N)->ExtractView(&Dot_equivalentPlasticStrainN);
+
+  double *Dot_accumulatedPlasticStrainN, *Dot_accumulatedPlasticStrainNP1;
+  dataManager.getData(m_accumulatedPlasticStrainDotFieldId, PeridigmField::STEP_NP1)->ExtractView(&Dot_accumulatedPlasticStrainNP1);
+  dataManager.getData(m_accumulatedPlasticStrainDotFieldId, PeridigmField::STEP_N)->ExtractView(&Dot_accumulatedPlasticStrainN);
+
+  double *Dot_DamageN, *Dot_DamageNP1;
+  dataManager.getData(m_DamageDotFieldId, PeridigmField::STEP_NP1)->ExtractView(&Dot_DamageNP1);
+  dataManager.getData(m_DamageDotFieldId, PeridigmField::STEP_N)->ExtractView(&Dot_DamageN);
+
   double *deltaTemperatureN, *deltaTemperatureNP1;
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
@@ -160,18 +187,26 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
-                                                            vonMisesStress,
+                                                            vonMisesStressN,
+                                                            vonMisesStressNP1,
                                                             equivalentPlasticStrainN, 
                                                             accumulatedPlasticStrainN, 
                                                             DamageN, 
+                                                            Dot_equivalentPlasticStrainN, 
+                                                            Dot_accumulatedPlasticStrainN, 
+                                                            Dot_DamageN, 
                                                             equivalentPlasticStrainNP1, 
                                                             accumulatedPlasticStrainNP1, 
                                                             DamageNP1, 
+                                                            Dot_equivalentPlasticStrainNP1, 
+                                                            Dot_accumulatedPlasticStrainNP1, 
+                                                            Dot_DamageNP1, 
                                                             numOwnedPoints, 
                                                             m_bulkModulus, 
                                                             m_shearModulus, 
                                                             dt,
                                                             deltaTemperatureN,
+                                                            deltaTemperatureNP1,
                                                             m_MeltingTemperature,
                                                             m_ReferenceTemperature,
                                                             m_A,

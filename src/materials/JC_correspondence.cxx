@@ -268,6 +268,9 @@ const double constD5
           
           ScalarT detM, invM11, invM12, invM21, invM22;
           
+          ScalarT residual;
+          int it;
+          
           ScalarT sphericalStressN = (*(stressN) + *(stressN+4) + *(stressN+8))/3.0;
           ScalarT fepsN = (constD1+constD2*exp(constD3*sphericalStressN/(*vonMisesStressN)))*std::pow(1+*eqpsdotN,constD4)*(1+constD5*hmlgTN);
           
@@ -275,7 +278,13 @@ const double constD5
           
           fun2 = - (*DadotN) - (2*((*DaN) - Da_it))/dt - (dt*((*eqpsN)/fepsN + eqps_it/((constD1 + constD2*exp((constD3*sphericalStressNP1)/((constA + constB*std::pow((*dapsN) + (dt*((*dapsdotN) + ((*eqpsdotN) + (2*((*eqpsN) - eqps_it))/dt)*(Da_it - 1)))/2,constN))*(std::pow(hmlgT,constM) - 1)*(Da_it - 1)*std::pow(((*eqpsdotN) + (2*((*eqpsN) - eqps_it))/dt)*(Da_it - 1) + 1,constC))))*(constD5*hmlgT + 1)*std::pow(1 - (2*(*eqpsN) - 2*eqps_it)/dt - (*eqpsdotN),constD4))))/2;
           
-          while ( pow(pow(fun1,2.0)+pow(fun2,2.0),0.5) > 1e-7 ) {
+          residual = pow(pow(fun1,2.0)+pow(fun2,2.0),0.5); it=0;
+          while ( residual > 1e-2 ) {
+              if (it>=20){
+                  // std::cout << "Break Johnson-Cook loop, Residual: " << residual << "\n\n";
+                  break;
+            }  
+              ++it;
               
               fun1_eqps = ((2*std::pow(2,1/2)*std::pow(3,1/2)*constC*(constA + constB*std::pow((*dapsN) + (dt*((*dapsdotN) + ((*eqpsdotN) + (2*((*eqpsN) - (*eqpsNP1)))/dt)*((*DaNP1) - 1)))/2,constN))*(std::pow(hmlgT,constM) - 1)*std::pow((*DaNP1) - 1,2)*std::pow(((*eqpsdotN) + (2*((*eqpsN) - (*eqpsNP1)))/dt)*((*DaNP1) - 1) + 1,constC - 1))/(3*dt) + (std::pow(2,1/2)*std::pow(3,1/2)*constB*constN*(std::pow(hmlgT,constM) - 1)*std::pow((*DaNP1) - 1,2)*std::pow((*dapsN) + (dt*((*dapsdotN) + ((*eqpsdotN) + (2*((*eqpsN) - (*eqpsNP1)))/dt)*((*DaNP1) - 1)))/2,constN - 1)*std::pow(((*eqpsdotN) + (2*((*eqpsN) - (*eqpsNP1)))/dt)*((*DaNP1) - 1) + 1,constC))/3)/(2*shearMod) - 1;
               
@@ -312,6 +321,7 @@ const double constD5
               
               fun2 = - (*DadotN) - (2*((*DaN) - (*DaNP1)))/dt - (dt*((*eqpsN)/fepsN + (*eqpsNP1)/((constD1 + constD2*exp((constD3*sphericalStressNP1)/((constA + constB*std::pow((*dapsN) + (dt*((*dapsdotN) + ((*eqpsdotN) + (2*((*eqpsN) - (*eqpsNP1)))/dt)*((*DaNP1) - 1)))/2,constN))*(std::pow(hmlgT,constM) - 1)*((*DaNP1) - 1)*std::pow(((*eqpsdotN) + (2*((*eqpsN) - (*eqpsNP1)))/dt)*((*DaNP1) - 1) + 1,constC))))*(constD5*hmlgT + 1)*std::pow(1 - (2*(*eqpsN) - 2*(*eqpsNP1))/dt - (*eqpsdotN),constD4))))/2;
               
+              residual = pow(pow(fun1,2.0)+pow(fun2,2.0),0.5);              
           };
           if ((Da_it<=*DaN) && (eqps_it<=*eqpsN)) {
               // std::cout << "Negative Delta Damage and delta plastic epsilon\n";

@@ -55,25 +55,17 @@ void updateJohnsonCookCauchyStress
 const ScalarT* unrotatedRateOfDeformation, 
 const ScalarT* cauchyStressN, 
 ScalarT* cauchyStressNP1, 
-const ScalarT* vonMisesStressN,
 ScalarT* vonMisesStressNP1,
 const ScalarT* equivalentPlasticStrainN,
 const ScalarT* accumulatedPlasticStrainN,
 const ScalarT* DamageN,
-const ScalarT* Dot_equivalentPlasticStrainN,
-const ScalarT* Dot_accumulatedPlasticStrainN,
-const ScalarT* Dot_DamageN,
 ScalarT* equivalentPlasticStrainNP1,
 ScalarT* accumulatedPlasticStrainNP1,
 ScalarT* DamageNP1,
-ScalarT* Dot_equivalentPlasticStrainNP1,
-ScalarT* Dot_accumulatedPlasticStrainNP1,
-ScalarT* Dot_DamageNP1,
 const int numPoints, 
 const double bulkMod,
 const double shearMod,
 const double dt,
-const ScalarT* TemperatureN,
 ScalarT* TemperatureNP1,
 const double MeltingTemperature,
 const double ReferenceTemperature,
@@ -86,8 +78,8 @@ const double constD1,
 const double constD2,
 const double constD3,
 const double constD4,
-const double constD5
-);
+const double constD5,
+const double constDC);
 }
 
 #endif // ELASTIC_PLASTIC_CORRESPONDENCE_H

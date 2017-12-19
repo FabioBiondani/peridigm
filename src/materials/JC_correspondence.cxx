@@ -137,12 +137,13 @@ const double constDC
     ScalarT fun2;
     ScalarT fun2_Da;
     
-    
     for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,
         stressNP1+=9, ++vmStress
         ,++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1
         ){
+        
         if (*DaN==1.){
+            std::cout << iID << " Entirely damaged\n";
             *DaNP1=*DaN;
             *eqpsNP1=*eqpsN;
             *dapsNP1=*dapsN;
@@ -150,6 +151,7 @@ const double constDC
             for (int i = 0; i < 9; i++) {
                 stressNP1[i] = 0.;
             }
+            continue;
         }
 
         //strainInc = dt * rateOfDef
@@ -210,8 +212,6 @@ const double constDC
                 (1-pow(hmlgT,constM));
         //If true, the step is plastic and we need to return to the yield
         //surface.
-        double aaa=6/(3-3);
-        std::cout << aaa;
         if( *vmStress/(1.-*DaN) > yieldStressHat0 ) {
             
             //std::cout << "\n\n\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
@@ -259,7 +259,9 @@ const double constDC
                 fun1 = ((*vmStress)/(1-*DaN) - 3.*shearMod*Deqps - yieldStressHat)/constA; // adimensional
                 fun1_Deqps = (-3*shearMod-yieldStressHat_Deqps)/constA;
                 //std::cout << "it=" << it <<"   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
-                if (it==20){fun1=0;std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" << "   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";}
+                if (it==20){fun1=0;
+                    std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" << "   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
+                }
             }
             
             if (Deqps>=0.) {
@@ -291,7 +293,15 @@ const double constDC
                     if(*vmStress/(1.-*DaN) > 5*yieldStressHat0){
                     //std::cout << "it=" << it <<"   fun2=" << fun2 << "   Da=" << *DaNP1 << "\n";
                     }
-                    if (it==20){*DaNP1=1;fun2=0.;std::cout << "WARNING: NOT-CONVERGED DAMAGE LOOP:" << "   fun2=" << fun2 << "   Imposed damage=" << *DaNP1 << "\n";}
+                    if (it==20){*DaNP1=1;fun2=0.;
+                        std::cout << "WARNING: NOT-CONVERGED DAMAGE LOOP:" << "   fun2=" << fun2 << "   iID=" << iID+1 << "   Imposed damage=" << *DaNP1 << "  vmStress=" << *vmStress << "\n";
+                    for (int i = 0; i < 9; i++) {
+                        std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
+                    }
+                    std::cout << "\n";
+                        
+                    }
+            
                 }
                 if (*DaNP1>1.){*DaNP1=1.;}
                 if (*DaNP1>=*DaN){

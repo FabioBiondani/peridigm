@@ -47,6 +47,7 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
+
 //@HEADER
 #define _GNU_SOURCE 1
 #include <fenv.h>
@@ -57,6 +58,7 @@ trapfpe ()
 
         feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
 }
+
 #include <iostream>
 
 #include <Epetra_ConfigDefs.h> // used to define HAVE_MPI

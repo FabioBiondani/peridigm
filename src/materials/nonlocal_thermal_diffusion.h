@@ -62,7 +62,6 @@ void computeHeatFlow
 	int numOwnedPoints,
 	// 	std::vector<int> neighPtrVector,
 	double thermalConductivity,
-	double specificHeat,
 	double horizon,
 	ScalarT* deltaTemperature
 );

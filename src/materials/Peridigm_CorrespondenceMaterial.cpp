@@ -70,6 +70,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_partialStressFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
+//  BulkMod obj_bulkModulus(params);
+//  ShearMod obj_shearModulus(params);
+//  m_bulkModulus = obj_bulkModulus.compute(0.0);
+//  m_shearModulus = obj_shearModulus.compute(0.0);
   m_bulkModulus = calculateBulkModulus(params);
   m_shearModulus = calculateShearModulus(params);
   m_density = params.get<double>("Density");

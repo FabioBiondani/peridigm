@@ -79,9 +79,9 @@ void computeHeatFlow
 	const double PI_G = boost::math::constants::pi<double>();
 // 	const double *xOwned = xOverlap;
 	const ScalarT *yOwned = yOverlap;
-	const ScalarT *deltaTemperatureOwned = deltaTemperatureOverlap;
+	const ScalarT *deltaTemperatureOwned = deltaTemperature;
 	const double *v = volumeOverlap;
-	ScalarT *heatFlowOwned = heatFlowOverlap;
+	ScalarT *heatFlowOwned = heatFlow;
 	const int *neighPtr = localNeighborList;
 	double cellVolume;
 // 	double X_dx, X_dy, X_dz, zeta, omega;
@@ -100,7 +100,7 @@ void computeHeatFlow
 			int localId = *neighPtr;
 			cellVolume = v[localId];
 // 			const double *XP = &xOverlap[3*localId];
-			const ScalarT *deltaTP = &deltaTemperatureOverlap[localId];
+			const ScalarT *deltaTP = &deltaTemperature[localId];
 			const ScalarT *YP = &yOverlap[3*localId];
 // 			X_dx = XP[0]-X[0];
 // 			X_dy = XP[1]-X[1];

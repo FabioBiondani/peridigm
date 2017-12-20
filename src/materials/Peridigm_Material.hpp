@@ -66,6 +66,8 @@
 #include "FunctionRTC.hh"
 #endif
 
+using namespace std;
+
 namespace PeridigmNS {
 
   //! Base class defining the Peridigm material model interface.
@@ -171,35 +173,49 @@ namespace PeridigmNS {
     double calculateShearModulus(const Teuchos::ParameterList & params) const;
 
 
-    // alternative definitions creating a class
+    // alternative definitions using RTC in a class
 //     class Moduli{
-//     protected:
+//       protected:
 //         Teuchos::ParameterList params;
-//         virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
-//         Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
+//         virtual PG_RuntimeCompiler::Function create_rtc()=0;
+//         PG_RuntimeCompiler::Function rtcFunction;
 //         double value;
 //       public:
+//         Moduli(){}
 //         Moduli(const Teuchos::ParameterList& p)
 //         {
 //             params = p;
-//             rtcFunction = create_rtc();
+//         }
+//         void set(const Teuchos::ParameterList& p)
+//         {
+//             params = p;
 //         }
 //         double compute(double Temperature){
-//             rtcFunction->varValueFill(1,Temperature);
-//             rtcFunction->execute();
+//             bool success = rtcFunction.varValueFill(1,Temperature);
+//             if(!success){
+//                 string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+//                 msg += "**** " + rtcFunction.getErrors() + "\n";
+//                 TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+//             }
+//             rtcFunction.execute();
 //             return value;
 //         }
 //     };
 //     class BulkMod: public Moduli{
 //       public:
-//         BulkMod(const Teuchos::ParameterList& p) : Moduli(p){};
-//         Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
-//         
+//         PG_RuntimeCompiler::Function create_rtc();
+//         BulkMod(const Teuchos::ParameterList& p) : Moduli(p){
+//             rtcFunction = create_rtc();
+//         };
+//         BulkMod() : Moduli(){};
 //     };
 //     class ShearMod: public Moduli{
 //       public:
-//         ShearMod(const Teuchos::ParameterList& p) : Moduli(p){};
-//         Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
+//         PG_RuntimeCompiler::Function create_rtc();
+//         ShearMod(const Teuchos::ParameterList& p) : Moduli(p){
+//             rtcFunction = create_rtc();
+//         };
+//         ShearMod() : Moduli(){};
 //     };
 
 

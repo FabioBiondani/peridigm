@@ -356,20 +356,19 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
 
 
 
-// Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create_rtc()
+// PG_RuntimeCompiler::Function PeridigmNS::Material::BulkMod::create_rtc()
 // {
 //   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
 //   string bulkModulusStr, shearModulusStr, youngsModulusStr, poissonsRatioStr, rtcFunctionString;
 //   
-//   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
-//   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcModulo"));
-//   rtcFunction->addVar("double", "value");
-//   rtcFunction->addVar("double", "T");
+//   PG_RuntimeCompiler::Function rtcFunction;
+//   rtcFunction = PG_RuntimeCompiler::Function(2, "rtcBulk");
+//   rtcFunction.addVar("double", "value");
+//   rtcFunction.addVar("double", "T");
 // 
 //   if( params.isParameter("Bulk Modulus") ){
 //     bulkModulusDefined = true;
 //     bulkModulusStr = params.get<string>("Bulk Modulus");
-//     
 //   }
 //   if( params.isParameter("Shear Modulus") ){
 //     shearModulusStr = params.get<string>("Shear Modulus");
@@ -402,42 +401,41 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
 //   else
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 //   
-//   bool success = rtcFunction->addBody(rtcFunctionString);
+//   bool success = rtcFunction.addBody(rtcFunctionString);
 //   if(!success){
 //     string msg = "\n**** Error:  rtcFunction->addBody(function) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//     msg += "**** " + rtcFunction->getErrors() + "\n";
+//     msg += "**** " + rtcFunction.getErrors() + "\n";
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
 //   }
 //   
-//   success = rtcFunction->varValueFill(0, 0.0);
+//   success = rtcFunction.varValueFill(0, 0.0);
 //   if(!success){
 //     string msg = "\n**** Error:  rtcFunction->varValueFill(0,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//     msg += "**** " + rtcFunction->getErrors() + "\n";
+//     msg += "**** " + rtcFunction.getErrors() + "\n";
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
 //   }
-//   success = rtcFunction->varValueFill(1, 0.0);
+//   success = rtcFunction.varValueFill(1, 0.0);
 //   if(!success){
 //     string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//     msg += "**** " + rtcFunction->getErrors() + "\n";
+//     msg += "**** " + rtcFunction.getErrors() + "\n";
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
 //   }
 //   
 //   return rtcFunction;
 // }
-// Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::create_rtc()
+// PG_RuntimeCompiler::Function PeridigmNS::Material::ShearMod::create_rtc()
 // {
 //   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
 //   string bulkModulusStr, shearModulusStr, youngsModulusStr, poissonsRatioStr, rtcFunctionString;
 //   
-//   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
-//   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcModulo"));
-//   rtcFunction->addVar("double", "value");
-//   rtcFunction->addVar("double", "T");
+//   PG_RuntimeCompiler::Function rtcFunction;
+//   rtcFunction = PG_RuntimeCompiler::Function(2, "rtcShear");
+//   rtcFunction.addVar("double", "value");
+//   rtcFunction.addVar("double", "T");
 // 
 //   if( params.isParameter("Bulk Modulus") ){
 //     bulkModulusDefined = true;
 //     bulkModulusStr = params.get<string>("Bulk Modulus");
-//     
 //   }
 //   if( params.isParameter("Shear Modulus") ){
 //     shearModulusStr = params.get<string>("Shear Modulus");
@@ -470,23 +468,23 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
 //   else
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 //   
-//   bool success = rtcFunction->addBody(rtcFunctionString);
+//   bool success = rtcFunction.addBody(rtcFunctionString);
 //   if(!success){
 //     string msg = "\n**** Error:  rtcFunction->addBody(function) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//     msg += "**** " + rtcFunction->getErrors() + "\n";
+//     msg += "**** " + rtcFunction.getErrors() + "\n";
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
 //   }
 //   
-//   success = rtcFunction->varValueFill(0, 0.0);
+//   success = rtcFunction.varValueFill(0, 0.0);
 //   if(!success){
 //     string msg = "\n**** Error:  rtcFunction->varValueFill(0,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//     msg += "**** " + rtcFunction->getErrors() + "\n";
+//     msg += "**** " + rtcFunction.getErrors() + "\n";
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
 //   }
-//   success = rtcFunction->varValueFill(1, 0.0);
+//   success = rtcFunction.varValueFill(1, 0.0);
 //   if(!success){
 //     string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//     msg += "**** " + rtcFunction->getErrors() + "\n";
+//     msg += "**** " + rtcFunction.getErrors() + "\n";
 //     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
 //   }
 //   

@@ -50,6 +50,7 @@
 #include "elastic.h"
 #include "correspondence.h"
 #include <Teuchos_Assert.hpp>
+#include <iostream>
 
 using namespace std;
 
@@ -69,9 +70,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_unrotatedRateOfDeformationFieldId(-1),
     m_partialStressFieldId(-1)
 {
-  //! \todo Add meaningful asserts on material properties.
-//  BulkMod obj_bulkModulus(params);
-//  ShearMod obj_shearModulus(params);
+    //! \todo Add meaningful asserts on material properties.
+//  obj_bulkModulus.set(params);
+//  obj_shearModulus.set(params);
 //  m_bulkModulus = obj_bulkModulus.compute(0.0);
 //  m_shearModulus = obj_shearModulus.compute(0.0);
   m_bulkModulus = calculateBulkModulus(params);

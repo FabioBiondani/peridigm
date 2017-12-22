@@ -53,7 +53,7 @@
 
 // GNU or Intel with libstd++
 #if defined (__GNUC__) && __GNUC__ >= 4 && defined (__GLIBCXX__)
-#include <tr1/memory>
+#include <memory>
 
 // IBM XL
 #elif defined (__xlC__) && __xlC__ >= 0x0900

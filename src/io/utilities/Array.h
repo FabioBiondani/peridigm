@@ -53,7 +53,7 @@
 
 namespace UTILITIES {
 
-using std::tr1::shared_ptr;
+using std::shared_ptr;
 
 template<class T>
 class Array {

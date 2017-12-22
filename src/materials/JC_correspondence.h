@@ -47,6 +47,8 @@
 #ifndef JC_CORRESPONDENCE_H
 #define JC_CORRESPONDENCE_H
 
+#include "Peridigm_Material.hpp"
+
 namespace CORRESPONDENCE {
 
 template<typename ScalarT>
@@ -63,10 +65,10 @@ ScalarT* equivalentPlasticStrainNP1,
 ScalarT* accumulatedPlasticStrainNP1,
 ScalarT* DamageNP1,
 const int numPoints, 
-const double bulkMod,
-const double shearMod,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
 const double dt,
-ScalarT* TemperatureNP1,
+double* TemperatureNP1,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,

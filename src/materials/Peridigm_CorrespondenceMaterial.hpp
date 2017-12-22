@@ -101,8 +101,8 @@ namespace PeridigmNS {
     // material parameters
     double m_bulkModulus;
     double m_shearModulus;
-//     BulkMod obj_bulkModulus;
-//     ShearMod obj_shearModulus;
+    BulkMod obj_bulkModulus;
+    ShearMod obj_shearModulus;
     double m_density;
     double m_hourglassCoefficient;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;

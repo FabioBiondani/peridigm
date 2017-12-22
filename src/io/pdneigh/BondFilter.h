@@ -104,7 +104,7 @@ public:
 	 * bonds are included by default, ie flag=0; if a point is excluded then flag =1 is set
 	 */
 	virtual void filterBonds(std::vector<int>& treeList, const double *pt, const std::size_t ptLocalId, const double *xOverlap, bool* bondFlags) = 0;
-	virtual std::tr1::shared_ptr<BondFilter> clone(bool withSelf) = 0;
+	virtual std::shared_ptr<BondFilter> clone(bool withSelf) = 0;
 protected:
 	bool includeSelf;
 
@@ -115,7 +115,7 @@ public:
 	BondFilterDefault(bool withSelf=false) : BondFilter(withSelf) {}
 	virtual ~BondFilterDefault() {}
 	virtual void filterBonds(std::vector<int>& treeList, const double *pt, const std::size_t ptLocalId, const double *xOverlap, bool* markForExclusion);
-	virtual std::tr1::shared_ptr<BondFilter> clone(bool withSelf=true);
+	virtual std::shared_ptr<BondFilter> clone(bool withSelf=true);
 };
 
 
@@ -131,7 +131,7 @@ public:
 	FinitePlaneFilter(const FinitePlane& plane, bool withSelf, double tolerance) : BondFilter(withSelf), tolerance(tolerance), plane(plane) {}
 	virtual ~FinitePlaneFilter() {}
 	virtual void filterBonds(std::vector<int>& treeList, const double *pt, const std::size_t ptLocalId, const double *xOverlap, bool* markForExclusion);
-	virtual std::tr1::shared_ptr<BondFilter> clone(bool withSelf=true);
+	virtual std::shared_ptr<BondFilter> clone(bool withSelf=true);
 private:
 	double tolerance;
 	FinitePlane plane;

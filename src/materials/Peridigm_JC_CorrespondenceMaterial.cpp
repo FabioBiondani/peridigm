@@ -139,6 +139,9 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
 
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
+  
+  double *deformationGradient;
+  dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
   double *vonMisesStressN, *vonMisesStressNP1;
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&vonMisesStressNP1);
@@ -171,8 +174,8 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
                                                             accumulatedPlasticStrainNP1, 
                                                             DamageNP1, 
                                                             numOwnedPoints, 
-                                                            m_bulkModulus, 
-                                                            m_shearModulus, 
+                                                            obj_bulkModulus, 
+                                                            obj_shearModulus, 
                                                             dt,
                                                             deltaTemperatureNP1,
                                                             m_MeltingTemperature,

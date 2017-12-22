@@ -119,8 +119,8 @@ void BondFilterDefault::filterBonds(std::vector<int>& treeList, const double *pt
 
 }
 
-  std::tr1::shared_ptr<BondFilter> BondFilterDefault::clone(bool withSelf) {
-	return std::tr1::shared_ptr<BondFilterDefault>(new BondFilterDefault(withSelf));
+  std::shared_ptr<BondFilter> BondFilterDefault::clone(bool withSelf) {
+	return std::shared_ptr<BondFilterDefault>(new BondFilterDefault(withSelf));
 }
 
 void FinitePlaneFilter::filterBonds(std::vector<int>& treeList, const double *pt, const size_t ptLocalId, const double *xOverlap, bool *bondFlags) {
@@ -157,8 +157,8 @@ void FinitePlaneFilter::filterBonds(std::vector<int>& treeList, const double *pt
 	}
 }
 
-std::tr1::shared_ptr<BondFilter> FinitePlaneFilter::clone(bool withSelf) {
-	return std::tr1::shared_ptr<FinitePlaneFilter>(new FinitePlaneFilter(plane,withSelf,tolerance));
+std::shared_ptr<BondFilter> FinitePlaneFilter::clone(bool withSelf) {
+	return std::shared_ptr<FinitePlaneFilter>(new FinitePlaneFilter(plane,withSelf,tolerance));
 }
 
 }

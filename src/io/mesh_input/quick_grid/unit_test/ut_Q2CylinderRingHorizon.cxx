@@ -55,7 +55,7 @@
 
 using namespace QUICKGRID;
 using UTILITIES::Vector3D;
-using std::tr1::shared_ptr;
+using std::shared_ptr;
 using std::size_t;
 
 

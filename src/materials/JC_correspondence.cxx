@@ -48,6 +48,7 @@
 #include "JC_correspondence.h"
 #include "correspondence.h"
 #include "material_utilities.h"
+#include "Peridigm_Material.hpp"
 #include <Sacado.hpp>
 #include <math.h>
 #include <iostream>
@@ -70,10 +71,10 @@ ScalarT* equivalentPlasticStrainNP1,
 ScalarT* accumulatedPlasticStrainNP1,
 ScalarT* DamageNP1,
 const int numPoints, 
-const double bulkMod,
-const double shearMod,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
 const double dt,
-ScalarT* Temperature,
+double* Temperature,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,
@@ -137,10 +138,22 @@ const double constDC
     ScalarT fun2;
     ScalarT fun2_Da;
     
+    double bulkMod;
+    double shearMod;
+    
     for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,
         stressNP1+=9, ++vmStress
         ,++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1
         ){
+        
+        // temperatures
+        *Temperature = ReferenceTemperature; ///////
+        ScalarT hmlgT = (*Temperature - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
+
+        //Tempdouble = *Temperature;
+        bulkMod=obj_bulkModulus.compute(*Temperature);
+        shearMod=obj_shearModulus.compute(*Temperature);
+
         
         if (*DaN==1.){
             std::cout << iID << " Entirely damaged\n";
@@ -201,11 +214,8 @@ const double constDC
         *eqpsNP1 = *eqpsN;
         *dapsNP1 = *dapsN;
         *DaNP1 = *DaN;
-
-        // temperatures
-        *Temperature = ReferenceTemperature;
-        ScalarT hmlgT = (*Temperature - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
-
+        
+        
         
         yieldStressHat0 = // without considering damage
                 (constA+constB*pow(*eqpsN,constN))*
@@ -365,8 +375,8 @@ double* equivalentPlasticStrainNP1,
 double* accumulatedPlasticStrainNP1,
 double* DamageNP1,
 const int numPoints, 
-const double bulkMod,
-const double shearMod,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
 const double dt,
 double* Temperature,
 const double MeltingTemperature,
@@ -398,10 +408,10 @@ Sacado::Fad::DFad<double>* equivalentPlasticStrainNP1,
 Sacado::Fad::DFad<double>* accumulatedPlasticStrainNP1,
 Sacado::Fad::DFad<double>* DamageNP1,
 const int numPoints, 
-const double bulkMod,
-const double shearMod,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
 const double dt,
-Sacado::Fad::DFad<double>* Temperature,
+double* Temperature,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,

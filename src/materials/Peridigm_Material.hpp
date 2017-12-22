@@ -59,6 +59,7 @@
 #include "Peridigm_SerialMatrix.hpp"
 #include "Peridigm_ScratchMatrix.hpp"
 
+#include <string>
 #include <Trilinos_version.h>
 #if TRILINOS_MAJOR_MINOR_VERSION >= 111100
 #include "RTC_FunctionRTC.hh"
@@ -172,54 +173,57 @@ namespace PeridigmNS {
     //! Compute the shear modulus given any two elastic constants from among:  bulk modulus, shear modulus, Young's modulus, Poisson's ratio.
     double calculateShearModulus(const Teuchos::ParameterList & params) const;
 
-
     // alternative definitions using RTC in a class
-//     class Moduli{
-//       protected:
-//         Teuchos::ParameterList params;
-//         virtual PG_RuntimeCompiler::Function create_rtc()=0;
-//         PG_RuntimeCompiler::Function rtcFunction;
-//         double value;
-//       public:
-//         Moduli(){}
-//         Moduli(const Teuchos::ParameterList& p)
-//         {
-//             params = p;
-//         }
-//         void set(const Teuchos::ParameterList& p)
-//         {
-//             params = p;
-//         }
-//         double compute(double Temperature){
-//             bool success = rtcFunction.varValueFill(1,Temperature);
-//             if(!success){
-//                 string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-//                 msg += "**** " + rtcFunction.getErrors() + "\n";
-//                 TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
-//             }
-//             rtcFunction.execute();
-//             return value;
-//         }
-//     };
-//     class BulkMod: public Moduli{
-//       public:
-//         PG_RuntimeCompiler::Function create_rtc();
-//         BulkMod(const Teuchos::ParameterList& p) : Moduli(p){
-//             rtcFunction = create_rtc();
-//         };
-//         BulkMod() : Moduli(){};
-//     };
-//     class ShearMod: public Moduli{
-//       public:
-//         PG_RuntimeCompiler::Function create_rtc();
-//         ShearMod(const Teuchos::ParameterList& p) : Moduli(p){
-//             rtcFunction = create_rtc();
-//         };
-//         ShearMod() : Moduli(){};
-//     };
-
-
-    
+    class Moduli{
+      protected:
+        Teuchos::ParameterList params;
+        virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc()=0;
+        Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
+        double value;
+      public:
+        Moduli(){}
+        Moduli(const Teuchos::ParameterList& p)
+        {
+            params = p;
+        }
+        void set(const Teuchos::ParameterList& p)
+        {
+            params = p;
+            rtcFunction = create_rtc();
+        }
+        double compute(double Temperature){
+            bool success = rtcFunction->varValueFill(1,Temperature);
+            if(!success){
+                string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+                msg += "**** " + rtcFunction->getErrors() + "\n";
+                TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+            }
+            success = rtcFunction->execute();
+            if(!success){
+                string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+                msg += "**** " + rtcFunction->getErrors() + "\n";
+                TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+            }
+            value = rtcFunction->getValueOfVar("value");
+            return value;
+        }
+    };
+    class BulkMod: public Moduli{
+      public:
+        Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
+        BulkMod(const Teuchos::ParameterList& p) : Moduli(p){
+            rtcFunction = create_rtc();
+        };
+        BulkMod() : Moduli(){};
+    };
+    class ShearMod: public Moduli{
+      public:
+        Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
+        ShearMod(const Teuchos::ParameterList& p) : Moduli(p){
+            rtcFunction = create_rtc();
+        };
+        ShearMod() : Moduli(){};
+    };
     
     
     enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };

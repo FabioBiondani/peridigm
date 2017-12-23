@@ -131,11 +131,9 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
                                                                PeridigmNS::DataManager& dataManager) const
 {
-  double *unrotatedCauchyStressN;
-  dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&unrotatedCauchyStressN);
-
-  double *unrotatedCauchyStressNP1;
+  double *unrotatedCauchyStressN, *unrotatedCauchyStressNP1;
   dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
+  dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&unrotatedCauchyStressN);
 
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
@@ -163,37 +161,40 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
   
-  CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
-                                                            unrotatedCauchyStressN, 
-                                                            unrotatedCauchyStressNP1, 
-                                                            vonMisesStressNP1,
-                                                            equivalentPlasticStrainN, 
-                                                            accumulatedPlasticStrainN, 
-                                                            DamageN, 
-                                                            equivalentPlasticStrainNP1, 
-                                                            accumulatedPlasticStrainNP1, 
-                                                            DamageNP1, 
-                                                            numOwnedPoints, 
-                                                            obj_bulkModulus, 
-                                                            obj_shearModulus, 
-                                                            dt,
-                                                            deltaTemperatureNP1,
-                                                            m_MeltingTemperature,
-                                                            m_ReferenceTemperature,
-                                                            m_A,
-                                                            m_N,
-                                                            m_B,
-                                                            m_C,
-                                                            m_M,
-                                                            m_D1,
-                                                            m_D2,
-                                                            m_D3,
-                                                            m_D4,
-                                                            m_D5,
-                                                            m_DC
-                                               );
-  
   *deltaTemperatureNP1=m_ReferenceTemperature;
+  CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
+                                                unrotatedCauchyStressN, 
+                                                unrotatedCauchyStressNP1, 
+                                                vonMisesStressNP1,
+                                                equivalentPlasticStrainN, 
+                                                accumulatedPlasticStrainN, 
+                                                DamageN, 
+                                                equivalentPlasticStrainNP1, 
+                                                accumulatedPlasticStrainNP1, 
+                                                DamageNP1, 
+                                                numOwnedPoints, 
+                                                obj_bulkModulus, 
+                                                obj_shearModulus,
+                                                obj_alphaVol,
+                                                deltaTemperatureN,
+                                                deltaTemperatureNP1,
+                                                dt,
+                                                m_MeltingTemperature,
+                                                m_ReferenceTemperature,
+                                                m_A,
+                                                m_N,
+                                                m_B,
+                                                m_C,
+                                                m_M,
+                                                m_D1,
+                                                m_D2,
+                                                m_D3,
+                                                m_D4,
+                                                m_D5,
+                                                m_DC
+                                                );
+  
+
   
   
 }

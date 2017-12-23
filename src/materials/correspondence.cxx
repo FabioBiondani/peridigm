@@ -117,6 +117,19 @@ int Invert3by3Matrix
 }
 
 template<typename ScalarT>
+void Determinant3by3Matrix
+(
+ const ScalarT* matrix,
+ ScalarT& determinant
+)
+{
+  ScalarT minor0 =  *(matrix+4) * *(matrix+8) - *(matrix+5) * *(matrix+7);
+  ScalarT minor1 =  *(matrix+3) * *(matrix+8) - *(matrix+5) * *(matrix+6);
+  ScalarT minor2 =  *(matrix+3) * *(matrix+7) - *(matrix+4) * *(matrix+6);
+  determinant = *(matrix) * minor0 - *(matrix+1) * minor1 + *(matrix+2) * minor2;
+}
+
+template<typename ScalarT>
 void TransposeMatrix
 (
  const ScalarT* matrix,
@@ -814,6 +827,12 @@ template int Invert3by3Matrix<double>
  double* inverse
 );
 
+template void Determinant3by3Matrix<double>
+(
+ const double* matrix,
+ double& determinant
+);
+
 template int computeShapeTensorInverseAndApproximateDeformationGradient<double>
 (
 const double* volume,
@@ -912,6 +931,12 @@ template int Invert3by3Matrix<Sacado::Fad::DFad<double> >
  const Sacado::Fad::DFad<double>* matrix,
  Sacado::Fad::DFad<double>& determinant,
  Sacado::Fad::DFad<double>* inverse
+);
+
+template void Determinant3by3Matrix<Sacado::Fad::DFad<double> >
+(
+ const Sacado::Fad::DFad<double>* matrix,
+ Sacado::Fad::DFad<double>& determinant
 );
 
 template void computeGreenLagrangeStrain<Sacado::Fad::DFad<double> >

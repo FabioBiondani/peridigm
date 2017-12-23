@@ -494,6 +494,46 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   
   return rtcFunction;
 }
+Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::AlphaVol::create_rtc()
+{
+  string alphaStr, rtcFunctionString;
+  
+  Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
+  rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcShear"));
+  rtcFunction->addVar("double", "value");
+  rtcFunction->addVar("double", "T");
+
+  if( params.isParameter("Volumetric Expansion Coefficient") ){
+      alphaStr = params.get<string>("Volumetric Expansion Coefficient");
+  }else{
+      alphaStr="0.0";
+      cout<<  "WARNING: Volumetric Expansion Coefficient not defined for material, assuming null coefficient"  << "\n" ;
+}
+  
+  rtcFunctionString = "value=" + alphaStr;
+  
+  bool success = rtcFunction->addBody(rtcFunctionString);
+  if(!success){
+    string msg = "\n**** Error:  rtcFunction->addBody(function) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+    msg += "**** " + rtcFunction->getErrors() + "\n";
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+  }
+  
+  success = rtcFunction->varValueFill(0, 0.0);
+  if(!success){
+    string msg = "\n**** Error:  rtcFunction->varValueFill(0,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+    msg += "**** " + rtcFunction->getErrors() + "\n";
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+  }
+  success = rtcFunction->varValueFill(1, 0.0);
+  if(!success){
+    string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+    msg += "**** " + rtcFunction->getErrors() + "\n";
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+  }
+  
+  return rtcFunction;
+}
 
 
 

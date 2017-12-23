@@ -59,6 +59,14 @@ int Invert3by3Matrix
  ScalarT* inverse
 );
 
+//! Compute determinant of a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
+template<typename ScalarT>
+void Determinant3by3Matrix
+(
+ const ScalarT* matrix,
+ ScalarT& determinant
+);
+
 //! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
 template<typename ScalarT>
 void TransposeMatrix
@@ -121,6 +129,13 @@ double dt
 );
 
 //! Green-Lagrange Strain E = 0.5*(F^T F - I).
+template<typename ScalarT>
+void computeGreenLagrangeStrain
+(
+  ScalarT* deformationGradient,
+  ScalarT* greenLagrangeStrain,
+  int numPoints
+);
 template<typename ScalarT>
 void computeGreenLagrangeStrain
 (

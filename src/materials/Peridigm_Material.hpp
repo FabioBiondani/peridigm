@@ -224,6 +224,14 @@ namespace PeridigmNS {
         };
         ShearMod() : Moduli(){};
     };
+    class AlphaVol: public Moduli{
+      public:
+        Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
+        AlphaVol(const Teuchos::ParameterList& p) : Moduli(p){
+            rtcFunction = create_rtc();
+        };
+        AlphaVol() : Moduli(){};
+    };
     
     
     enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };

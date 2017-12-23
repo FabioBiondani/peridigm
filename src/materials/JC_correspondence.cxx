@@ -73,8 +73,10 @@ ScalarT* DamageNP1,
 const int numPoints, 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::AlphaVol obj_alphaVol,
+const double* deltaTemperatureN,
+const double* deltaTemperatureNP1,
 const double dt,
-double* Temperature,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,
@@ -100,6 +102,9 @@ const double constDC
     const ScalarT* dapsN = accumulatedPlasticStrainN;
     const ScalarT* DaN = DamageN;
     
+    
+    ScalarT deviatoricStressN[9];
+    ScalarT hydroStressN;
     
     ScalarT* eqpsNP1 = equivalentPlasticStrainNP1;
     ScalarT* dapsNP1 = accumulatedPlasticStrainNP1;
@@ -138,21 +143,27 @@ const double constDC
     ScalarT fun2;
     ScalarT fun2_Da;
     
-    double bulkMod;
-    double shearMod;
+    double bulkModN;
+    double shearModN;
+    double alphaN;
+    double bulkModNP1;
+    double shearModNP1;
+    double alphaNP1;
     
-    for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,
-        stressNP1+=9, ++vmStress
+    for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, ++vmStress
         ,++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1
         ){
         
         // temperatures
-        *Temperature = ReferenceTemperature; ///////
-        ScalarT hmlgT = (*Temperature - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
+        ScalarT hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
 
         //Tempdouble = *Temperature;
-        bulkMod=obj_bulkModulus.compute(*Temperature);
-        shearMod=obj_shearModulus.compute(*Temperature);
+        bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);
+        shearModN   =obj_shearModulus.compute(*deltaTemperatureN);
+        alphaN      =obj_alphaVol.compute(*deltaTemperatureN);
+        shearModNP1 =obj_shearModulus.compute(*deltaTemperatureN);
+        bulkModNP1  =obj_bulkModulus.compute(*deltaTemperatureNP1);
+        alphaNP1    =obj_alphaVol.compute(*deltaTemperatureNP1);
 
         
         if (*DaN==1.){
@@ -170,9 +181,15 @@ const double constDC
         //strainInc = dt * rateOfDef
         for (int i = 0; i < 9; i++) {
             strainInc[i] = *(rateOfDef+i)*dt;
+        }
+        strainInc[0] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
+        strainInc[4] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
+        strainInc[8] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
+
+        for (int i = 0; i < 9; i++) {
             deviatoricStrainInc[i] = strainInc[i];
         }
-
+        
         //dilatation
         dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
 
@@ -181,23 +198,31 @@ const double constDC
         deviatoricStrainInc[4] -= dilatationInc/3.0;
         deviatoricStrainInc[8] -= dilatationInc/3.0;
 
+        
+        
+        hydroStressN=(*(stressN) + *(stressN+4) + *(stressN+8))/3.0;
+        for (int i = 0; i < 9; i++) {
+            *(deviatoricStressN+i) = *(stressN+i);
+        }
+        *(deviatoricStressN) -= hydroStressN;
+        *(deviatoricStressN+4) -= hydroStressN;
+        *(deviatoricStressN+8) -= hydroStressN;
+        
+        
         //Compute an elastic ``trial stress''
         for (int i = 0; i < 9; i++) {
-            *(stressNP1+i) = *(stressN+i) + (1.-*DaN)*deviatoricStrainInc[i]*2.0*shearMod;
+            *(deviatoricStressNP1+i) = *(deviatoricStressN+i)*shearModNP1/shearModN + (1.-*DaN)*deviatoricStrainInc[i]*2.0*shearModNP1;
         }
-        *(stressNP1) += (1.-*DaN)*bulkMod*dilatationInc;
-        *(stressNP1+4) += (1.-*DaN)*bulkMod*dilatationInc;
-        *(stressNP1+8) += (1.-*DaN)*bulkMod*dilatationInc;
-
-        hydroStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
-
-        // Compute the ``trial'' von Mises stress
+        hydroStressNP1=hydroStressN*bulkModNP1/bulkModN+(1.-*DaN)*bulkModNP1*dilatationInc;
+        
+        
         for (int i = 0; i < 9; i++) {
-            deviatoricStressNP1[i] = *(stressNP1+i);
+            *(stressNP1+i) = *(deviatoricStressNP1+i);
         }
-        deviatoricStressNP1[0] -= hydroStressNP1;
-        deviatoricStressNP1[4] -= hydroStressNP1;
-        deviatoricStressNP1[8] -= hydroStressNP1;
+        *(stressNP1) += hydroStressNP1;
+        *(stressNP1+4) += hydroStressNP1;
+        *(stressNP1+8) += hydroStressNP1;
+        
 
         // Compute \sigma_ij * \sigma_ij
         tempScalar = 0.0;
@@ -266,8 +291,8 @@ const double constDC
                 ( +(constB*constN*pow_eqps_nM1)*(1+teqps)
                 +(constA+constB*pow(*eqpsNP1,constN))*constC*teqps_Deqps   );
                 
-                fun1 = ((*vmStress)/(1-*DaN) - 3.*shearMod*Deqps - yieldStressHat)/constA; // adimensional
-                fun1_Deqps = (-3*shearMod-yieldStressHat_Deqps)/constA;
+                fun1 = ((*vmStress)/(1-*DaN) - 3.*shearModNP1*Deqps - yieldStressHat)/constA; // adimensional
+                fun1_Deqps = (-3*shearModNP1-yieldStressHat_Deqps)/constA;
                 //std::cout << "it=" << it <<"   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
                 if (it==20){fun1=0;
                     std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" << "   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
@@ -377,8 +402,10 @@ double* DamageNP1,
 const int numPoints, 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::AlphaVol obj_alphaVol,
+const double* deltaTemperatureN,
+const double* deltaTemperatureNP1,
 const double dt,
-double* Temperature,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,
@@ -410,8 +437,10 @@ Sacado::Fad::DFad<double>* DamageNP1,
 const int numPoints, 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::AlphaVol obj_alphaVol,
+const double* deltaTemperatureN,
+const double* deltaTemperatureNP1,
 const double dt,
-double* Temperature,
 const double MeltingTemperature,
 const double ReferenceTemperature,
 const double constA,

@@ -507,7 +507,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::AlphaVol::creat
       alphaStr = params.get<string>("Volumetric Expansion Coefficient");
   }else{
       alphaStr="0.0";
-      cout<<  "WARNING: Volumetric Expansion Coefficient not defined for material, assuming null coefficient"  << "\n" ;
+      cout<<  "WARNING: Volumetric Expansion Coefficient not defined, assuming null value"  << "\n" ;
 }
   
   rtcFunctionString = "value=" + alphaStr;

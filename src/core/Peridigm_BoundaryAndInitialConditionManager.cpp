@@ -144,7 +144,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
     	{
      		std::cerr << "\nA prescribed temperature has been defined\n" << std::endl;
     		Teuchos::RCP<Epetra_Vector> toVector = peridigm->getDeltaTemperature();
-    		bcPtr = Teuchos::rcp(new DirichletIncrementBC(name,bcParams,toVector,peridigm,false,1.0,0.0));
+    		bcPtr = Teuchos::rcp(new DirichletBC(name,bcParams,toVector,peridigm,false));
     		boundaryConditions.push_back(bcPtr);
     	}
     	break;

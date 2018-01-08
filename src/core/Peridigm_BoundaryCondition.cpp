@@ -48,7 +48,7 @@
 #include "Peridigm_BoundaryCondition.hpp"
 #include "Peridigm.hpp"
 #include <boost/math/special_functions/fpclassify.hpp>
-
+#include <iostream>
 
 using namespace std;
 
@@ -119,7 +119,7 @@ void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, doub
     msg += "**** " + rtcFunction->getErrors() + "\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
   }
-
+  
   // if this is any other boundary condition besides prescribed displacement
   // get the previous value from evaluating the string function as above
   // if it is a perscribed displacement bc, check to see if the increment is
@@ -237,6 +237,7 @@ void PeridigmNS::DirichletIncrementBC::apply(Teuchos::RCP< std::map< std::string
       double currentValue = 0.0;
       double previousValue = 0.0;
       evaluateParser(localNodeID,currentValue,previousValue,timeCurrent,timePrevious_);
+      
       const double value = coeff * (currentValue - previousValue)
                  + deltaTCoeff * (currentValue - previousValue) * (1.0 / (timeCurrent - timePrevious_));
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN returned by dirichlet increment BC evaluation.\n");

@@ -93,6 +93,16 @@ int main(int argc, char *argv[]) {
   // Set up communicators
   MPI_Comm peridigmComm = MPI_COMM_WORLD;
 
+  
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//   volatile int i = 0;
+//   char hostname[256];
+//   gethostname(hostname, sizeof(hostname));
+//   cout << "PID " << getpid() << " on " << hostname << " ready for attach\n";
+//   while (i == 0) {
+//   }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   PeridigmNS::Timer::self().startTimer("Total");
 
   // Banner
@@ -102,6 +112,8 @@ int main(int argc, char *argv[]) {
     if(mpi_size > 1)
       cout << "MPI initialized on " << mpi_size << " processors.\n" << endl;
   }
+  
+  
 
   int status = 0;
   try {

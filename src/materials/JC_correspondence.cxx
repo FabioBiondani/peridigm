@@ -103,8 +103,8 @@ const double constDC
     const ScalarT* DaN = DamageN;
     
     
-    ScalarT deviatoricStressN[9];
     ScalarT hydroStressN;
+    ScalarT deviatoricStressN[9];
     
     ScalarT* eqpsNP1 = equivalentPlasticStrainNP1;
     ScalarT* dapsNP1 = accumulatedPlasticStrainNP1;
@@ -134,7 +134,11 @@ const double constDC
     ScalarT fun1;
     ScalarT fun1_Deqps;
     
+    ScalarT hmlgT;
+    ScalarT pow_hmlgT_M;
     ScalarT tdaps;
+    ScalarT pow_1tdaps_D4;
+    ScalarT pow_1tdaps_D4M1;
     ScalarT tdaps_Da;
     ScalarT hydroStress;
     ScalarT yieldStress;
@@ -150,12 +154,13 @@ const double constDC
     double shearModNP1;
     double alphaNP1;
     
-    for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, ++vmStress
-        ,++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1
+    for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, ++vmStress,
+        ++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1,
+        ++deltaTemperatureN,    ++deltaTemperatureNP1
         ){
         
         // temperatures
-        ScalarT hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
+        hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
 
         //Tempdouble = *Temperature;
         bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);
@@ -167,7 +172,7 @@ const double constDC
 
         
         if (*DaN==1.){
-            std::cout << iID << " Entirely damaged\n";
+//             std::cout << iID << " Entirely damaged\n";
             *DaNP1=*DaN;
             *eqpsNP1=*eqpsN;
             *dapsNP1=*dapsN;
@@ -241,10 +246,17 @@ const double constDC
         *DaNP1 = *DaN;
         
         
+        if ((hmlgT<0.) && (constM<1.)){
+            pow_hmlgT_M=hmlgT;
+            
+        }
+        else{
+            pow_hmlgT_M=pow(hmlgT,constM);
+        }
         
         yieldStressHat0 = // without considering damage
                 (constA+constB*pow(*eqpsN,constN))*
-                (1-pow(hmlgT,constM));
+                (1-pow_hmlgT_M);
         //If true, the step is plastic and we need to return to the yield
         //surface.
         if( *vmStress/(1.-*DaN) > yieldStressHat0 ) {
@@ -283,11 +295,11 @@ const double constDC
                 yieldStressHat =
                 (constA+constB*pow(*eqpsNP1,constN))*
                 pow(1+teqps,constC)*
-                (1-pow(hmlgT,constM));
+                (1-pow_hmlgT_M);
                 
                 yieldStressHat_Deqps = 
                 pow(1+teqps,constC-1)*
-                (1-pow(hmlgT,constM))*
+                (1-pow_hmlgT_M)*
                 ( +(constB*constN*pow_eqps_nM1)*(1+teqps)
                 +(constA+constB*pow(*eqpsNP1,constN))*constC*teqps_Deqps   );
                 
@@ -320,8 +332,17 @@ const double constDC
                     hydroStress = hydroStressNP1*
                     (1.-*DaNP1)/(1.-*DaN);
                     
-                    frs = (constD1+constD2*exp(constD3*hydroStress/yieldStress))*pow(1+tdaps,constD4)*(1+constD5*hmlgT); // fracture strain
-                    frs_Da = (constD1+constD2*exp(constD3*hydroStress/yieldStress))*constD4*pow(1+tdaps,constD4-1)*tdaps_Da*(1+constD5*hmlgT);
+                    if (tdaps>0.){
+                        pow_1tdaps_D4=pow(1+tdaps,constD4);
+                        pow_1tdaps_D4M1=pow(1+tdaps,constD4-1);
+                    }
+                    else{
+                        pow_1tdaps_D4=1;
+                        pow_1tdaps_D4M1=1;
+                    }
+                            
+                    frs = (constD1+constD2*exp(constD3*hydroStress/yieldStress))*pow_1tdaps_D4*(1+constD5*hmlgT); // fracture strain
+                    frs_Da = (constD1+constD2*exp(constD3*hydroStress/yieldStress))*constD4*pow_1tdaps_D4M1*tdaps_Da*(1+constD5*hmlgT);
                     
                     fun2 = *DaNP1-*DaN -constDC/(frs*(1-*DaNP1))*Deqps ;
                     fun2_Da = 1 + constDC/pow((1-*DaNP1)*frs,2)*(-frs+(1-*DaNP1)*frs_Da)*Deqps;
@@ -421,7 +442,7 @@ const double constD5,
 const double constDC
 );
 
-/** Explicit template instantiation for Sacado::Fad::DFad<double>. */
+/* Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template void updateJohnsonCookCauchyStress<Sacado::Fad::DFad<double> >
 (
 const Sacado::Fad::DFad<double>* unrotatedRateOfDeformation, 

@@ -138,9 +138,6 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
   
-  double *deformationGradient;
-  dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
-
   double *vonMisesStressN, *vonMisesStressNP1;
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&vonMisesStressNP1);
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_N)->ExtractView(&vonMisesStressN);
@@ -161,7 +158,7 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
   
-  *deltaTemperatureNP1=m_ReferenceTemperature;
+//   *deltaTemperatureNP1=m_ReferenceTemperature;
   CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
                                                 unrotatedCauchyStressN, 
                                                 unrotatedCauchyStressNP1, 

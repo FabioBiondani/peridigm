@@ -52,7 +52,7 @@
 #include "nonlocal_thermal_diffusion.h"
 #include "material_utilities.h"
 #include <boost/math/constants/constants.hpp>
-
+#include <iostream>
 // ----------------------------------HEAT FLOW---------------------------------
 namespace MATERIAL_EVALUATION {
 
@@ -101,6 +101,7 @@ void computeHeatFlow
 			cellVolume = v[localId];
 // 			const double *XP = &xOverlap[3*localId];
 			const ScalarT *deltaTP = &deltaTemperatureOverlap[localId];
+//            if (*deltaTP!=0.) {std::cout << "*deltaTP=" << *deltaT << "\n";}
 			const ScalarT *YP = &yOverlap[3*localId];
 // 			X_dx = XP[0]-X[0];
 // 			X_dy = XP[1]-X[1];

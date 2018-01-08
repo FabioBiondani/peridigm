@@ -187,6 +187,8 @@ const double constDC
         for (int i = 0; i < 9; i++) {
             strainInc[i] = *(rateOfDef+i)*dt;
         }
+        
+        // Thermal isovolumetric expansion
         strainInc[0] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
         strainInc[4] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
         strainInc[8] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);

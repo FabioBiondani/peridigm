@@ -75,9 +75,12 @@ namespace PeridigmNS {
   class Material{
 
   public:
-
+    Teuchos::ParameterList matparams;
+      
     //! Standard constructor.
     Material(const Teuchos::ParameterList & params) : m_finiteDifferenceProbeLength(DBL_MAX) {
+      Teuchos::ParameterList matparams = params;
+      cout << matparams;
       if(params.isParameter("Finite Difference Probe Length"))
       m_finiteDifferenceProbeLength = params.get<double>("Finite Difference Probe Length");
     }

@@ -78,9 +78,12 @@ PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::Parame
 	m_density = params.get<double>("Density");
 	m_horizon = params.get<double>("Horizon");
 	m_alpha = params.get<double>("Thermal Expansion Coefficient");
-	m_thermalConductivity = params.get<double>("Thermal Conductivity");
-	m_specificHeat = params.get<double>("Specific Heat");
-
+    
+    TempDepConst obj_specificHeat(matparams,"Specific Heat");
+    double m_specificHeat = obj_specificHeat.compute(0.0);
+    TempDepConst obj_termCond(matparams,"Thermal Conductivity");
+    double m_thermalConductivity = obj_termCond.compute(0.0);
+    
 	if(params.isParameter("Apply Automatic Differentiation Jacobian"))
 		m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
 

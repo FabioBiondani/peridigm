@@ -494,7 +494,6 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   
   return rtcFunction;
 }
-
 Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::create_rtc()
 {
   string ConstStr, rtcFunctionString;

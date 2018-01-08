@@ -707,8 +707,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     }
 
     if (analysisHasThermal){
-      double blockSpecificHeat = blockIt->getMaterialModel()->lookupMaterialProperty("Specific Heat");
-      double blockThermalConductivity = blockIt->getMaterialModel()->lookupMaterialProperty("Thermal Conductivity");
+      Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
+      Material::TempDepConst obj_specificHeat(matparams,"Specific Heat");
+      double blockSpecificHeat = obj_specificHeat.compute(0.0);
+      Material::TempDepConst obj_termCond(matparams,"Thermal Conductivity");
+      double blockThermalConductivity = obj_termCond.compute(0.0);
       for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
         int globalID = OwnedScalarPointMap->GID(i);
         int mothershipLocalID = oneDimensionalMap->LID(globalID);

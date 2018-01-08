@@ -103,7 +103,8 @@ namespace PeridigmNS {
     double m_shearModulus;
     BulkMod obj_bulkModulus;
     ShearMod obj_shearModulus;
-    AlphaVol obj_alphaVol;
+    TempDepConst obj_alphaVol;
+    
     
     double m_density;
     double m_hourglassCoefficient;

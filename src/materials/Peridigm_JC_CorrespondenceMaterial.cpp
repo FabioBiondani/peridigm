@@ -76,6 +76,8 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   m_D4 = params.get<double>("Constant D4");
   m_D5 = params.get<double>("Constant D5");
   m_DC = params.get<double>("Constant DC");
+  
+  obj_termcond.set(params,"Thermal Conductivity");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   

@@ -224,13 +224,22 @@ namespace PeridigmNS {
         };
         ShearMod() : Moduli(){};
     };
-    class AlphaVol: public Moduli{
+    class TempDepConst: public Moduli{
+        string ConstName;
       public:
         Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
-        AlphaVol(const Teuchos::ParameterList& p) : Moduli(p){
+        TempDepConst(const Teuchos::ParameterList& p,string cn) : Moduli(p){
+            ConstName=cn;
             rtcFunction = create_rtc();
         };
-        AlphaVol() : Moduli(){};
+        void set(const Teuchos::ParameterList& p,string cn)
+        {
+            ConstName=cn;
+            params = p;
+            rtcFunction = create_rtc();
+        }
+
+        TempDepConst() : Moduli(){};
     };
     
     

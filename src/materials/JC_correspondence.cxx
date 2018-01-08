@@ -73,7 +73,7 @@ ScalarT* DamageNP1,
 const int numPoints, 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
-PeridigmNS::Material::AlphaVol obj_alphaVol,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const double dt,
@@ -350,10 +350,12 @@ const double constDC
                     //std::cout << "it=" << it <<"   fun2=" << fun2 << "   Da=" << *DaNP1 << "\n";
                     }
                     if (it==20){*DaNP1=1;fun2=0.;
-                        std::cout << "WARNING: NOT-CONVERGED DAMAGE LOOP:" << "   fun2=" << fun2 << "   iID=" << iID+1 << "   Imposed damage=" << *DaNP1 << "  vmStress=" << *vmStress << "\n";
-                    for (int i = 0; i < 9; i++) {
-                        std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
-                    }
+                        std::cout << "WARNING: NOT-CONVERGED DAMAGE LOOP:" <<  "   Imposed damage=" << *DaNP1 << "   iID=" << iID+1;
+//                         std::cout << "   fun2=" << fun2 <<"  vmStress=" << *vmStress ;
+                        std::cout << "\n";
+//                     for (int i = 0; i < 9; i++) {
+//                         std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
+//                     }
                     std::cout << "\n";
                         
                     }
@@ -423,7 +425,7 @@ double* DamageNP1,
 const int numPoints, 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
-PeridigmNS::Material::AlphaVol obj_alphaVol,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const double dt,
@@ -458,7 +460,7 @@ Sacado::Fad::DFad<double>* DamageNP1,
 const int numPoints, 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
-PeridigmNS::Material::AlphaVol obj_alphaVol,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const double dt,

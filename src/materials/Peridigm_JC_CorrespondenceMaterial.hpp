@@ -99,6 +99,7 @@ namespace PeridigmNS {
     double m_D5;
     double m_DC;
     
+    TempDepConst obj_termcond;
     
 
     // field spec ids for all relevant data

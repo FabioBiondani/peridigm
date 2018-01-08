@@ -494,23 +494,24 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   
   return rtcFunction;
 }
-Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::AlphaVol::create_rtc()
+
+Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::create_rtc()
 {
-  string alphaStr, rtcFunctionString;
+  string ConstStr, rtcFunctionString;
   
   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcShear"));
   rtcFunction->addVar("double", "value");
   rtcFunction->addVar("double", "T");
 
-  if( params.isParameter("Volumetric Expansion Coefficient") ){
-      alphaStr = params.get<string>("Volumetric Expansion Coefficient");
+  if( params.isParameter(ConstName) ){
+      ConstStr = params.get<string>(ConstName);
   }else{
-      alphaStr="0.0";
-      cout<<  "WARNING: Volumetric Expansion Coefficient not defined, assuming null value"  << "\n" ;
+      ConstStr="0.0";
+      cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;
 }
   
-  rtcFunctionString = "value=" + alphaStr;
+  rtcFunctionString = "value=" + ConstStr;
   
   bool success = rtcFunction->addBody(rtcFunctionString);
   if(!success){

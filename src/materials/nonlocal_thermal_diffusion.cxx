@@ -66,8 +66,7 @@ void computeHeatFlow
 	ScalarT* heatFlowOverlap,
 	const int*  localNeighborList,
 	int numOwnedPoints,
-	double thermalConductivity,
-	double specificHeat,
+    PeridigmNS::Material::TempDepConst obj_thermalConductivity,
 	double horizon,
 	ScalarT* deltaTemperatureOverlap
 )
@@ -75,7 +74,8 @@ void computeHeatFlow
 	/*
 	 * Compute processor local contribution to internal heat flux
 	 */
-	double K_T = thermalConductivity;
+	double K_T ;
+    double microConductivity;
 	const double PI_G = boost::math::constants::pi<double>();
 // 	const double *xOwned = xOverlap;
 	const ScalarT *yOwned = yOverlap;
@@ -86,7 +86,7 @@ void computeHeatFlow
 	double cellVolume;
 // 	double X_dx, X_dy, X_dz, zeta, omega;
 	ScalarT Y_dx, Y_dy, Y_dz, dY, dT, q1;
-	double microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);
+    double deltaTdouble=0;
     
 // 	loop over all the nodes
 	for(int p=0;p<numOwnedPoints;p++, deltaTemperatureOwned++, yOwned +=3, heatFlowOwned++){
@@ -95,6 +95,16 @@ void computeHeatFlow
 		const ScalarT *Y = yOwned;
 // 		double selfCellVolume = v[p];
 		const ScalarT *deltaT = deltaTemperatureOwned;
+//      local thermal conductivity
+//         if (typeid(*deltaT)==typeid(double()))
+//         {deltaTdouble=*deltaT;}
+//         else if (typeid(*deltaT)==typeid(Sacado::Fad::DFad<double>()))
+//         {deltaTdouble= (*deltaT).val();}
+        
+        K_T = obj_thermalConductivity.compute(deltaTdouble);
+        microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);
+
+        
 // 		loop over the horizon region
 		for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
 			int localId = *neighPtr;
@@ -132,9 +142,8 @@ template void computeHeatFlow<double>
 	const int*  localNeighborList,
 	int numOwnedPoints,
 // 	std::vector<int> neighPtrVector,
-	double thermalConductivity,
-	double specificHeat,
-	double horizon,
+    PeridigmNS::Material::TempDepConst obj_thermalConductivity,
+    double horizon,
 	double* deltaTemperatureOverlap
 );
 
@@ -148,8 +157,7 @@ template void computeHeatFlow<Sacado::Fad::DFad<double> >
 	Sacado::Fad::DFad<double>* heatFlowOverlap,
 	const int*  localNeighborList,
 	int numOwnedPoints,
-	double thermalConductivity,
-	double specificHeat,
+    PeridigmNS::Material::TempDepConst obj_thermalConductivity,
 	double horizon,
 	Sacado::Fad::DFad<double>* deltaTemperatureOverlap
 );

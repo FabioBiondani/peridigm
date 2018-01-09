@@ -51,6 +51,8 @@
 #include <cstdlib>
 
 #include "Peridigm_InfluenceFunction.hpp"
+#include <Sacado.hpp>
+#include <iostream>
 
 class Bond_Volume_Calculator;
 
@@ -270,6 +272,30 @@ double compute_norm_2_deviatoric_extension
 
 }
 
+// adding function to convert Sacado::Fad::DFad<double> in double
+// template<typename T> double convT2double(T input)
+// {
+//     double output;
+//     if ( typeid(input) == typeid(double()) )
+//         {output = input;}    
+//     else if ( typeid(input) == typeid(Sacado::Fad::DFad<double>()) )
+//         {output = input.val();}
+//     else
+//         {output=0.0;
+//             std::cout << "type not defined in conversione from T to double\n";
+//         }
+//     return output;
+// }
+// double convT2double(double input)
+// {
+//     double output=input;
+//     return output;
+// }
+// double convT2double(Sacado::Fad::DFad<double> input)
+// {
+//     double output= input.val();
+//     return output;
+// }
 
 }
 

@@ -99,7 +99,7 @@
 		public:
 
 // 			! Constructor.
-		ThermalElasticMaterial(const Teuchos::ParameterList & params);
+        ThermalElasticMaterial(const Teuchos::ParameterList& params);
 
 // 			! Destructor.
 		virtual ~ThermalElasticMaterial();
@@ -189,8 +189,8 @@
 		double m_density;
 		double m_alpha;
 		double m_horizon;
-		double m_thermalConductivity;
-		double m_specificHeat;
+        TempDepConst obj_specificHeat;
+        TempDepConst obj_termCond;
 		double m_convectionConstant;
 		double m_fluidTemperature;
 		bool m_applyAutomaticDifferentiationJacobian;

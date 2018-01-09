@@ -63,7 +63,7 @@ using namespace std;
 
 PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::ParameterList& params)
   : ThermalMaterial(params),
-	m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_alpha(0.0), m_horizon(0.0),m_thermalConductivity(0.0),m_specificHeat(0.0),m_convectionConstant(0.0),m_fluidTemperature(0.0),
+	m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_alpha(0.0), m_horizon(0.0),m_convectionConstant(0.0),m_fluidTemperature(0.0),
 	m_applyAutomaticDifferentiationJacobian(true),
 	m_applySurfaceCorrectionFactor(false),
 	m_applyThermalStrains(true),
@@ -80,10 +80,8 @@ PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::Parame
 	m_horizon = params.get<double>("Horizon");
 	m_alpha = params.get<double>("Thermal Expansion Coefficient");
     
-    TempDepConst obj_specificHeat(matparams,"Specific Heat");
-    m_specificHeat = obj_specificHeat.compute(0.0);
-    TempDepConst obj_termCond(matparams,"Thermal Conductivity");
-    m_thermalConductivity = obj_termCond.compute(0.0);
+    obj_specificHeat.set(matparams,"Specific Heat");
+    obj_termCond.set(matparams,"Thermal Conductivity");
     
 	if(params.isParameter("Apply Automatic Differentiation Jacobian"))
 		m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
@@ -103,8 +101,6 @@ PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::Parame
 	materialProperties["Density"] = m_density;
 	materialProperties["Horizon"] = m_horizon;
 	materialProperties["Thermal Expansion Coefficient"] = m_alpha;
-	materialProperties["Thermal Conductivity"] = m_thermalConductivity;
-	materialProperties["Specific Heat"] = m_specificHeat;
 	if(m_thermalShock)
 	{
 		materialProperties["Convection Constant"] = m_convectionConstant;
@@ -266,8 +262,7 @@ PeridigmNS::ThermalElasticMaterial::computeHeatFlow(	const double dt,
 											heatFlow,
 											neighborhoodList,
 											numOwnedPoints,
-											m_thermalConductivity,
-											m_specificHeat,
+											obj_termCond,
 											m_horizon,
 											deltaTemperature);
 }
@@ -471,7 +466,7 @@ PeridigmNS::ThermalElasticMaterial::computeAutomaticDifferentiationJacobian(cons
 	MATERIAL_EVALUATION::computeDilatation(x,&y_AD[0],weightedVolume,cellVolume,bondDamage,&dilatation_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
 	MATERIAL_EVALUATION::computeInternalForceLinearElasticCoupled(x,&y_AD[0],weightedVolume,cellVolume,&dilatation_AD[0],bondDamage,scf,&force_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_bulkModulus,m_shearModulus,m_horizon,m_alpha,&dTY_AD[0]);
 
-	MATERIAL_EVALUATION::computeHeatFlow(x,&y_AD[0],cellVolume,bondDamage,&heatFlow_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,m_thermalConductivity,m_specificHeat,m_horizon,&dTY_AD[0]);
+	MATERIAL_EVALUATION::computeHeatFlow(x,&y_AD[0],cellVolume,bondDamage,&heatFlow_AD[0],&tempNeighborhoodList[0],tempNumOwnedPoints,obj_termCond,m_horizon,&dTY_AD[0]);
 
 	// Load derivative values into scratch matrix
 	// Multiply by volume along the way to convert force density to force

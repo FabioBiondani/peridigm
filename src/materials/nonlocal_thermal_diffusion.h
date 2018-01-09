@@ -47,6 +47,8 @@
 #ifndef THERMAL_DIFFUSION_H
 #define THERMAL_DIFFUSION_H
 
+#include "Peridigm_Material.hpp"
+
 namespace MATERIAL_EVALUATION {
 
 //! Computes contributions to the Heat Flow resulting from owned points.
@@ -61,8 +63,7 @@ void computeHeatFlow
 	const int*  localNeighborList,
 	int numOwnedPoints,
 	// 	std::vector<int> neighPtrVector,
-	double thermalConductivity,
-    double specificHeat,
+    PeridigmNS::Material::TempDepConst obj_thermalConductivity,
     double horizon,
 	ScalarT* deltaTemperature
 );

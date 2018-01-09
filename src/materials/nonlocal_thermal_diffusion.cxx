@@ -87,7 +87,7 @@ void computeHeatFlow
 // 	double X_dx, X_dy, X_dz, zeta, omega;
 	ScalarT Y_dx, Y_dy, Y_dz, dY, dT, q1;
 	double microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);
-
+    
 // 	loop over all the nodes
 	for(int p=0;p<numOwnedPoints;p++, deltaTemperatureOwned++, yOwned +=3, heatFlowOwned++){
 		int numNeigh = *neighPtr; neighPtr++;
@@ -115,6 +115,7 @@ void computeHeatFlow
 			dT = *deltaTP - *deltaT;
 			q1 = (1-*bondDamage)*microConductivity*dT/dY;//*omega;
 			*heatFlowOwned += q1*cellVolume*horizon;
+//          std::cout << (*heatFlowOwned) << "\n";
 // 			heatFlowOverlap[localId] -= q1*selfCellVolume*horizon;
 		}
 	}
@@ -152,6 +153,11 @@ template void computeHeatFlow<Sacado::Fad::DFad<double> >
 	double horizon,
 	Sacado::Fad::DFad<double>* deltaTemperatureOverlap
 );
+
+
+
+
+
 
 // --------------------------------INTERNAL FORCE-------------------------------
 

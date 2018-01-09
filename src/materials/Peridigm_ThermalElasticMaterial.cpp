@@ -57,6 +57,7 @@
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
+#include <iostream>
 
 using namespace std;
 
@@ -80,9 +81,9 @@ PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::Parame
 	m_alpha = params.get<double>("Thermal Expansion Coefficient");
     
     TempDepConst obj_specificHeat(matparams,"Specific Heat");
-    double m_specificHeat = obj_specificHeat.compute(0.0);
+    m_specificHeat = obj_specificHeat.compute(0.0);
     TempDepConst obj_termCond(matparams,"Thermal Conductivity");
-    double m_thermalConductivity = obj_termCond.compute(0.0);
+    m_thermalConductivity = obj_termCond.compute(0.0);
     
 	if(params.isParameter("Apply Automatic Differentiation Jacobian"))
 		m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
@@ -256,7 +257,8 @@ PeridigmNS::ThermalElasticMaterial::computeHeatFlow(	const double dt,
 	dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
 	dataManager.getData(m_heatFlowFieldId, PeridigmField::STEP_NP1)->ExtractView(&heatFlow);
 	dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
-
+    
+    
 	MATERIAL_EVALUATION::computeHeatFlow(	x,
 											y,
 											cellVolume,

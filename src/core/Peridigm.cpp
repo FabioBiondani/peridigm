@@ -1662,7 +1662,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         }
       }
       for (int j=0; j<heatFlow->MyLength(); j++)
+      {
         deltaTemperaturePtr[j] += Tdt/((*density)[j]*(*specificHeat)[j])*( heatFlowPtr[j]/(horizonPtr[j]) + (*density)[j]*internalHeatSourcePtr[j] );
+      }
     }
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       blockIt->importData(*u, displacementFieldId, PeridigmField::STEP_NP1, Insert);

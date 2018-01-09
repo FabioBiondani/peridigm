@@ -63,6 +63,7 @@ double PeridigmNS::ComputeCriticalThermalTimeStep(const Epetra_Comm& comm, Perid
   double density = materialModel()->Density();
   
   Teuchos::ParameterList matparams = materialModel->matparams;
+
   Material::TempDepConst obj_specificHeat(matparams,"Specific Heat");
   double specificHeat = obj_specificHeat.compute(0.0);
   Material::TempDepConst obj_termCond(matparams,"Thermal Conductivity");

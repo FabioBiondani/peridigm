@@ -97,7 +97,7 @@ void computeHeatFlow
 		const ScalarT *deltaT = deltaTemperatureOwned;
         
 //      local thermal conductivity
-//         deltaTdouble = convT2double(deltaT);
+        deltaTdouble = convT2double(*deltaT);
         K_T = obj_thermalConductivity.compute(deltaTdouble);
         
         microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);

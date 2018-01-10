@@ -273,37 +273,16 @@ double compute_norm_2_deviatoric_extension
 }
 
 // adding function to convert Sacado::Fad::DFad<double> in double
-// template<typename T> double convT2double(T input)
-// {
-//     double output;
-//     if ( typeid(input) == typeid(double()) )
-//         {output = input;}    
-//     else if ( typeid(input) == typeid(Sacado::Fad::DFad<double>()) )
-//         {output = input.val();}
-//     else
-//         {output=0.0;
-//             std::cout << "type not defined in conversione from T to double\n";
-//         }
-//     return output;
-// }
-
-// template<class T> double convT2double(const T*const a) {
-//         return *a;
-// }
-// template<> double convT2double (const Sacado::Fad::DFad<double>*const a) {
-//         return a->val();
-// }
-
-// const double convT2double(const double input)
-// {
-//     double output=input;
-//     return output;
-// }
-// const double convT2double(const Sacado::Fad::DFad<double> input)
-// {
-//     double output= input.val();
-//     return output;
-// }
+inline const double convT2double(const double input)
+{
+    double output=input;
+    return output;
+}
+inline const double convT2double(const Sacado::Fad::DFad<double> input)
+{
+    double output= input.val();
+    return output;
+}
 
 }
 

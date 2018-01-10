@@ -80,6 +80,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
 
   obj_alphaVol.set(params,"Thermal Expansion Coefficient");
+  m_alphaVol= obj_alphaVol.compute(0.0);
   
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");

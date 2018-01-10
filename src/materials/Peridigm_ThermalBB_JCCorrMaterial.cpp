@@ -55,13 +55,12 @@
 using namespace std;
 
 PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::ParameterList& params)
-  : CorrespondenceMaterial(params),
+  : CorrespondenceMaterial(params),PureThermalMaterial(params),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),m_DC(0.0),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
     m_equivalentPlasticStrainFieldId(-1),    m_accumulatedPlasticStrainFieldId(-1),    m_DamageFieldId(-1),
-    m_deltaTemperatureFieldId(-1)
-
+    m_deltaTemperatureFieldId(-1),  m_heatFlowFieldId(-1)
 
 {
   m_MeltingTemperature = params.get<double>("Melting Temperature");
@@ -78,8 +77,10 @@ PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::Pa
   m_D5 = params.get<double>("Constant D5");
   m_DC = params.get<double>("Constant DC");
   
-  obj_termcond.set(params,"Thermal Conductivity");
-
+  obj_termCond.set(params,"Thermal Conductivity");
+  m_horizon = params.get<double>("Horizon");
+  
+  
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
@@ -89,7 +90,8 @@ PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::Pa
   m_accumulatedPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Accumulated_Plastic_Strain");
   m_DamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
   m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
-  
+  m_heatFlowFieldId     = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Heat_Flow");
+
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
@@ -128,6 +130,13 @@ PeridigmNS::ThermalBB_JCCorrMaterial::initialize(const double dt,
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
 }
+
+
+
+
+
+
+
 
 void
 PeridigmNS::ThermalBB_JCCorrMaterial::computeCauchyStress(const double dt,
@@ -199,6 +208,39 @@ PeridigmNS::ThermalBB_JCCorrMaterial::computeCauchyStress(const double dt,
   
 }
 
+void
+PeridigmNS::ThermalBB_JCCorrMaterial::computeHeatFlow(const double dt,
+                                                      const int numOwnedPoints,
+                                                      const int* ownedIDs,
+                                                      const int* neighborhoodList,
+                                                      PeridigmNS::DataManager& dataManager) const
+{
+
+//             Zero out the heat flow
+    dataManager.getData(m_heatFlowFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+
+//     Extract pointers to the underlying data
+    double *x, *y, *cellVolume, *bondDamage, *heatFlow, *deltaTemperature;
+
+    dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
+    dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
+    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&cellVolume);
+    dataManager.getData(m_DamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage); ////////////////////
+    dataManager.getData(m_heatFlowFieldId, PeridigmField::STEP_NP1)->ExtractView(&heatFlow);
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
+    
+    
+    MATERIAL_EVALUATION::computeHeatFlow(x,
+                                         y,
+                                         cellVolume,
+                                         bondDamage,
+                                         heatFlow,
+                                         neighborhoodList,
+                                         numOwnedPoints,
+                                         obj_termCond,
+                                         m_horizon,
+                                         deltaTemperature);
+}
 
 
 

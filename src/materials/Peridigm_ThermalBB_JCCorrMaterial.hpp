@@ -49,11 +49,12 @@
 #define PERIDIGM_THERMALBB_JCCORRMATERIAL_HPP
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
+#include "Peridigm_PureThermalMaterial.hpp"
 #include <map>
 
 namespace PeridigmNS {
 
-  class ThermalBB_JCCorrMaterial : public CorrespondenceMaterial {
+  class ThermalBB_JCCorrMaterial : public CorrespondenceMaterial, public PureThermalMaterial {
   public:
 
 	//! Constructor.
@@ -77,6 +78,14 @@ namespace PeridigmNS {
                                      const int numOwnedPoints,
                                      PeridigmNS::DataManager& dataManager) const;
 
+    //! Evaluate the heat flow.
+    virtual void computeHeatFlow(const double dt,
+                                 const int numOwnedPoints,
+                                 const int* ownedIDs,
+                                 const int* neighborhoodList,
+                                 PeridigmNS::DataManager& dataManager) const;
+
+
     //! Returns the requested material property
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
@@ -98,7 +107,11 @@ namespace PeridigmNS {
     double m_D5;
     double m_DC;
     
-    TempDepConst obj_termcond;
+    double m_horizon;
+    TempDepConst obj_specificHeat;
+    TempDepConst obj_termCond;
+    double m_convectionConstant;
+    double m_fluidTemperature;
     
 
     // field spec ids for all relevant data
@@ -109,6 +122,7 @@ namespace PeridigmNS {
     int m_accumulatedPlasticStrainFieldId;
     int m_DamageFieldId;
     int m_deltaTemperatureFieldId;
+    int m_heatFlowFieldId;
   };
 }
 

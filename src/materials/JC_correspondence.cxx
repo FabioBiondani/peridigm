@@ -166,7 +166,7 @@ const double constDC
         bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);
         shearModN   =obj_shearModulus.compute(*deltaTemperatureN);
         alphaN      =obj_alphaVol.compute(*deltaTemperatureN);
-        shearModNP1 =obj_shearModulus.compute(*deltaTemperatureN);
+        shearModNP1 =obj_shearModulus.compute(*deltaTemperatureNP1);
         bulkModNP1  =obj_bulkModulus.compute(*deltaTemperatureNP1);
         alphaNP1    =obj_alphaVol.compute(*deltaTemperatureNP1);
 

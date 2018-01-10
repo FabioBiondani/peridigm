@@ -1520,6 +1520,25 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   // 				std::cerr<<"localThermalShockNodeID == -1 ==> "<<localThermalShockNodeID<<std::endl;
     }
   }
+  
+  // Update specificHeat definition wih the initial temperature
+  if (analysisHasThermal){
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      Teuchos::RCP<const Epetra_BlockMap> OwnedScalarPointMap = blockIt->getOwnedScalarPointMap();
+      Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
+      Material::TempDepConst obj_specificHeat(matparams,"Specific Heat");
+      double localSpecificHeat ;
+      for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
+        int globalID = OwnedScalarPointMap->GID(i);
+        localSpecificHeat = obj_specificHeat.compute(deltaTemperaturePtr[globalID]) ;
+        int mothershipLocalID = oneDimensionalMap->LID(globalID);
+        (*specificHeat)[mothershipLocalID] = localSpecificHeat;
+      }
+    }
+  }
+
+  
+  
   // Evaluate internal force and contact force in initial configuration for use in first timestep
   PeridigmNS::Timer::self().startTimer("Internal Force");
   modelEvaluator->evalModel(workset);
@@ -1644,7 +1663,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     blas.AXPY(length, dt, vPtr, uPtr, 1, 1);
 
     // TODO The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
-
+    
     // Copy data from mothership vectors to overlap vectors in data manager
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     double* horizonPtr;
@@ -1667,7 +1686,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->importData(*v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
     }
-
+    
+    //
     if(analysisHasContact){
       if(contactModel->Name() == "Time-Dependent Short-Range Force"){
         for(contactBlockIt = contactBlocks->begin() ; contactBlockIt != contactBlocks->end() ; contactBlockIt++) {
@@ -1687,6 +1707,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     force->PutScalar(0.0);
     if(analysisHasThermal && fmod(step,deltaStep) == 0){
+
 // 			Copy heat flow from the data manager to the mothership vector
 			PeridigmNS::Timer::self().startTimer("Heat Flow");
 			modelEvaluator->evalHeatFlow(workset);
@@ -1706,6 +1727,25 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 			}
     }
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
+    
+    
+    // Update specificHeat definition with the computed temperature
+    if (analysisHasThermal){
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        Teuchos::RCP<const Epetra_BlockMap> OwnedScalarPointMap = blockIt->getOwnedScalarPointMap();
+        Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
+        Material::TempDepConst obj_specificHeat(matparams,"Specific Heat");
+        double localSpecificHeat ;
+        for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
+          int globalID = OwnedScalarPointMap->GID(i);
+          localSpecificHeat = obj_specificHeat.compute(deltaTemperaturePtr[globalID]) ;
+          int mothershipLocalID = oneDimensionalMap->LID(globalID);
+          (*specificHeat)[mothershipLocalID] = localSpecificHeat;
+        }
+      }
+    }
+    
+
 
     // Check for NaNs in heat flow evaluation
 		if(analysisHasThermal){

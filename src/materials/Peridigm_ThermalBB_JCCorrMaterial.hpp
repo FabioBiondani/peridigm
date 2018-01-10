@@ -1,4 +1,4 @@
-//! \file Peridigm_JC_CorrespondenceMaterial.hpp
+//! \file Peridigm_ThermalBB_JCCorrMaterial.hpp
 
 //@HEADER
 // ************************************************************************
@@ -45,25 +45,25 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
-#define PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
+#ifndef PERIDIGM_THERMALBB_JCCORRMATERIAL_HPP
+#define PERIDIGM_THERMALBB_JCCORRMATERIAL_HPP
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include <map>
 
 namespace PeridigmNS {
 
-  class JC_CorrespondenceMaterial : public CorrespondenceMaterial{
+  class ThermalBB_JCCorrMaterial : public CorrespondenceMaterial {
   public:
 
 	//! Constructor.
-    JC_CorrespondenceMaterial(const Teuchos::ParameterList& params);
+    ThermalBB_JCCorrMaterial(const Teuchos::ParameterList& params);
 
     //! Destructor.
-    virtual ~JC_CorrespondenceMaterial();
+    virtual ~ThermalBB_JCCorrMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return("Johnson-Cook Correspondence"); }
+    virtual std::string Name() const { return("Thermal Johnson-Cook Correspondence"); }
 
     //! Initialize the derived class
     virtual void initialize(const double dt, 
@@ -98,6 +98,8 @@ namespace PeridigmNS {
     double m_D5;
     double m_DC;
     
+    TempDepConst obj_termcond;
+    
 
     // field spec ids for all relevant data
     int m_unrotatedRateOfDeformationFieldId;
@@ -110,4 +112,4 @@ namespace PeridigmNS {
   };
 }
 
-#endif // PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
+#endif // PERIDIGM_THERMALBB_JCCORRMATERIAL_HPP

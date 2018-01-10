@@ -1,4 +1,4 @@
-/*! \file Peridigm_JC_CorrespondenceMaterial.cpp */
+/*! \file Peridigm_ThermalBB_JCCorrMaterial.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -45,15 +45,16 @@
 // ************************************************************************
 //@HEADER
 
-#include "Peridigm_JC_CorrespondenceMaterial.hpp"
+#include "Peridigm_ThermalBB_JCCorrMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "JC_correspondence.h"
+#include "nonlocal_thermal_diffusion.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 
 using namespace std;
 
-PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::ParameterList& params)
+PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),m_DC(0.0),
@@ -77,6 +78,8 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   m_D5 = params.get<double>("Constant D5");
   m_DC = params.get<double>("Constant DC");
   
+  obj_termcond.set(params,"Thermal Conductivity");
+
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
@@ -96,12 +99,12 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
-PeridigmNS::JC_CorrespondenceMaterial::~JC_CorrespondenceMaterial()
+PeridigmNS::ThermalBB_JCCorrMaterial::~ThermalBB_JCCorrMaterial()
 {
 }
 
 void
-PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
+PeridigmNS::ThermalBB_JCCorrMaterial::initialize(const double dt,
                                                              const int numOwnedPoints,
                                                              const int* ownedIDs,
                                                              const int* neighborhoodList,
@@ -127,7 +130,7 @@ PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
 }
 
 void
-PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
+PeridigmNS::ThermalBB_JCCorrMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
                                                                PeridigmNS::DataManager& dataManager) const
 {
@@ -158,6 +161,7 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
   
+//   *deltaTemperatureNP1=m_ReferenceTemperature;
   CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
                                                 unrotatedCauchyStressN, 
                                                 unrotatedCauchyStressNP1, 

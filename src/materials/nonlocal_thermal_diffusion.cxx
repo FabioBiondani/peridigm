@@ -95,13 +95,11 @@ void computeHeatFlow
 		const ScalarT *Y = yOwned;
 // 		double selfCellVolume = v[p];
 		const ScalarT *deltaT = deltaTemperatureOwned;
-//      local thermal conductivity
-//         if (typeid(*deltaT)==typeid(double()))
-//         {deltaTdouble=*deltaT;}
-//         else if (typeid(*deltaT)==typeid(Sacado::Fad::DFad<double>()))
-//         {deltaTdouble= (*deltaT).val();}
         
+//      local thermal conductivity
+//         deltaTdouble = convT2double(deltaT);
         K_T = obj_thermalConductivity.compute(deltaTdouble);
+        
         microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);
 
         

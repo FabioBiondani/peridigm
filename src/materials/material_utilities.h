@@ -286,12 +286,20 @@ double compute_norm_2_deviatoric_extension
 //         }
 //     return output;
 // }
-// double convT2double(double input)
+
+// template<class T> double convT2double(const T*const a) {
+//         return *a;
+// }
+// template<> double convT2double (const Sacado::Fad::DFad<double>*const a) {
+//         return a->val();
+// }
+
+// const double convT2double(const double input)
 // {
 //     double output=input;
 //     return output;
 // }
-// double convT2double(Sacado::Fad::DFad<double> input)
+// const double convT2double(const Sacado::Fad::DFad<double> input)
 // {
 //     double output= input.val();
 //     return output;

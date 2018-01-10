@@ -498,9 +498,6 @@ namespace PeridigmNS {
     //! Global vector for cell specific heat
   	Teuchos::RCP<Epetra_Vector> specificHeat;
 
-  	//! Global vector for cell thermal conductivity
-  	Teuchos::RCP<Epetra_Vector> thermalConductivity;
-
   	//! Global vector for cell convection constant
   	Teuchos::RCP<Epetra_Vector> convectionConstant;
 

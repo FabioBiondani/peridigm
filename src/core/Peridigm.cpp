@@ -710,13 +710,10 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
       Material::TempDepConst obj_specificHeat(matparams,"Specific Heat");
       double blockSpecificHeat = obj_specificHeat.compute(0.0);
-      Material::TempDepConst obj_termCond(matparams,"Thermal Conductivity");
-      double blockThermalConductivity = obj_termCond.compute(0.0);
       for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
         int globalID = OwnedScalarPointMap->GID(i);
         int mothershipLocalID = oneDimensionalMap->LID(globalID);
         (*specificHeat)[mothershipLocalID] = blockSpecificHeat;
-        (*thermalConductivity)[mothershipLocalID] = blockThermalConductivity;
       }
       double blockConvectionConstant;
       double blockFluidTemperature;
@@ -919,20 +916,18 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
 		if (hasThermalShock){
 			oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 12));
 			specificHeat = Teuchos::rcp((*oneDimensionalMothership)(5), false);   // specific heat
-			thermalConductivity = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // thermal conductivity
-			convectionConstant = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // convection constant
-			fluidTemperature = Teuchos::rcp((*oneDimensionalMothership)(8), false);   // fluid temperature
-			heatFlow = Teuchos::rcp((*oneDimensionalMothership)(9), false);   // heat flow
-			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(10), false);   // internal heat generation
-			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(11), false);       // flux through a node
+			convectionConstant = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // convection constant
+			fluidTemperature = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // fluid temperature
+			heatFlow = Teuchos::rcp((*oneDimensionalMothership)(8), false);   // heat flow
+			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(9), false);   // internal heat generation
+			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(10), false);       // flux through a node
 		}
 		else{
 			oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 10));
 			specificHeat = Teuchos::rcp((*oneDimensionalMothership)(5), false);   // specific heat
-			thermalConductivity = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // thermal conductivity
-			heatFlow = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // heat flow
-			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(8), false);   // internal heat generation
-			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(9), false);       // flux through a node
+			heatFlow = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // heat flow
+			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // internal heat generation
+			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(8), false);       // flux through a node
 		}
 	}
 	else {

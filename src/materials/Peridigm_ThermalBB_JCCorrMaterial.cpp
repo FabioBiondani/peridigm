@@ -51,6 +51,7 @@
 #include "nonlocal_thermal_diffusion.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
+#include <iostream>
 
 using namespace std;
 
@@ -60,7 +61,7 @@ PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::Pa
     m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),m_DC(0.0),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
     m_equivalentPlasticStrainFieldId(-1),    m_accumulatedPlasticStrainFieldId(-1),    m_DamageFieldId(-1),
-    m_deltaTemperatureFieldId(-1),  m_heatFlowFieldId(-1)
+    m_deltaTemperatureFieldId(-1),  m_heatFlowFieldId(-1), m_bondDamageFieldId(-1)
 
 {
   m_MeltingTemperature = params.get<double>("Melting Temperature");
@@ -90,7 +91,9 @@ PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::Pa
   m_accumulatedPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Accumulated_Plastic_Strain");
   m_DamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
   m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
+  
   m_heatFlowFieldId     = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Heat_Flow");
+  m_bondDamageFieldId   = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
 
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
@@ -99,6 +102,7 @@ PeridigmNS::ThermalBB_JCCorrMaterial::ThermalBB_JCCorrMaterial(const Teuchos::Pa
   m_fieldIds.push_back(m_accumulatedPlasticStrainFieldId);
   m_fieldIds.push_back(m_DamageFieldId);
   m_fieldIds.push_back(m_deltaTemperatureFieldId);
+  m_fieldIds.push_back(m_bondDamageFieldId);
 }
 
 PeridigmNS::ThermalBB_JCCorrMaterial::~ThermalBB_JCCorrMaterial()
@@ -225,10 +229,9 @@ PeridigmNS::ThermalBB_JCCorrMaterial::computeHeatFlow(const double dt,
     dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
     dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&cellVolume);
-    dataManager.getData(m_DamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage); ////////////////////
+	dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
     dataManager.getData(m_heatFlowFieldId, PeridigmField::STEP_NP1)->ExtractView(&heatFlow);
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
-    
     
     MATERIAL_EVALUATION::computeHeatFlow(x,
                                          y,

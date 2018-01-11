@@ -194,10 +194,10 @@ const double constDC
         }
         
         // Thermal isovolumetric expansion
-        ThermalExpansionStrain = - (alphaNP1+alphaN)/2*(*deltaTemperatureNP1-(*deltaTemperatureN));
-        strainInc[0] += ThermalExpansionStrain;
-        strainInc[4] += ThermalExpansionStrain;
-        strainInc[8] += ThermalExpansionStrain;
+        ThermalExpansionStrain = (alphaNP1+alphaN)/2* (*deltaTemperatureNP1-(*deltaTemperatureN));
+        strainInc[0] -= ThermalExpansionStrain;
+        strainInc[4] -= ThermalExpansionStrain;
+        strainInc[8] -= ThermalExpansionStrain;
 
         for (int i = 0; i < 9; i++) {
             deviatoricStrainInc[i] = strainInc[i];
@@ -268,7 +268,7 @@ const double constDC
                 
         //If true, the step is plastic and we need to return to the yield
         //surface.
-        if( *vmStress/(1.-*DaN) > yieldStressHat0 ) {
+        if( *vmStress/(1.-*DaN) >= yieldStressHat0 ) {
             
             //std::cout << "\n\n\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
             //std::cout << "DaN: " << *DaN << "   dapsN:" << *dapsN << "\n";
@@ -325,7 +325,13 @@ const double constDC
                 fun1_Deqps = (-3*shearModNP1-yieldStressHat_Deqps)/constA;
                 //std::cout << "it=" << it <<"   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
                 if (it==20){fun1=0;
-                    std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" << "   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
+                    std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   fun1=" << fun1 << "   Deqps=" << Deqps <<  "   iID=" << iID+1;
+                    std::cout << "  vmStress=" << *vmStress ;
+                    std::cout << "\n";
+                    for (int i = 0; i < 9; i++) {
+                        std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
+                    }
+                    std::cout << "\n";
                 }
             }
             
@@ -361,6 +367,8 @@ const double constDC
                             
                     frs = (constD1+constD2*exp(constD3*hydroStress/yieldStress))*pow_1tdaps_D4*(1+constD5*hmlgT); // fracture strain
                     frs_Da = (constD1+constD2*exp(constD3*hydroStress/yieldStress))*constD4*pow_1tdaps_D4M1*tdaps_Da*(1+constD5*hmlgT);
+                    
+//                     std::cout << frs << "  " << (constD1+constD2*exp(constD3*hydroStress/yieldStress)) << "  " << hydroStress/yieldStress << "  " << "\n";
                     
                     fun2 = *DaNP1-*DaN -constDC/(frs*(1-*DaNP1))*Deqps ;
                     fun2_Da = 1 + constDC/pow((1-*DaNP1)*frs,2)*(-frs+(1-*DaNP1)*frs_Da)*Deqps;

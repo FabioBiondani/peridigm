@@ -49,12 +49,12 @@
 #define PERIDIGM_THERMALBB_JCCORRMATERIAL_HPP
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
-#include "Peridigm_PureThermalMaterial.hpp"
+#include "Peridigm_ThermalMaterial.hpp"
 #include <map>
 
 namespace PeridigmNS {
 
-  class ThermalBB_JCCorrMaterial : public CorrespondenceMaterial, public PureThermalMaterial {
+  class ThermalBB_JCCorrMaterial : public ThermalMaterial, public CorrespondenceMaterial {
   public:
 
 	//! Constructor.

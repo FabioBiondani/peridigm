@@ -62,7 +62,7 @@
 using namespace std;
 
 PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::ParameterList& params)
-  : ThermalMaterial(params),
+  : Material(params),
 	m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_alpha(0.0), m_horizon(0.0),m_convectionConstant(0.0),m_fluidTemperature(0.0),
 	m_applyAutomaticDifferentiationJacobian(true),
 	m_applySurfaceCorrectionFactor(false),

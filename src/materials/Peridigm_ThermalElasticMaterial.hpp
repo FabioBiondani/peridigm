@@ -95,7 +95,7 @@
 	* \f$ \underline{e}_{d} \f$:  Deviatoric part of the extension. \f$ \underline{e}^{d} = 
 	*    \underline{e} - \underline{e}^{i} \f$.
 	*/
-		class ThermalElasticMaterial : public ThermalMaterial{
+		class ThermalElasticMaterial : public Material,public ThermalMaterial{
 		public:
 
 // 			! Constructor.

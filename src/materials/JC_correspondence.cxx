@@ -128,7 +128,10 @@ const double constDC
     ScalarT Deqps;
     ScalarT teqps=0;
     ScalarT teqps_Deqps;
+    ScalarT pow_eqps_n;
     ScalarT pow_eqps_nM1;
+    ScalarT pow_1teqps_C;
+    ScalarT pow_1teqps_Cm1;
     ScalarT yieldStressHat;
     ScalarT yieldStressHat_Deqps;
     ScalarT fun1;
@@ -153,6 +156,8 @@ const double constDC
     double bulkModNP1;
     double shearModNP1;
     double alphaNP1;
+    
+    double ThermalExpansionStrain;
     
     for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, ++vmStress,
         ++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1,
@@ -189,9 +194,10 @@ const double constDC
         }
         
         // Thermal isovolumetric expansion
-        strainInc[0] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
-        strainInc[4] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
-        strainInc[8] -= (alphaNP1+alphaN)/2*(deltaTemperatureNP1-deltaTemperatureN);
+        ThermalExpansionStrain = - (alphaNP1+alphaN)/2*(*deltaTemperatureNP1-(*deltaTemperatureN));
+        strainInc[0] += ThermalExpansionStrain;
+        strainInc[4] += ThermalExpansionStrain;
+        strainInc[8] += ThermalExpansionStrain;
 
         for (int i = 0; i < 9; i++) {
             deviatoricStrainInc[i] = strainInc[i];
@@ -259,6 +265,7 @@ const double constDC
         yieldStressHat0 = // without considering damage
                 (constA+constB*pow(*eqpsN,constN))*
                 (1-pow_hmlgT_M);
+                
         //If true, the step is plastic and we need to return to the yield
         //surface.
         if( *vmStress/(1.-*DaN) > yieldStressHat0 ) {
@@ -294,16 +301,25 @@ const double constDC
                 pow_eqps_nM1 = 0.;
                 if (*eqpsNP1>0.){pow_eqps_nM1 = +(pow(*eqpsNP1,constN-1));}
                 
+                pow_eqps_n = 0.;
+                if (*eqpsNP1>0.){pow_eqps_n = +(pow(*eqpsNP1,constN));}
+                
+                pow_1teqps_C = 0.;
+                if (1+teqps>0.){pow_1teqps_C = +(pow(1+teqps,constC));}
+                pow_1teqps_Cm1 = 0.;
+                if (1+teqps>0.){pow_1teqps_Cm1 = +(pow(1+teqps,constC-1));}
+                
+                
                 yieldStressHat =
-                (constA+constB*pow(*eqpsNP1,constN))*
-                pow(1+teqps,constC)*
+                (constA+constB*pow_eqps_n)*
+                pow_1teqps_C*
                 (1-pow_hmlgT_M);
                 
                 yieldStressHat_Deqps = 
-                pow(1+teqps,constC-1)*
+                pow_1teqps_Cm1*
                 (1-pow_hmlgT_M)*
                 ( +(constB*constN*pow_eqps_nM1)*(1+teqps)
-                +(constA+constB*pow(*eqpsNP1,constN))*constC*teqps_Deqps   );
+                +(constA+constB*pow_eqps_n)*constC*teqps_Deqps   );
                 
                 fun1 = ((*vmStress)/(1-*DaN) - 3.*shearModNP1*Deqps - yieldStressHat)/constA; // adimensional
                 fun1_Deqps = (-3*shearModNP1-yieldStressHat_Deqps)/constA;
@@ -353,11 +369,11 @@ const double constDC
                     }
                     if (it==20){*DaNP1=1;fun2=0.;
                         std::cout << "WARNING: NOT-CONVERGED DAMAGE LOOP:" <<  "   Imposed damage=" << *DaNP1 << "   iID=" << iID+1;
-//                         std::cout << "   fun2=" << fun2 <<"  vmStress=" << *vmStress ;
+                        std::cout << "   fun2=" << fun2 <<"  vmStress=" << *vmStress ;
                         std::cout << "\n";
-//                     for (int i = 0; i < 9; i++) {
-//                         std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
-//                     }
+                    for (int i = 0; i < 9; i++) {
+                        std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
+                    }
                     std::cout << "\n";
                         
                     }

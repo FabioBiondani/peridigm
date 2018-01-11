@@ -2,14 +2,17 @@
 #define PERIDIGM_THERMALMATERIAL_HPP
 
 #include "Peridigm_Material.hpp"
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include "Peridigm_DataManager.hpp"
 
 namespace PeridigmNS{
 	
-	class ThermalMaterial : public Material{
+	class ThermalMaterial {
 	public: 
 		
 // 		! Constructor
-		ThermalMaterial(const Teuchos::ParameterList & params): Material(params) {};
+		ThermalMaterial() {};
 		
 // 		! Destructor
 		virtual ~ThermalMaterial(){};

@@ -415,6 +415,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
     // Set the material model
     string materialName = blockIt->getMaterialName();
+    Teuchos::ParameterList matParams = materialParams.sublist(materialName);
+    string materialModelName = matParams.get<string>("Material Model");
 
     // Generate a relevant error message and then check whether is should be heard
     // Material names tagged with "MP" somewhere in their name are considered by
@@ -425,7 +427,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     multiphysError += materialName;
     multiphysError += ", is not multiphysics compatible.\n";
     //The following: If we tried to enable multiphysics, but aren't using the right material model in each material block, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasMultiphysics && (materialName.find("Multiphysics") == std::string::npos)), "\n**** Error, material model is not multiphysics compatible.\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasMultiphysics && (materialModelName.find("Multiphysics") == std::string::npos)), "\n**** Error, material model is not multiphysics compatible.\n");
 
     // MODIFIED NOTE
   	thermalError = "\n**** Error, for material block ";
@@ -434,13 +436,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   	thermalError += materialName;
   	thermalError += ", is not thermal compatible.\n";
     //The following: If we have not tried to enable multiphysics, yet are attempting to use a multiphysics material model, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasMultiphysics && (materialName.find("Multiphysics") != std::string::npos)), "\n**** Error, multiphysics must be enabled at the top level of the input deck.\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasMultiphysics && (materialModelName.find("Multiphysics") != std::string::npos)), "\n**** Error, multiphysics must be enabled at the top level of the input deck.\n");
     // MODIFIED NOTE
     // The following: If we tried to enable thermal, but aren't using the right material model in each material block, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasThermal && (materialName.find("Thermal") == std::string::npos)), "\n**** Error, material model is not thermal compatible.\n");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasThermal && (materialModelName.find("Thermal") == std::string::npos)), "\n**** Error, material model is not thermal compatible.\n");
     // The following: If we have not tried to enable thermal, yet are attempting to use a thermal material model, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasThermal && (materialName.find("Thermal") != std::string::npos)), "\n**** Error, thermal must be enabled at the top level of the input deck.\n");
-    Teuchos::ParameterList matParams = materialParams.sublist(materialName);
+    TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasThermal && (materialModelName.find("Thermal") != std::string::npos)), "\n**** Error, thermal must be enabled at the top level of the input deck.\n");
 
     // Is the material name that of one designed for multiphysics when multiphysics is enabled?
 
@@ -1498,6 +1499,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     blockIt->importData(*u, displacementFieldId, PeridigmField::STEP_NP1, Insert);
     blockIt->importData(*y, coordinatesFieldId, PeridigmField::STEP_NP1, Insert);
     blockIt->importData(*v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
+    blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_N, Insert);
     blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
   }
   if(analysisHasContact)

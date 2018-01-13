@@ -53,6 +53,7 @@
 #include <functional>
 #include <boost/math/constants/constants.hpp>
 #include <vector>
+#include <iostream>
 
 namespace CORRESPONDENCE {
 
@@ -235,6 +236,7 @@ const double* modelCoordinates,
 const ScalarT* coordinates,
 ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
+const ScalarT* bondDamage,
 const int* neighborhoodList,
 int numPoints
 )
@@ -251,7 +253,7 @@ int numPoints
 
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   ScalarT deformedBondX, deformedBondY, deformedBondZ;
-  double neighborVolume, omega, temp;
+  double neighborVolume, omega, tempST, tempDG;
 
   std::vector<ScalarT> shapeTensorVector(9);
   ScalarT* shapeTensor = &shapeTensorVector[0];
@@ -259,9 +261,6 @@ int numPoints
 
   std::vector<ScalarT> defGradFirstTermVector(9);
   ScalarT* defGradFirstTerm = &defGradFirstTermVector[0];
-
-  // placeholder for bond damage
-  double bondDamage = 0.0;
 
   int inversionReturnCode(0);
 
@@ -279,7 +278,7 @@ int numPoints
     *(defGradFirstTerm+6) = 0.0 ; *(defGradFirstTerm+7) = 0.0 ; *(defGradFirstTerm+8) = 0.0 ;
 
     numNeighbors = *neighborListPtr; neighborListPtr++;
-    for(int n=0; n<numNeighbors; n++, neighborListPtr++){
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
 
       neighborIndex = *neighborListPtr;
       neighborVolume = volume[neighborIndex];
@@ -298,28 +297,32 @@ int numPoints
       deformedBondZ = *(neighborCoord+2) - *(coord+2);
 
       omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
+      
+      if (*bondDamage !=0.0)
+        std::cout << *bondDamage << "\n";
 
-      temp = (1.0 - bondDamage) * omega * neighborVolume;
+      tempST = (1.0 - *bondDamage) * omega * neighborVolume;
+      tempDG = (1.0 - *bondDamage) * omega * neighborVolume;
 
-      *(shapeTensor)   += temp * undeformedBondX * undeformedBondX;
-      *(shapeTensor+1) += temp * undeformedBondX * undeformedBondY;
-      *(shapeTensor+2) += temp * undeformedBondX * undeformedBondZ;
-      *(shapeTensor+3) += temp * undeformedBondY * undeformedBondX;
-      *(shapeTensor+4) += temp * undeformedBondY * undeformedBondY;
-      *(shapeTensor+5) += temp * undeformedBondY * undeformedBondZ;
-      *(shapeTensor+6) += temp * undeformedBondZ * undeformedBondX;
-      *(shapeTensor+7) += temp * undeformedBondZ * undeformedBondY;
-      *(shapeTensor+8) += temp * undeformedBondZ * undeformedBondZ;
+      *(shapeTensor)   += tempST * undeformedBondX * undeformedBondX;
+      *(shapeTensor+1) += tempST * undeformedBondX * undeformedBondY;
+      *(shapeTensor+2) += tempST * undeformedBondX * undeformedBondZ;
+      *(shapeTensor+3) += tempST * undeformedBondY * undeformedBondX;
+      *(shapeTensor+4) += tempST * undeformedBondY * undeformedBondY;
+      *(shapeTensor+5) += tempST * undeformedBondY * undeformedBondZ;
+      *(shapeTensor+6) += tempST * undeformedBondZ * undeformedBondX;
+      *(shapeTensor+7) += tempST * undeformedBondZ * undeformedBondY;
+      *(shapeTensor+8) += tempST * undeformedBondZ * undeformedBondZ;
 
-      *(defGradFirstTerm)   += temp * deformedBondX * undeformedBondX;
-      *(defGradFirstTerm+1) += temp * deformedBondX * undeformedBondY;
-      *(defGradFirstTerm+2) += temp * deformedBondX * undeformedBondZ;
-      *(defGradFirstTerm+3) += temp * deformedBondY * undeformedBondX;
-      *(defGradFirstTerm+4) += temp * deformedBondY * undeformedBondY;
-      *(defGradFirstTerm+5) += temp * deformedBondY * undeformedBondZ;
-      *(defGradFirstTerm+6) += temp * deformedBondZ * undeformedBondX;
-      *(defGradFirstTerm+7) += temp * deformedBondZ * undeformedBondY;
-      *(defGradFirstTerm+8) += temp * deformedBondZ * undeformedBondZ;
+      *(defGradFirstTerm)   += tempDG * deformedBondX * undeformedBondX;
+      *(defGradFirstTerm+1) += tempDG * deformedBondX * undeformedBondY;
+      *(defGradFirstTerm+2) += tempDG * deformedBondX * undeformedBondZ;
+      *(defGradFirstTerm+3) += tempDG * deformedBondY * undeformedBondX;
+      *(defGradFirstTerm+4) += tempDG * deformedBondY * undeformedBondY;
+      *(defGradFirstTerm+5) += tempDG * deformedBondY * undeformedBondZ;
+      *(defGradFirstTerm+6) += tempDG * deformedBondZ * undeformedBondX;
+      *(defGradFirstTerm+7) += tempDG * deformedBondZ * undeformedBondY;
+      *(defGradFirstTerm+8) += tempDG * deformedBondZ * undeformedBondZ;
     }
     
     inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
@@ -349,6 +352,7 @@ const ScalarT* rotationTensorN,
 ScalarT* leftStretchTensorNP1,
 ScalarT* rotationTensorNP1,
 ScalarT* unrotatedRateOfDeformation,
+const ScalarT* bondDamage,
 const int* neighborhoodList,
 int numPoints,
 double dt
@@ -395,9 +399,6 @@ double dt
   double neighborVolume, omega, scalarTemp; 
   int inversionReturnCode(0);
 
-  // placeholder for bond damage
-  double bondDamage = 0.0;
-
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, vel+=3,
@@ -411,7 +412,7 @@ double dt
     
     //Compute Fdot
     numNeighbors = *neighborListPtr; neighborListPtr++;
-    for(int n=0; n<numNeighbors; n++, neighborListPtr++){
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
 
       neighborIndex = *neighborListPtr;
       neighborVolume = volume[neighborIndex];
@@ -433,7 +434,7 @@ double dt
 
       omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
 
-      scalarTemp = (1.0 - bondDamage) * omega * neighborVolume;
+      scalarTemp = (1.0 - *bondDamage) * omega * neighborVolume;
 
       *(FdotFirstTerm)   += scalarTemp * velStateX * undeformedBondX;
       *(FdotFirstTerm+1) += scalarTemp * velStateX * undeformedBondY;
@@ -676,6 +677,7 @@ const double* modelCoordinates,
 const ScalarT* coordinates,
 const ScalarT* deformationGradient,
 ScalarT* hourglassForceDensity,
+const ScalarT* bondDamage,
 const int* neighborhoodList,
 int numPoints,
 double bulkModulus,
@@ -700,9 +702,6 @@ double hourglassCoefficient
   ScalarT* hourglassForceDensityPtr = hourglassForceDensity;
   ScalarT* neighborHourglassForceDensityPtr;
 
-  // placeholder for inclusion of bond damage
-  double bondDamage = 0.0;
-
   const double pi = boost::math::constants::pi<double>();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
@@ -714,7 +713,7 @@ double hourglassCoefficient
     constant = firstPartOfConstant/( (*delta)*(*delta)*(*delta)*(*delta) );
 
     numNeighbors = *neighborListPtr; neighborListPtr++;
-    for(int n=0; n<numNeighbors; n++, neighborListPtr++){
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
       neighborIndex = *neighborListPtr;
       neighborModelCoord = modelCoordinates + 3*neighborIndex;
       neighborCoord = coordinates + 3*neighborIndex;
@@ -753,7 +752,7 @@ double hourglassCoefficient
       dot = hourglassVectorX*deformedBondX + hourglassVectorY*deformedBondY + hourglassVectorZ*deformedBondZ;
       dot *= -1.0;
 
-      magnitude = (1.0-bondDamage) * constant * (dot/undeformedBondLength) * (1.0/deformedBondLength);
+      magnitude = (1.0- *bondDamage) * constant * (dot/undeformedBondLength) * (1.0/deformedBondLength);
 
       vol = volume[iID];
       neighborVol = volume[neighborIndex];
@@ -841,6 +840,7 @@ const double* modelCoordinates,
 const double* coordinates,
 double* shapeTensorInverse,
 double* deformationGradient,
+const double* bondDamage,
 const int* neighborhoodList,
 int numPoints
 );
@@ -858,6 +858,7 @@ const double* rotationTensorN,
 double* leftStretchTensorNP1,
 double* rotationTensorNP1,
 double* unrotatedRateOfDeformation,
+const double* bondDamage,
 const int* neighborhoodList,
 int numPoints,
 double dt
@@ -894,6 +895,7 @@ const double* modelCoordinates,
 const double* coordinates,
 const double* deformationGradient,
 double* hourglassForceDensity,
+const double* bondDamage,
 const int* neighborhoodList,
 int numPoints,
 double bulkModulus,

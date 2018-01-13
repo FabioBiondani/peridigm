@@ -265,12 +265,13 @@ const double constDC
         yieldStressHat0 = // without considering damage
                 (constA+constB*pow(*eqpsN,constN))*
                 (1-pow_hmlgT_M);
-                
+        //std::cout << "\n\n\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
+
         //If true, the step is plastic and we need to return to the yield
         //surface.
         if( *vmStress/(1.-*DaN) >= yieldStressHat0 ) {
             
-            //std::cout << "\n\n\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
+            //std::cout << "\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
             //std::cout << "DaN: " << *DaN << "   dapsN:" << *dapsN << "\n";
             // FIND PLASTIC STRAIN AND DAMAGE USING NEWTON'S METHOD
             

@@ -50,6 +50,7 @@
 #include "elastic.h"
 #include "correspondence.h"
 #include <Teuchos_Assert.hpp>
+#include <iostream>
 
 using namespace std;
 
@@ -174,6 +175,10 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
+  double *bondDamage;
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+
+
   int shapeTensorReturnCode = 
     CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                horizon,
@@ -181,6 +186,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
                                                                                coordinates,
                                                                                shapeTensorInverse,
                                                                                deformationGradient,
+                                                                               bondDamage,
                                                                                neighborhoodList,
                                                                                numOwnedPoints);
 
@@ -211,7 +217,10 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_velocitiesFieldId, PeridigmField::STEP_NP1)->ExtractView(&velocities);
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
-  
+
+  double *bondDamage;
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+
   // Compute the inverse of the shape tensor and the approximate deformation gradient
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
   // to compute the Cauchy stress.
@@ -223,6 +232,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                coordinates,
                                                                                shapeTensorInverse,
                                                                                deformationGradient,
+                                                                               bondDamage,
                                                                                neighborhoodList,
                                                                                numOwnedPoints);
   string shapeTensorErrorMessage =
@@ -251,6 +261,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                                     leftStretchTensorNP1,
                                                                                                     rotationTensorNP1,
                                                                                                     unrotatedRateOfDeformation,
+                                                                                                    bondDamage,
                                                                                                     neighborhoodList, 
                                                                                                     numOwnedPoints, 
                                                                                                     dt);
@@ -301,7 +312,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   double TX, TY, TZ, omega, vol, neighborVol, jacobianDeterminant;
   int numNeighbors, neighborIndex;
-
+  int bondIndex(0);
+  
   string matrixInversionErrorMessage =
     "**** Error:  CorrespondenceMaterial::computeForce() failed to invert deformation gradient.\n";
   matrixInversionErrorMessage +=
@@ -334,11 +346,11 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     modelCoordinatesPtr = modelCoordinates + 3*iID;
     numNeighbors = *neighborListPtr; neighborListPtr++;
 
-    for(int n=0; n<numNeighbors; n++, neighborListPtr++){
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondIndex++){
 
       neighborIndex = *neighborListPtr;
       neighborModelCoordinatesPtr = modelCoordinates + 3*neighborIndex;
-
+      
       undeformedBondX = *(neighborModelCoordinatesPtr)   - *(modelCoordinatesPtr);
       undeformedBondY = *(neighborModelCoordinatesPtr+1) - *(modelCoordinatesPtr+1);
       undeformedBondZ = *(neighborModelCoordinatesPtr+2) - *(modelCoordinatesPtr+2);
@@ -346,7 +358,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   undeformedBondY*undeformedBondY +
                                   undeformedBondZ*undeformedBondZ);
 
-      omega = m_OMEGA(undeformedBondLength, *delta);
+      omega = m_OMEGA(undeformedBondLength, *delta)*(1-bondDamage[bondIndex]);
       TX = omega * ( *(temp)   * undeformedBondX + *(temp+1) * undeformedBondY + *(temp+2) * undeformedBondZ );
       TY = omega * ( *(temp+3) * undeformedBondX + *(temp+4) * undeformedBondY + *(temp+5) * undeformedBondZ );
       TZ = omega * ( *(temp+6) * undeformedBondX + *(temp+7) * undeformedBondY + *(temp+8) * undeformedBondZ );
@@ -393,6 +405,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                         coordinates,
                                         deformationGradient,
                                         hourglassForceDensity,
+                                        bondDamage,
                                         neighborhoodList,
                                         numOwnedPoints,
                                         m_bulkModulus,

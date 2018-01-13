@@ -1,4 +1,4 @@
-/*! \file Peridigm_DamageModelFactory.hpp */
+/*! \file Peridigm_FakeDamageModel.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -45,39 +45,34 @@
 // ************************************************************************
 //@HEADER
 
-#include <Teuchos_Assert.hpp>
-#include "Peridigm_DamageModelFactory.hpp"
-#include "Peridigm_CriticalStretchDamageModel.hpp"
-#include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
-#include "Peridigm_InterfaceAwareDamageModel.hpp"
-#include "Peridigm_TupekCorrespondenceDamageModel.hpp"
 #include "Peridigm_FakeDamageModel.hpp"
+#include "Peridigm_Field.hpp"
 
 using namespace std;
 
-Teuchos::RCP<PeridigmNS::DamageModel>
-PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModelParams)
+PeridigmNS::FakeDamageModel::FakeDamageModel(const Teuchos::ParameterList& params)
+  : DamageModel(params)
 {
-  Teuchos::RCP<PeridigmNS::DamageModel> damageModel;
+}
 
-  const string& damageModelName = damageModelParams.get<string>("Damage Model");
+PeridigmNS::FakeDamageModel::~FakeDamageModel()
+{
+}
 
-  if(damageModelName == "Critical Stretch")
-    damageModel = Teuchos::rcp( new CriticalStretchDamageModel(damageModelParams) );
-  else if(damageModelName == "Interface Aware")
-    damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
-  else if(damageModelName == "Time Dependent Critical Stretch")
-    damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
-  else if(damageModelName == "Tupek Correspondence")
-    damageModel = Teuchos::rcp( new TupekCorrespondenceDamageModel(damageModelParams) );
-  else if(damageModelName == "Fake")
-    damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
-  else {
-    string invalidDamageModel("\n**** Unrecognized damage model type: ");
-    invalidDamageModel += damageModelName;
-    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\" or \"Interface Aware\".\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
-  }
-  
-  return damageModel;
+void
+PeridigmNS::FakeDamageModel::initialize(const double dt,
+                                                   const int numOwnedPoints,
+                                                   const int* ownedIDs,
+                                                   const int* neighborhoodList,
+                                                   PeridigmNS::DataManager& dataManager) const
+{
+}
+
+void
+PeridigmNS::FakeDamageModel::computeDamage(const double dt,
+                                                      const int numOwnedPoints,
+                                                      const int* ownedIDs,
+                                                      const int* neighborhoodList,
+                                                      PeridigmNS::DataManager& dataManager) const
+{
 }

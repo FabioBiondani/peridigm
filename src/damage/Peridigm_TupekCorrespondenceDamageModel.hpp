@@ -1,4 +1,4 @@
-/*! \file Peridigm_DamageModelFactory.hpp */
+/*! \file Peridigm_TupekCorrespondenceDamageModel.hpp */
 
 //@HEADER
 // ************************************************************************
@@ -45,39 +45,58 @@
 // ************************************************************************
 //@HEADER
 
-#include <Teuchos_Assert.hpp>
-#include "Peridigm_DamageModelFactory.hpp"
-#include "Peridigm_CriticalStretchDamageModel.hpp"
-#include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
-#include "Peridigm_InterfaceAwareDamageModel.hpp"
-#include "Peridigm_TupekCorrespondenceDamageModel.hpp"
-#include "Peridigm_FakeDamageModel.hpp"
+#ifndef PERIDIGM_TUPEKCORRESPONDENCEDAMAGEMODEL_HPP
+#define PERIDIGM_TUPEKCORRESPONDENCEDAMAGEMODEL_HPP
 
-using namespace std;
+#include "Peridigm_DamageModel.hpp"
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Epetra_Vector.h>
+#include <Epetra_Map.h>
 
-Teuchos::RCP<PeridigmNS::DamageModel>
-PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModelParams)
-{
-  Teuchos::RCP<PeridigmNS::DamageModel> damageModel;
+namespace PeridigmNS {
 
-  const string& damageModelName = damageModelParams.get<string>("Damage Model");
+  //! Base class defining the Peridigm damage model interface.
+  class TupekCorrespondenceDamageModel : public DamageModel{
 
-  if(damageModelName == "Critical Stretch")
-    damageModel = Teuchos::rcp( new CriticalStretchDamageModel(damageModelParams) );
-  else if(damageModelName == "Interface Aware")
-    damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
-  else if(damageModelName == "Time Dependent Critical Stretch")
-    damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
-  else if(damageModelName == "Tupek Correspondence")
-    damageModel = Teuchos::rcp( new TupekCorrespondenceDamageModel(damageModelParams) );
-  else if(damageModelName == "Fake")
-    damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
-  else {
-    string invalidDamageModel("\n**** Unrecognized damage model type: ");
-    invalidDamageModel += damageModelName;
-    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\" or \"Interface Aware\".\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
-  }
-  
-  return damageModel;
+  public:
+	
+    //! Standard constructor.
+    TupekCorrespondenceDamageModel(const Teuchos::ParameterList& params);
+
+    //! Destructor.
+    virtual ~TupekCorrespondenceDamageModel();
+
+    //! Return name of the model.
+    virtual std::string Name() const { return("Tupek Correspondence"); }
+
+    //! Returns a vector of field IDs corresponding to the variables associated with the model.
+    virtual std::vector<int> FieldIds() const { return m_fieldIds; }
+
+    //! Initialize the damage model.
+    virtual void
+    initialize(const double dt,
+               const int numOwnedPoints,
+               const int* ownedIDs,
+               const int* neighborhoodList,
+               PeridigmNS::DataManager& dataManager) const ;
+
+    //! Evaluate the damage
+    virtual void
+    computeDamage(const double dt,
+                  const int numOwnedPoints,
+                  const int* ownedIDs,
+                  const int* neighborhoodList,
+                  PeridigmNS::DataManager& dataManager) const ;
+
+  protected:
+
+    // field ids for all relevant data
+    std::vector<int> m_fieldIds;
+    int m_damageFieldId;
+    int m_bondDamageFieldId;
+  };
+
 }
+
+#endif // PERIDIGM_TUPEKCORRESPONDENCEDAMAGEMODEL_HPP

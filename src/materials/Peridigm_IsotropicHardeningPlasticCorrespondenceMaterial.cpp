@@ -113,6 +113,7 @@ PeridigmNS::IsotropicHardeningPlasticCorrespondenceMaterial::initialize(const do
 void
 PeridigmNS::IsotropicHardeningPlasticCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
+                                                               const int* neighborhoodList,
                                                                PeridigmNS::DataManager& dataManager) const
 {
   double *unrotatedCauchyStressN;

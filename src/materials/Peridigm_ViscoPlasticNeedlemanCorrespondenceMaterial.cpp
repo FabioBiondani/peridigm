@@ -117,6 +117,7 @@ PeridigmNS::ViscoplasticNeedlemanCorrespondenceMaterial::initialize(const double
 void
 PeridigmNS::ViscoplasticNeedlemanCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
+                                                               const int* neighborhoodList,
                                                                PeridigmNS::DataManager& dataManager) const
 {
   double *unrotatedCauchyStressN;

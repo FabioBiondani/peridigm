@@ -129,6 +129,7 @@ PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
 void
 PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
+                                                               const int* neighborhoodList,
                                                                PeridigmNS::DataManager& dataManager) const
 {
   double *unrotatedCauchyStressN, *unrotatedCauchyStressNP1;
@@ -194,7 +195,5 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   
   
 }
-
-
 
 

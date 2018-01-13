@@ -74,6 +74,7 @@ PeridigmNS::ElasticCorrespondenceMaterial::~ElasticCorrespondenceMaterial()
 void
 PeridigmNS::ElasticCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
+                                                               const int* neighborhoodList,
                                                                PeridigmNS::DataManager& dataManager) const
 {
   double *unrotatedCauchyStressN;

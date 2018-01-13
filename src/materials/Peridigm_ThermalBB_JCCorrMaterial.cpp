@@ -145,6 +145,7 @@ PeridigmNS::ThermalBB_JCCorrMaterial::initialize(const double dt,
 void
 PeridigmNS::ThermalBB_JCCorrMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
+                                                               const int* neighborhoodList,
                                                                PeridigmNS::DataManager& dataManager) const
 {
   double *unrotatedCauchyStressN, *unrotatedCauchyStressNP1;

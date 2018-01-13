@@ -282,7 +282,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   //   Input:  unrotated Cauchy stress at step N
   //   Input:  internal state data (managed in the derived class)
   //   Output: unrotated Cauchy stress at step N+1
-  computeCauchyStress(dt, numOwnedPoints, dataManager);
+  computeCauchyStress(dt, numOwnedPoints, neighborhoodList, dataManager);
 
   // rotate back to the Eulerian frame
   double *unrotatedCauchyStressNP1, *cauchyStressNP1;

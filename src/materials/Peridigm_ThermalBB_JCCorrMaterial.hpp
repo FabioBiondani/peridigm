@@ -76,6 +76,7 @@ namespace PeridigmNS {
     //! Evaluate the Cauchy stress.
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
+                                     const int* neighborhoodList,
                                      PeridigmNS::DataManager& dataManager) const;
 
     //! Evaluate the heat flow.

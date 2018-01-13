@@ -297,9 +297,6 @@ int numPoints
       deformedBondZ = *(neighborCoord+2) - *(coord+2);
 
       omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
-      
-      if (*bondDamage !=0.0)
-        std::cout << *bondDamage << "\n";
 
       tempST = (1.0 - *bondDamage) * omega * neighborVolume;
       tempDG = (1.0 - *bondDamage) * omega * neighborVolume;

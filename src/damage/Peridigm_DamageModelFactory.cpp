@@ -68,16 +68,17 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
   else if(damageModelName == "Time Dependent Critical Stretch")
     damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
-  else if(damageModelName == "Tupek Correspondence")
-    damageModel = Teuchos::rcp( new TupekCorrespondenceDamageModel(damageModelParams) );
+//   else if(damageModelName == "Tupek Correspondence")
+//     damageModel = Teuchos::rcp( new TupekCorrespondenceDamageModel(damageModelParams) );
   else if(damageModelName == "Fake")
     damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
-    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\" or \"Interface Aware\".\n";
+    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\" or \"Fake\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
   }
   
   return damageModel;
 }
+

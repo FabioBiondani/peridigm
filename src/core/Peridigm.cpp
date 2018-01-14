@@ -1372,8 +1372,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double timeFinal   = solverParams->get("Final Time", 1.0);
   double timeCurrent = timeInitial;
   workset->timeStep = dt;
-  double dt2 = dt/2.0;
   int nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
+  double dt_original = dt;
+  dt = (timeFinal-timeInitial)/nsteps;
+  double dt2 = dt/2.0;
 
   // Check to make sure the number of time steps is sane
   if(floor((timeFinal-timeInitial)/dt) > static_cast<double>(INT_MAX)){
@@ -1390,7 +1392,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     cout << "Time step (seconds):" << endl;
     cout << "  Stable time step    " << globalCriticalTimeStep << endl;
     if(verletParams->isParameter("Fixed dt"))
-      cout << "  User time step      " << dt << endl;
+      cout << "  User time step      " << dt_original << endl;
     else
       cout << "  User time step      not provided" << endl;
     if(verletParams->isParameter("Safety Factor"))
@@ -1434,6 +1436,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 // 		workset->thermalTimeStep = Tdt;
 		nTsteps = static_cast<int>( floor((timeFinal-timeInitial)/Tdt) );
+        double Tdt_original = Tdt;
+        Tdt = (timeFinal-timeInitial)/nTsteps;
 
 // 		Check to make sure the number of time steps is sane
 		if(floor((timeFinal-timeInitial)/Tdt) > static_cast<double>(INT_MAX)){
@@ -1451,7 +1455,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 			cout << "  Thermal Time step (seconds):" << endl;
 			cout << "  Stable thermal time step    " << globalCriticalThermalTimeStep << endl;
 			if(verletParams->isParameter("Fixed Thermal dt"))
-				cout << "  User thermal time step      " << Tdt << endl;
+				cout << "  User thermal time step      " << Tdt_original << endl;
 			else
 				cout << "  User thermal time step not provided" << endl;
 			if(verletParams->isParameter("Thermal Safety Factor"))

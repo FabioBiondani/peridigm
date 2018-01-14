@@ -1406,6 +1406,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   // Compute the approximate critical time step for the thermal problem
 	double Tdt = 1.; // initialized to make the compiler happy.
 	int nTsteps = 1; // initialized to make the compiler happy.
+	int deltaStep = 1;
 	if (analysisHasThermal){
 		double criticalThermalTimeStep = 1.0e50;
 		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1436,6 +1437,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 // 		workset->thermalTimeStep = Tdt;
 		nTsteps = static_cast<int>( floor((timeFinal-timeInitial)/Tdt) );
+        deltaStep =  static_cast<int>( floor(nsteps/nTsteps) );
+        nTsteps = nsteps / deltaStep;
+
         double Tdt_original = Tdt;
         Tdt = (timeFinal-timeInitial)/nTsteps;
 
@@ -1611,7 +1615,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double currentValue = 0.0;
   double previousValue = 0.0;
 
-  const int deltaStep =  static_cast<int>( floor(nsteps/nTsteps) );
 
   for(int step=1; step<=nsteps; step++){
 

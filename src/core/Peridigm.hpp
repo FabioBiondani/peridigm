@@ -193,9 +193,9 @@ namespace PeridigmNS {
     }
 
     // Write the Peridigm sub-model to an Exodus file (intended for use when calling Peridigm as a library).
-    void writePeridigmSubModel(double currentTime) {
+    void writePeridigmSubModel(double currentTime, int nsteps) {
       synchDataManagers();
-      outputManager->write(blocks, currentTime);
+      outputManager->write(blocks, currentTime, nsteps);
     }
 
     //! Get the field manager (intended for use when calling Peridigm as a library).

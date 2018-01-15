@@ -50,7 +50,6 @@
 #include "Peridigm_CriticalStretchDamageModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
-#include "Peridigm_TupekCorrespondenceDamageModel.hpp"
 #include "Peridigm_FakeDamageModel.hpp"
 
 using namespace std;
@@ -68,8 +67,6 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
   else if(damageModelName == "Time Dependent Critical Stretch")
     damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
-//   else if(damageModelName == "Tupek Correspondence")
-//     damageModel = Teuchos::rcp( new TupekCorrespondenceDamageModel(damageModelParams) );
   else if(damageModelName == "Fake")
     damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
   else {

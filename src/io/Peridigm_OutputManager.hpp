@@ -73,7 +73,7 @@ namespace PeridigmNS {
     virtual void close(){};
 
     //! Write data to disk
-    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double) = 0;
+    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, int) = 0;
 
   protected:
 

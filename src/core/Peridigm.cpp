@@ -1601,7 +1601,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   // Write initial configuration to disk
   PeridigmNS::Timer::self().startTimer("Output");
   synchDataManagers();
-  outputManager->write(blocks, timeCurrent);
+  outputManager->write(blocks, timeCurrent, nsteps);
   PeridigmNS::Timer::self().stopTimer("Output");
 
   int displayTrigger = nsteps/100;
@@ -1740,7 +1740,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     
     
     // Update specificHeat definition with the computed temperature
-    if (analysisHasThermal){
+    if (analysisHasThermal && fmod(step,deltaStep) == 0){
       for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         Teuchos::RCP<const Epetra_BlockMap> OwnedScalarPointMap = blockIt->getOwnedScalarPointMap();
         Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
@@ -1794,7 +1794,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, nsteps);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
@@ -2280,7 +2280,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   // Write initial configuration to disk
   PeridigmNS::Timer::self().startTimer("Output");
   synchDataManagers();
-  outputManager->write(blocks, timeCurrent);
+  outputManager->write(blocks, timeCurrent, (int)timeSteps.size());
   PeridigmNS::Timer::self().stopTimer("Output");
 
   // Functionality for updating the Jacobian at a user-specified interval
@@ -2649,7 +2649,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     // Write output for completed load step
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, (int)timeSteps.size());
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
@@ -2785,7 +2785,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   // Write initial configuration to disk
   PeridigmNS::Timer::self().startTimer("Output");
   synchDataManagers();
-  outputManager->write(blocks, timeCurrent);
+  outputManager->write(blocks, timeCurrent, (int)timeSteps.size());
   PeridigmNS::Timer::self().stopTimer("Output");
 
   Epetra_Time loadStepCPUTime(*peridigmComm);
@@ -3082,7 +3082,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
     // Write output for completed load step
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent,(int)timeSteps.size());
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
@@ -3538,7 +3538,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
   // Write initial configuration to disk
   PeridigmNS::Timer::self().startTimer("Output");
   synchDataManagers();
-  outputManager->write(blocks, timeCurrent);
+  outputManager->write(blocks, timeCurrent, nsteps);
   PeridigmNS::Timer::self().stopTimer("Output");
 
   for(int step=0; step<nsteps ; step++){
@@ -3841,7 +3841,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Write output for completed time step
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, nsteps);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1

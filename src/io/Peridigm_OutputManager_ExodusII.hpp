@@ -72,7 +72,7 @@ namespace PeridigmNS {
     virtual ~OutputManager_ExodusII();
 
     //! Write data to disk
-    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double);
+    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time, int nsteps);
 
   private:
     

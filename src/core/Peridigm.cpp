@@ -1373,6 +1373,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double timeCurrent = timeInitial;
   workset->timeStep = dt;
   int nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
+  if (nsteps==0)
+  {
+      nsteps=1;
+      cout << "WARNING: Time step is bigger than the total integration time.\n";
+  }
+  
   double dt_original = dt;
   dt = (timeFinal-timeInitial)/nsteps;
   double dt2 = dt/2.0;
@@ -1437,6 +1443,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 // 		workset->thermalTimeStep = Tdt;
 		nTsteps = static_cast<int>( floor((timeFinal-timeInitial)/Tdt) );
+        if (nTsteps==0)
+        {
+            nTsteps=1;
+            cout << "WARNING: Thermal time step is bigger than the total integration time.\n";
+        }
         deltaStep =  static_cast<int>( floor(nsteps/nTsteps) );
         nTsteps = nsteps / deltaStep;
 

@@ -1679,7 +1679,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     double* horizonPtr;
     horizon->ExtractView(&horizonPtr);
     if(analysisHasThermal && fmod(step,deltaStep) == 0){
-      //cout << "T=" << deltaTemperaturePtr[0] << "    c=" << (*specificHeat)[0] << "\n";
       if (hasThermalShock){
         for (size_t i=0; i<localThermalShockNodeList.size(); i++){
           int j = localThermalShockNodeList[i];
@@ -1752,7 +1751,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
           int mothershipLocalID = oneDimensionalMap->LID(globalID);
           localSpecificHeat = obj_specificHeat.compute(deltaTemperaturePtr[mothershipLocalID]) ;
           (*specificHeat)[mothershipLocalID] = localSpecificHeat;
-          cout << "T=" << deltaTemperaturePtr[mothershipLocalID] << "    c=" << (*specificHeat)[mothershipLocalID] << "\n";
         }
       }
     }

@@ -89,7 +89,8 @@ const double constD2,
 const double constD3,
 const double constD4,
 const double constD5,
-const double constDC
+const double constDC,
+ScalarT* DissipationNP1
 )
 {
     const ScalarT* rateOfDef = unrotatedRateOfDeformation;
@@ -156,12 +157,14 @@ const double constDC
     double bulkModNP1;
     double shearModNP1;
     double alphaNP1;
+//     double YoungModNP1;
+//     double PoissRatNP1;
     
     double ThermalExpansionStrain;
     
     for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, ++vmStress,
         ++eqpsN,   ++eqpsNP1,   ++dapsN,   ++dapsNP1,   ++DaN,   ++DaNP1,
-        ++deltaTemperatureN,    ++deltaTemperatureNP1
+        ++deltaTemperatureN,    ++deltaTemperatureNP1, ++DissipationNP1
         ){
         
         // temperatures
@@ -431,8 +434,22 @@ const double constDC
             } // end if Deqps
             
         } else {
+            yieldStress = (1.-*DaNP1)*yieldStressHat0;
             // The step is elastic
         }; // end if yield
+        
+        
+        
+        
+//         // compute DissipationNP1 (Damage conjugate)
+//         YoungModNP1 = 9*bulkModNP1*shearModNP1/(3*bulkModNP1+shearModNP1);
+//         PoissRatNP1 = (3*bulkModNP1-2*shearModNP1)/(2*(3*bulkModNP1+shearModNP1));
+//         if (*vmStress==0) *DissipationNP1=0.0;
+//         else *DissipationNP1 = pow(*vmStress,2) / (2*YoungModNP1*pow(1-*DaNP1,2)) *( 2/3*(1.+PoissRatNP1) +3*(1-2*PoissRatNP1)*pow(hydroStressNP1/(*vmStress),2));
+//         //cout << hydroStressNP1 << "  " << *vmStress << endl;
+        
+        
+        
     } // end for points
 }//end updateJohnsonCookCauchyStress
 
@@ -468,7 +485,8 @@ const double constD2,
 const double constD3,
 const double constD4,
 const double constD5,
-const double constDC
+const double constDC,
+double* DissipationNP1
 );
 
 /* Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -503,7 +521,8 @@ const double constD2,
 const double constD3,
 const double constD4,
 const double constD5,
-const double constDC
+const double constDC,
+Sacado::Fad::DFad<double>* DissipationNP1
 );
 
 }

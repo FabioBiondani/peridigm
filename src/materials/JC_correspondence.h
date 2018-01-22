@@ -83,7 +83,8 @@ const double constD2,
 const double constD3,
 const double constD4,
 const double constD5,
-const double constDC);
+const double constDC,
+ScalarT* DissipationNP1);
 }
 
 #endif // ELASTIC_PLASTIC_CORRESPONDENCE_H

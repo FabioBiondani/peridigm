@@ -77,6 +77,15 @@ namespace PeridigmNS {
                                      const int numOwnedPoints,
                                      const int* neighborhoodList,
                                      PeridigmNS::DataManager& dataManager) const;
+    
+    //! Evaluate the internal force.
+    void computeForce(const double dt,
+                      const int numOwnedPoints,
+                      const int* ownedIDs,
+                      const int* neighborhoodList,
+                      PeridigmNS::DataManager& dataManager) const;
+
+
 
     //! Returns the requested material property
     //! A dummy method here.
@@ -98,7 +107,6 @@ namespace PeridigmNS {
     double m_D4;
     double m_D5;
     double m_DC;
-    
 
     // field spec ids for all relevant data
     int m_unrotatedRateOfDeformationFieldId;
@@ -108,6 +116,8 @@ namespace PeridigmNS {
     int m_accumulatedPlasticStrainFieldId;
     int m_DamageFieldId;
     int m_deltaTemperatureFieldId;
+    int m_BondsLeftFieldId;
+    int m_DissipationFieldId;
   };
 }
 

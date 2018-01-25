@@ -51,6 +51,7 @@
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 #include "correspondence.h"
+#include <math.h>
 
 #include <boost/math/constants/constants.hpp>
 const double pi = boost::math::constants::pi<double>();
@@ -347,7 +348,7 @@ PeridigmNS::JC_CorrespondenceMaterial::computeForce(const double dt,
   for(int p=0;p<numOwnedPoints;p++,DamageOverlap++,volumeOverlap++,modelcoordinatesOverlap+=3,BondsLeftNP1++){
     int numNeigh = *neighPtr2; neighPtr2++;
     Da=*DamageOverlap;
-    radius=pow(*volumeOverlap*3/(4*pi),1/3);
+    radius=std::pow(*volumeOverlap*3/(4*pi),1.0/3.0);
     mcoordX=*modelcoordinatesOverlap;
     mcoordY=*(modelcoordinatesOverlap+1);
     mcoordZ=*(modelcoordinatesOverlap+2);
@@ -356,17 +357,17 @@ PeridigmNS::JC_CorrespondenceMaterial::computeForce(const double dt,
     for(int n=0;n<numNeigh;n++,neighPtr2++,bondDamageOverlapNP1++,bondDamageOverlapN++){
       int localId = *neighPtr2;
       DaP = DamageNP1[localId];
-      radiusP = pow(volume[localId]*3/(4*pi),1/3);
+      radiusP = std::pow(volume[localId]*3/(4*pi),1.0/3.0);
       mcoordXP = modelCoordinates[3*localId];
       mcoordYP = modelCoordinates[3*localId+1];
       mcoordZP = modelCoordinates[3*localId+2];
-      distance = pow(pow(mcoordX-mcoordXP,2)+pow(mcoordY-mcoordYP,2)+pow(mcoordZ-mcoordZP,2),1/2);
+      distance = std::pow(std::pow(mcoordX-mcoordXP,2.0)+std::pow(mcoordY-mcoordYP,2.0)+std::pow(mcoordZ-mcoordZP,2.0),1.0/2.0);
       
       meanDa1 = Da + radius/distance*(DaP-Da);
       meanDa2 = Da + (distance-radiusP)/distance*(DaP-Da);
       if ((meanDa1>m_DC) || (meanDa2>m_DC)) {
           *bondDamageOverlapNP1=1.;
-//           cout << *DamageNP1 << "  " << meanDa << "  " << Da << "  " << DaP << "  " << "\n";
+          //cout << Da << "  " << DaP << "  " << meanDa1 << "  " << meanDa2 << "  " << radius << "  " << radiusP << "  " << distance << "  " << endl;
           BondsLeft-=1;
       }
       else {*bondDamageOverlapNP1=*bondDamageOverlapN;}

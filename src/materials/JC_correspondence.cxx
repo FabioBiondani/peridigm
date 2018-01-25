@@ -151,6 +151,8 @@ ScalarT* DissipationNP1
     ScalarT fun2;
     ScalarT fun2_Da;
     
+    ScalarT vmStressMeso;
+    
     double bulkModN;
     double shearModN;
     double alphaN;
@@ -248,7 +250,7 @@ ScalarT* DissipationNP1
             }
         }
 
-        *vmStress = sqrt(3.0/2.0*tempScalar);
+        vmStressMeso = sqrt(3.0/2.0*tempScalar);
         
         // update strains and damage
         Deqps=0.0;
@@ -268,13 +270,14 @@ ScalarT* DissipationNP1
         yieldStressHat0 = // without considering damage
                 (constA+constB*pow(*eqpsN,constN))*
                 (1-pow_hmlgT_M);
-        //std::cout << "\n\n\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
+        //std::cout << "\n\n\n" << vmStressMeso/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
+        //std::cout << pow(*eqpsN,constN) << "\n";
 
         //If true, the step is plastic and we need to return to the yield
         //surface.
-        if( *vmStress/(1.-*DaN) >= yieldStressHat0 ) {
+        if( vmStressMeso/(1.-*DaN) >= yieldStressHat0 ) {
             
-            //std::cout << "\n" << *vmStress/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
+            //std::cout << "\n" << vmStressMeso/(1.-*DaN) << ">" << yieldStressHat0 << "\n";
             //std::cout << "DaN: " << *DaN << "   dapsN:" << *dapsN << "\n";
             // FIND PLASTIC STRAIN AND DAMAGE USING NEWTON'S METHOD
             
@@ -325,12 +328,12 @@ ScalarT* DissipationNP1
                 ( +(constB*constN*pow_eqps_nM1)*(1+teqps)
                 +(constA+constB*pow_eqps_n)*constC*teqps_Deqps   );
                 
-                fun1 = ((*vmStress)/(1-*DaN) - 3.*shearModNP1*Deqps - yieldStressHat)/constA; // adimensional
+                fun1 = ((vmStressMeso)/(1-*DaN) - 3.*shearModNP1*Deqps - yieldStressHat)/constA; // adimensional
                 fun1_Deqps = (-3*shearModNP1-yieldStressHat_Deqps)/constA;
                 //std::cout << "it=" << it <<"   fun1=" << fun1 << "   Deqps=" << Deqps << "\n";
                 if (it==20){fun1=0;
                     std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   fun1=" << fun1 << "   Deqps=" << Deqps <<  "   iID=" << iID+1;
-                    std::cout << "  vmStress=" << *vmStress ;
+                    std::cout << "  vmStressMeso=" << vmStressMeso ;
                     std::cout << "\n";
                     for (int i = 0; i < 9; i++) {
                         std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
@@ -352,7 +355,7 @@ ScalarT* DissipationNP1
                     }
                     ++it;
                     tdaps = teqps/(1-*DaNP1); // time derived daps
-                    tdaps_Da = 1/pow(1-*DaNP1,2)*teqps;
+                    tdaps_Da = 1/pow(1-*DaNP1,2.0)*teqps;
                     *dapsNP1 = tdaps*dt+*dapsN; // damage accumulated plastic strain
                     
                     yieldStress = yieldStressHat*(1.-*DaNP1);
@@ -375,13 +378,13 @@ ScalarT* DissipationNP1
 //                     std::cout << frs << "  " << (constD1+constD2*exp(constD3*hydroStress/yieldStress)) << "  " << hydroStress/yieldStress << "  " << "\n";
                     
                     fun2 = *DaNP1-*DaN -constDC/(frs*(1-*DaNP1))*Deqps ;
-                    fun2_Da = 1 + constDC/pow((1-*DaNP1)*frs,2)*(-frs+(1-*DaNP1)*frs_Da)*Deqps;
-                    if(*vmStress/(1.-*DaN) > 5*yieldStressHat0){
+                    fun2_Da = 1 + constDC/pow((1-*DaNP1)*frs,2.0)*(-frs+(1-*DaNP1)*frs_Da)*Deqps;
+                    if(vmStressMeso/(1.-*DaN) > 5*yieldStressHat0){
                     //std::cout << "it=" << it <<"   fun2=" << fun2 << "   Da=" << *DaNP1 << "\n";
                     }
                     if (it==20){*DaNP1=1;fun2=0.;
                         std::cout << "WARNING: NOT-CONVERGED DAMAGE LOOP:" <<  "   Imposed damage=" << *DaNP1 << "   iID=" << iID+1;
-                        std::cout << "   fun2=" << fun2 <<"  vmStress=" << *vmStress ;
+                        std::cout << "   fun2=" << fun2 <<"  vmStressMeso=" << vmStressMeso ;
                         std::cout << "\n";
                     for (int i = 0; i < 9; i++) {
                         std::cout << *(stressN+i) << "  "<< *(stressNP1+i) << "  " << *(rateOfDef+i) << "  ";
@@ -396,7 +399,7 @@ ScalarT* DissipationNP1
                     // RADIAL RETURN
                     // update deviatoric stress
                     // vmStress = yieldStress in the new condition
-                    tempScalar = yieldStressHat*(1.-*DaNP1)/(*vmStress);
+                    tempScalar = yieldStressHat*(1.-*DaNP1)/(vmStressMeso);
                     for (int i = 0; i < 9; i++) {
                         deviatoricStressNP1[i] *= tempScalar; 
                         *(stressNP1+i) = deviatoricStressNP1[i];
@@ -418,7 +421,7 @@ ScalarT* DissipationNP1
                     }
                     //std::cout << "Von Mises Stress: " << pow(1.5*tempScalar,.5) << "   " << yieldStress;
                     
-                    *vmStress = yieldStress;
+                    vmStressMeso = yieldStress;
                 }
                 else
                 {
@@ -439,13 +442,15 @@ ScalarT* DissipationNP1
         }; // end if yield
         
         
+        // compute effective Von Mises Stress
+        *vmStress=vmStressMeso/(1-*DaNP1);
         
         
 //         // compute DissipationNP1 (Damage conjugate)
 //         YoungModNP1 = 9*bulkModNP1*shearModNP1/(3*bulkModNP1+shearModNP1);
 //         PoissRatNP1 = (3*bulkModNP1-2*shearModNP1)/(2*(3*bulkModNP1+shearModNP1));
 //         if (*vmStress==0) *DissipationNP1=0.0;
-//         else *DissipationNP1 = pow(*vmStress,2) / (2*YoungModNP1*pow(1-*DaNP1,2)) *( 2/3*(1.+PoissRatNP1) +3*(1-2*PoissRatNP1)*pow(hydroStressNP1/(*vmStress),2));
+//         else *DissipationNP1 = pow(*vmStress,2.0) / (2*YoungModNP1*pow(1-*DaNP1,2.0)) *( 2/3*(1.+PoissRatNP1) +3*(1-2*PoissRatNP1)*pow(hydroStressNP1/(*vmStress),2.0));
 //         //cout << hydroStressNP1 << "  " << *vmStress << endl;
         
         

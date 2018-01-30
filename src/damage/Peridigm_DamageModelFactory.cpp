@@ -51,6 +51,7 @@
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
 #include "Peridigm_FakeDamageModel.hpp"
+#include "Peridigm_MeanLocalDamageModel.hpp"
 
 using namespace std;
 
@@ -69,6 +70,8 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
   else if(damageModelName == "Fake")
     damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
+  else if(damageModelName == "Mean Local Damage")
+    damageModel = Teuchos::rcp( new MeanLocalDamageModel(damageModelParams) );
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;

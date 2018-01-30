@@ -114,10 +114,9 @@ namespace PeridigmNS {
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
     int m_accumulatedPlasticStrainFieldId;
-    int m_DamageFieldId;
+    int m_LocalDamageFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
-    int m_BondsLeftFieldId;
     int m_DissipationFieldId;
   };
 }

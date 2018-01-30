@@ -54,17 +54,17 @@ const double pi = boost::math::constants::pi<double>();
 using namespace std;
 
 PeridigmNS::MeanLocalDamageModel::MeanLocalDamageModel(const Teuchos::ParameterList& params)
-  : DamageModel(params), m_volumeFieldId(-1), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_localdamageFieldId(-1), m_bondDamageFieldId(-1), m_bondsLeftFieldId(-1), m_damageFieldId(-1)
+  : DamageModel(params), m_volumeFieldId(-1), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_localdamageFieldId(-1), m_bondDamageFieldId(-1)/*, m_bondsLeftFieldId(-1)*/, m_damageFieldId(-1)
 {
   m_criticalLocalDamage = params.get<double>("Critical Local Damage");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_volumeFieldId  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
-  m_modelCoordinatesFieldId = fieldManager.getFieldId("Model_Coordinates");
-  m_coordinatesFieldId = fieldManager.getFieldId("Coordinates");
+  m_modelCoordinatesFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
+  m_coordinatesFieldId                = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
   m_localdamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Local_Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
-  m_bondsLeftFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bonds_Left");
+//   m_bondsLeftFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bonds_Left");
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   
   
@@ -72,7 +72,7 @@ PeridigmNS::MeanLocalDamageModel::MeanLocalDamageModel(const Teuchos::ParameterL
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_localdamageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
-  m_fieldIds.push_back(m_bondsLeftFieldId);
+//   m_fieldIds.push_back(m_bondsLeftFieldId);
   m_fieldIds.push_back(m_damageFieldId);
 }
 
@@ -87,20 +87,20 @@ PeridigmNS::MeanLocalDamageModel::initialize(const double dt,
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *bondDamage, *BondsLeft, *damage;
+  double *bondDamage, /**BondsLeft,*/ *damage;
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-  dataManager.getData(m_bondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeft);
+//   dataManager.getData(m_bondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeft);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
   // Initialize damage to zero
   int neighborhoodListIndex = 0;
   int bondIndex = 0;
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID , ++BondsLeft){
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID /*, ++BondsLeft*/){
 	int nodeID = ownedIDs[iID];
     damage[nodeID] = 0.0;
 	int numNeighbors = neighborhoodList[neighborhoodListIndex++];
     neighborhoodListIndex += numNeighbors;
-    *BondsLeft = numNeighbors;
+//     *BondsLeft = numNeighbors;
 	for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
       bondDamage[bondIndex++] = 0.0;
 	}
@@ -130,8 +130,8 @@ PeridigmNS::MeanLocalDamageModel::computeDamage(const double dt,
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
 
-  double *BondsLeftNP1;
-  dataManager.getData(m_bondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeftNP1);
+//   double *BondsLeftNP1;
+//   dataManager.getData(m_bondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeftNP1);
 
 
   const int *neighPtr = neighborhoodList;
@@ -154,9 +154,9 @@ PeridigmNS::MeanLocalDamageModel::computeDamage(const double dt,
   double mcoordYP;
   double mcoordZP;
   
-  int BondsLeft;
+//   int BondsLeft;
  
-  for(int p=0;p<numOwnedPoints;p++,localDamageOverlap++,volumeOverlap++,xOverlap+=3,BondsLeftNP1++){
+  for(int p=0;p<numOwnedPoints;p++,localDamageOverlap++,volumeOverlap++,xOverlap+=3/*,BondsLeftNP1++*/){
     int numNeigh = *neighPtr; neighPtr++;
     Da=*localDamageOverlap;
     radius=std::pow(*volumeOverlap*3/(4*pi),1.0/3.0);
@@ -164,7 +164,7 @@ PeridigmNS::MeanLocalDamageModel::computeDamage(const double dt,
     mcoordY=*(xOverlap+1);
     mcoordZ=*(xOverlap+2);
     
-    BondsLeft=numNeigh;
+//     BondsLeft=numNeigh;
     for(int n=0;n<numNeigh;n++,neighPtr++,bondDamageOverlapNP1++,bondDamageOverlapN++){
       int localId = *neighPtr;
       DaP = LocalDamageNP1[localId];
@@ -181,11 +181,10 @@ PeridigmNS::MeanLocalDamageModel::computeDamage(const double dt,
           //cout << Da << "  " << DaP << "  " << meanDa1 << "  " << meanDa2 << "  " << radius << "  " << radiusP << "  " << distance << "  " << endl;
       }
       else {*bondDamageOverlapNP1=*bondDamageOverlapN;}
-      if (*bondDamageOverlapNP1==1.){
-          BondsLeft-=1;
-      }
+//       if (*bondDamageOverlapNP1==1.)
+//           BondsLeft-=1;
     }
-    *BondsLeftNP1 = BondsLeft;
+//     *BondsLeftNP1 = BondsLeft;
   }
 
   //  Update the element damage (percent of bonds broken)

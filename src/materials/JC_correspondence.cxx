@@ -441,7 +441,15 @@ ScalarT* DissipationNP1
             // The step is elastic
         }; // end if yield
         
-        
+        if (*DaNP1==1.){
+//             std::cout << iID << " Entirely damaged\n";
+            *vmStress=0.;
+            for (int i = 0; i < 9; i++) {
+                stressNP1[i] = 0.;
+            }
+            continue;
+        }
+
         // compute effective Von Mises Stress
         *vmStress=vmStressMeso/(1-*DaNP1);
         

@@ -176,7 +176,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
   double *bondDamage;
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
 
 
   int shapeTensorReturnCode = 
@@ -194,7 +194,9 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
     "**** Error:  CorrespondenceMaterial::initialize() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+//   TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+  if (shapeTensorReturnCode != 0) cout << shapeTensorErrorMessage;
+
 
 }
 
@@ -219,7 +221,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
   double *bondDamage;
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
 
   // Compute the inverse of the shape tensor and the approximate deformation gradient
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
@@ -239,7 +241,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+//   TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+  if (shapeTensorReturnCode != 0) cout << shapeTensorErrorMessage;
 
   double *leftStretchTensorN, *leftStretchTensorNP1, *rotationTensorN, *rotationTensorNP1, *unrotatedRateOfDeformation;
   dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_N)->ExtractView(&leftStretchTensorN);
@@ -269,8 +272,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   rotationTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode != 0, rotationTensorErrorMessage);
-
+//   TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode != 0, rotationTensorErrorMessage);
+  if (rotationTensorReturnCode != 0) cout << rotationTensorErrorMessage;
+  
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
   //   1) The unrotated rate-of-deformation tensor
@@ -334,7 +338,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     // Invert the deformation gradient and store the determinant
     int matrixInversionReturnCode =
       CORRESPONDENCE::Invert3by3Matrix(defGrad, jacobianDeterminant, defGradInv);
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
+//     TEUCHOS_TEST_FOR_EXCEPT_MSG(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
+    if (matrixInversionReturnCode != 0) cout << matrixInversionErrorMessage;
     
     //P = J * \sigma * F^(-T)
     CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, stress, defGradInv, piolaStress);

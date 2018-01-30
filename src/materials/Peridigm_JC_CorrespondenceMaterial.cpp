@@ -63,7 +63,7 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),m_DC(0.0),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
-    m_equivalentPlasticStrainFieldId(-1),    m_accumulatedPlasticStrainFieldId(-1),    m_DamageFieldId(-1), 
+    m_equivalentPlasticStrainFieldId(-1),    m_accumulatedPlasticStrainFieldId(-1),    m_DamageFieldId(-1), m_bondDamageFieldId(-1),
     m_deltaTemperatureFieldId(-1), m_BondsLeftFieldId(-1), m_DissipationFieldId(-1)
 
 
@@ -89,8 +89,9 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_accumulatedPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Accumulated_Plastic_Strain");
-  m_DamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
-  m_BondsLeftFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bonds Left");
+  m_DamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Continuum_Damage");
+  m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
+  m_BondsLeftFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bonds_Left");
   m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
   m_DissipationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Dissipation");
   
@@ -131,6 +132,8 @@ PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_DamageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_DamageFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_BondsLeftFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_BondsLeftFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
@@ -211,7 +214,7 @@ PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
   
 }
 
-
+/*
 void
 PeridigmNS::JC_CorrespondenceMaterial::computeForce(const double dt,
                                                  const int numOwnedPoints,
@@ -327,67 +330,55 @@ PeridigmNS::JC_CorrespondenceMaterial::computeForce(const double dt,
   double* DamageOverlap= DamageNP1;
   double* volumeOverlap= volume;
   double* modelcoordinatesOverlap = coordinates;
-  double meanDa1;
-  double meanDa2;
-  double Da;
-  double DaP;
-  double radius;  // mean radius of the element
-  double radiusP;
-  double distance;
-  double mcoordX;
-  double mcoordY;
-  double mcoordZ;
-  double mcoordXP;
-  double mcoordYP;
-  double mcoordZP;
-  
+//   double meanDa1;
+//   double meanDa2;
+//   double Da;
+//   double DaP;
+//   double radius;  // mean radius of the element
+//   double radiusP;
+//   double distance;
+//   double mcoordX;
+//   double mcoordY;
+//   double mcoordZ;
+//   double mcoordXP;
+//   double mcoordYP;
+//   double mcoordZP;
+//   
   int BondsLeft;
   bondDamageOverlapN= bondDamageN;
   bondDamageOverlapNP1= bondDamageNP1;
-
+// 
   for(int p=0;p<numOwnedPoints;p++,DamageOverlap++,volumeOverlap++,modelcoordinatesOverlap+=3,BondsLeftNP1++){
     int numNeigh = *neighPtr2; neighPtr2++;
-    Da=*DamageOverlap;
-    radius=std::pow(*volumeOverlap*3/(4*pi),1.0/3.0);
-    mcoordX=*modelcoordinatesOverlap;
-    mcoordY=*(modelcoordinatesOverlap+1);
-    mcoordZ=*(modelcoordinatesOverlap+2);
-    
+//     Da=*DamageOverlap;
+//     radius=std::pow(*volumeOverlap*3/(4*pi),1.0/3.0);
+//     mcoordX=*modelcoordinatesOverlap;
+//     mcoordY=*(modelcoordinatesOverlap+1);
+//     mcoordZ=*(modelcoordinatesOverlap+2);
+//     
     BondsLeft=numNeigh;
     for(int n=0;n<numNeigh;n++,neighPtr2++,bondDamageOverlapNP1++,bondDamageOverlapN++){
-      int localId = *neighPtr2;
-      DaP = DamageNP1[localId];
-      radiusP = std::pow(volume[localId]*3/(4*pi),1.0/3.0);
-      mcoordXP = modelCoordinates[3*localId];
-      mcoordYP = modelCoordinates[3*localId+1];
-      mcoordZP = modelCoordinates[3*localId+2];
-      distance = std::pow(std::pow(mcoordX-mcoordXP,2.0)+std::pow(mcoordY-mcoordYP,2.0)+std::pow(mcoordZ-mcoordZP,2.0),1.0/2.0);
-      
-      meanDa1 = Da + radius/distance*(DaP-Da);
-      meanDa2 = Da + (distance-radiusP)/distance*(DaP-Da);
-      if ((meanDa1>m_DC) || (meanDa2>m_DC)) {
-          *bondDamageOverlapNP1=1.;
-          //cout << Da << "  " << DaP << "  " << meanDa1 << "  " << meanDa2 << "  " << radius << "  " << radiusP << "  " << distance << "  " << endl;
+//       int localId = *neighPtr2;
+//       DaP = DamageNP1[localId];
+//       radiusP = std::pow(volume[localId]*3/(4*pi),1.0/3.0);
+//       mcoordXP = modelCoordinates[3*localId];
+//       mcoordYP = modelCoordinates[3*localId+1];
+//       mcoordZP = modelCoordinates[3*localId+2];
+//       distance = std::pow(std::pow(mcoordX-mcoordXP,2.0)+std::pow(mcoordY-mcoordYP,2.0)+std::pow(mcoordZ-mcoordZP,2.0),1.0/2.0);
+//       
+//       meanDa1 = Da + radius/distance*(DaP-Da);
+//       meanDa2 = Da + (distance-radiusP)/distance*(DaP-Da);
+//       if ((meanDa1>m_DC) || (meanDa2>m_DC)) {
+//           *bondDamageOverlapNP1=1.;
+//           //cout << Da << "  " << DaP << "  " << meanDa1 << "  " << meanDa2 << "  " << radius << "  " << radiusP << "  " << distance << "  " << endl;
+//       }
+//       else {*bondDamageOverlapNP1=*bondDamageOverlapN;}
+      if (*bondDamageOverlapNP1==1.){
           BondsLeft-=1;
       }
-      else {*bondDamageOverlapNP1=*bondDamageOverlapN;}
     }
     *BondsLeftNP1 = BondsLeft;
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -524,4 +515,4 @@ PeridigmNS::JC_CorrespondenceMaterial::computeForce(const double dt,
   Teuchos::RCP<Epetra_Vector> forceDensityVector = dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1);
   Teuchos::RCP<Epetra_Vector> hourglassForceDensityVector = dataManager.getData(m_hourglassForceDensityFieldId, PeridigmField::STEP_NP1);
   forceDensityVector->Update(1.0, *hourglassForceDensityVector, 1.0);
-}
+}*/

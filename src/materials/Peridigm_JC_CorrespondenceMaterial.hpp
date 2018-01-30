@@ -78,12 +78,12 @@ namespace PeridigmNS {
                                      const int* neighborhoodList,
                                      PeridigmNS::DataManager& dataManager) const;
     
-    //! Evaluate the internal force.
-    void computeForce(const double dt,
-                      const int numOwnedPoints,
-                      const int* ownedIDs,
-                      const int* neighborhoodList,
-                      PeridigmNS::DataManager& dataManager) const;
+//     //! Evaluate the internal force.
+//     void computeForce(const double dt,
+//                       const int numOwnedPoints,
+//                       const int* ownedIDs,
+//                       const int* neighborhoodList,
+//                       PeridigmNS::DataManager& dataManager) const;
 
 
 
@@ -115,6 +115,7 @@ namespace PeridigmNS {
     int m_equivalentPlasticStrainFieldId;
     int m_accumulatedPlasticStrainFieldId;
     int m_DamageFieldId;
+    int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
     int m_BondsLeftFieldId;
     int m_DissipationFieldId;

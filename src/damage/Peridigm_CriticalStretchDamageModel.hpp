@@ -108,6 +108,7 @@ namespace PeridigmNS {
     int m_coordinatesFieldId;
     int m_damageFieldId;
     int m_bondDamageFieldId;
+    int m_BondsLeftFieldId;
     int m_deltaTemperatureFieldId;
   };
 

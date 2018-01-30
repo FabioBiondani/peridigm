@@ -51,7 +51,7 @@
 using namespace std;
 
 PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::UserDefinedTimeDependentCriticalStretchDamageModel(const Teuchos::ParameterList& params)
-  : DamageModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1)
+  : DamageModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_BondsLeftFieldId(-1), m_deltaTemperatureFieldId(-1)
 {
 
   functiondmg = params.get<string>("Time Dependent Critical Stretch");
@@ -73,6 +73,7 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::UserDefinedTimeD
   //m_stepFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Step");
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
+  m_BondsLeftFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bonds_left");
   if(m_applyThermalStrains)
     m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
     
@@ -83,6 +84,7 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::UserDefinedTimeD
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
+  m_fieldIds.push_back(m_BondsLeftFieldId);
   //m_fieldIds.push_back(m_stepFieldId);
   
   if(m_applyThermalStrains)
@@ -140,19 +142,21 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::initialize(const
                                                    PeridigmNS::DataManager& dataManager) const
 {
 
-  double *damage, *bondDamage, *step;
+  double *damage, *bondDamage, *step, *BondsLeft;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_BondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeft);
   //dataManager.getData(m_stepFieldId, PeridigmField::STEP_NP1)->ExtractView(&step);
   
   // Initialize damage to zero
   int neighborhoodListIndex = 0;
   int bondIndex = 0;
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID){
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID, ++BondsLeft){
 	int nodeID = ownedIDs[iID];
     damage[nodeID] = 0.0;
 	int numNeighbors = neighborhoodList[neighborhoodListIndex++];
     neighborhoodListIndex += numNeighbors;
+    *BondsLeft = numNeighbors;
 	for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
       bondDamage[bondIndex++] = 0.0;
 	}
@@ -166,12 +170,13 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::computeDamage(co
                                                       const int* neighborhoodList,
                                                       PeridigmNS::DataManager& dataManager) const 
 {
-  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *step;
+  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *step, *BondsLeftNP1;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
+  dataManager.getData(m_BondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeftNP1);
   //dataManager.getData(m_stepFieldId, PeridigmField::STEP_NP1)->ExtractView(&step);
   deltaTemperature = NULL;
   if(m_applyThermalStrains)
@@ -190,7 +195,7 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::computeDamage(co
   // Update the bond damage
   // Break bonds if the extension is greater than the critical extension
   
-  for(iID=0 ; iID<numOwnedPoints ; ++iID){
+  for(iID=0 ; iID<numOwnedPoints ; ++iID, ++BondsLeftNP1){
 	nodeId = ownedIDs[iID];
 	nodeInitialX[0] = x[nodeId*3];
 	nodeInitialX[1] = x[nodeId*3+1];
@@ -199,6 +204,7 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::computeDamage(co
 	nodeCurrentX[1] = y[nodeId*3+1];
 	nodeCurrentX[2] = y[nodeId*3+2];
 	numNeighbors = neighborhoodList[neighborhoodListIndex++];
+    *BondsLeftNP1 = numNeighbors;
 	for(iNID=0 ; iNID<numNeighbors ; ++iNID){
 	  neighborID = neighborhoodList[neighborhoodListIndex++];
       initialDistance = 
@@ -213,9 +219,10 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::computeDamage(co
       trialDamage = 0.0;
       if(relativeExtension > m_criticalStretch)
         trialDamage = 1.0;
-      if(trialDamage > bondDamageNP1[bondIndex]){
+      if(trialDamage > bondDamageNP1[bondIndex])
         bondDamageNP1[bondIndex] = trialDamage;
-      }
+      if(bondDamageNP1[bondIndex]==1.)
+        *BondsLeftNP1-=1;
       bondIndex += 1;
     }
   }

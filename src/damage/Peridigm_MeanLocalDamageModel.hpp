@@ -1,4 +1,4 @@
-/*! \file Peridigm_CriticalStretchDamageModel.hpp */
+/*! \file Peridigm_MeanLocalDamageModel.hpp */
 
 //@HEADER
 // ************************************************************************
@@ -45,8 +45,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_CRITICALSTRETCHDAMAGEMODEL_HPP
-#define PERIDIGM_CRITICALSTRETCHDAMAGEMODEL_HPP
+#ifndef PERIDIGM_MEANLOCALDAMAGEMODEL_HPP
+#define PERIDIGM_MEANLOCALDAMAGEMODEL_HPP
 
 #include "Peridigm_DamageModel.hpp"
 #include <Teuchos_RCP.hpp>
@@ -57,18 +57,18 @@
 namespace PeridigmNS {
 
   //! Base class defining the Peridigm damage model interface.
-  class CriticalStretchDamageModel : public DamageModel{
+  class MeanLocalDamageModel : public DamageModel{
 
   public:
 	
     //! Standard constructor.
-    CriticalStretchDamageModel(const Teuchos::ParameterList& params);
+    MeanLocalDamageModel(const Teuchos::ParameterList& params);
 
     //! Destructor.
-    virtual ~CriticalStretchDamageModel();
+    virtual ~MeanLocalDamageModel();
 
     //! Return name of the model.
-    virtual std::string Name() const { return("Critical Stretch"); }
+    virtual std::string Name() const { return("Mean Local Damage"); }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the model.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
@@ -91,27 +91,20 @@ namespace PeridigmNS {
 
   protected:
 
-	//! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
-	inline double distance(double a1, double a2, double a3,
-						   double b1, double b2, double b3) const
-	{
-	  return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
-	}
-
-    double m_criticalStretch;
-    double m_alpha;
-    bool m_applyThermalStrains;
+    double m_criticalLocalDamage;
 
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
+    int m_volumeFieldId;
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
-    int m_damageFieldId;
+    int m_localdamageFieldId;
     int m_bondDamageFieldId;
     int m_bondsLeftFieldId;
+    int m_damageFieldId;
     int m_deltaTemperatureFieldId;
   };
 
 }
 
-#endif // PERIDIGM_CRITICALSTRETCHDAMAGEMODEL_HPP
+#endif // PERIDIGM_MEANLOCALDAMAGEMODEL_HPP

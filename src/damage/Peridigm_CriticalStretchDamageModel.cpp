@@ -118,13 +118,12 @@ PeridigmNS::CriticalStretchDamageModel::computeDamage(const double dt,
                                                       const int* neighborhoodList,
                                                       PeridigmNS::DataManager& dataManager) const
 {
-  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *BondsLeftN, *BondsLeftNP1;
+  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *BondsLeftNP1;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_BondsLeftFieldId, PeridigmField::STEP_N)->ExtractView(&BondsLeftN);
   dataManager.getData(m_BondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeftNP1);
   deltaTemperature = NULL;
   if(m_applyThermalStrains)
@@ -167,7 +166,7 @@ PeridigmNS::CriticalStretchDamageModel::computeDamage(const double dt,
         trialDamage = 1.0;
       if(trialDamage > bondDamageNP1[bondIndex])
         bondDamageNP1[bondIndex] = trialDamage;
-      if(*bondDamageNP1==1.)
+      if(bondDamageNP1[bondIndex]==1.)
         *BondsLeftNP1-=1;
       bondIndex += 1;
     }

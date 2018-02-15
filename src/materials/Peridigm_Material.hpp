@@ -207,7 +207,7 @@ namespace PeridigmNS {
                 TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
             }
             value = rtcFunction->getValueOfVar("value");
-            cout << "value= " << value << endl;
+//             cout << "value= " << value << endl;
             return value;
         }
     };

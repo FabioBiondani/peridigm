@@ -58,6 +58,7 @@
 #else
 #include "FunctionRTC.hh"
 #endif
+#include <sstream>
 
 using namespace std;
 
@@ -362,7 +363,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
 {
   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
   string bulkModulusStr, shearModulusStr, youngsModulusStr, poissonsRatioStr, rtcFunctionString;
-  
+
   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcBulk"));
   rtcFunction->addVar("double", "value");
@@ -370,19 +371,43 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
 
   if( params.isParameter("Bulk Modulus") ){
     bulkModulusDefined = true;
-    bulkModulusStr = params.get<string>("Bulk Modulus");
+    if (params.isType<double>("Bulk Modulus")){
+        double dbl = params.get<double>("Bulk Modulus");
+        std::ostringstream strs;
+        strs << dbl;
+        bulkModulusStr = strs.str();
+    }
+    else bulkModulusStr = params.get<string>("Bulk Modulus");
     
   }
   if( params.isParameter("Shear Modulus") ){
-    shearModulusStr = params.get<string>("Shear Modulus");
+    if (params.isType<double>("Shear Modulus")){
+        double dbl = params.get<double>("Shear Modulus");
+        std::ostringstream strs;
+        strs << dbl;
+        shearModulusStr = strs.str();
+    }
+    else shearModulusStr = params.get<string>("Shear Modulus");
     shearModulusDefined = true;
   }
   if( params.isParameter("Young's Modulus") ){
-    youngsModulusStr = params.get<string>("Young's Modulus");
+    if (params.isType<double>("Young's Modulus")){
+        double dbl = params.get<double>("Young's Modulus");
+        std::ostringstream strs;
+        strs << dbl;
+        youngsModulusStr = strs.str();
+    }
+    else youngsModulusStr = params.get<string>("Young's Modulus");
     youngsModulusDefined = true;
   }
   if( params.isParameter("Poisson's Ratio") ){
-    poissonsRatioStr = params.get<string>("Poisson's Ratio");
+    if (params.isType<double>("Poisson's Ratio")){
+        double dbl = params.get<double>("Poisson's Ratio");
+        std::ostringstream strs;
+        strs << dbl;
+        poissonsRatioStr = strs.str();
+    }
+    else poissonsRatioStr = params.get<string>("Poisson's Ratio");
     poissonsRatioDefined = true;
   }
 
@@ -438,19 +463,43 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
 
   if( params.isParameter("Bulk Modulus") ){
     bulkModulusDefined = true;
-    bulkModulusStr = params.get<string>("Bulk Modulus");
+    if (params.isType<double>("Bulk Modulus")){
+        double dbl = params.get<double>("Bulk Modulus");
+        std::ostringstream strs;
+        strs << dbl;
+        bulkModulusStr = strs.str();
+    }
+    else bulkModulusStr = params.get<string>("Bulk Modulus");
     
   }
   if( params.isParameter("Shear Modulus") ){
-    shearModulusStr = params.get<string>("Shear Modulus");
+    if (params.isType<double>("Shear Modulus")){
+        double dbl = params.get<double>("Shear Modulus");
+        std::ostringstream strs;
+        strs << dbl;
+        shearModulusStr = strs.str();
+    }
+    else shearModulusStr = params.get<string>("Shear Modulus");
     shearModulusDefined = true;
   }
   if( params.isParameter("Young's Modulus") ){
-    youngsModulusStr = params.get<string>("Young's Modulus");
+    if (params.isType<double>("Young's Modulus")){
+        double dbl = params.get<double>("Young's Modulus");
+        std::ostringstream strs;
+        strs << dbl;
+        youngsModulusStr = strs.str();
+    }
+    else youngsModulusStr = params.get<string>("Young's Modulus");
     youngsModulusDefined = true;
   }
   if( params.isParameter("Poisson's Ratio") ){
-    poissonsRatioStr = params.get<string>("Poisson's Ratio");
+    if (params.isType<double>("Poisson's Ratio")){
+        double dbl = params.get<double>("Poisson's Ratio");
+        std::ostringstream strs;
+        strs << dbl;
+        poissonsRatioStr = strs.str();
+    }
+    else poissonsRatioStr = params.get<string>("Poisson's Ratio");
     poissonsRatioDefined = true;
   }
 
@@ -504,7 +553,13 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
   rtcFunction->addVar("double", "T");
 
   if( params.isParameter(ConstName) ){
-      ConstStr = params.get<string>(ConstName);
+    if (params.isType<double>(ConstName)){
+        double dbl = params.get<double>(ConstName);
+        std::ostringstream strs;
+        strs << dbl;
+        ConstStr = strs.str();
+    }
+    else ConstStr = params.get<string>(ConstName);
   }else{
       ConstStr="0.0";
       cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;

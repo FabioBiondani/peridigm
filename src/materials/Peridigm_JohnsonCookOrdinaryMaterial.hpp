@@ -120,8 +120,8 @@ namespace PeridigmNS {
     double m_density;
     double m_alpha;
     double m_horizon;
+    bool m_applySurfaceCorrectionFactor;
     bool m_applyThermalStrains;
-    bool m_computePartialStress;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
 
     // field spec ids for all relevant data
@@ -133,9 +133,13 @@ namespace PeridigmNS {
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
     int m_forceDensityFieldId;
-    int m_partialStressFieldId;
     int m_bondDamageFieldId;
+    int m_surfaceCorrectionFactorFieldId;
     int m_deltaTemperatureFieldId;
+    int m_ElasticEnergyDensity;
+    int m_DeviatoricElasticEnergyDensity;
+    int m_VonMisesStress;
+    int m_equivalentStrain;
   };
 }
 

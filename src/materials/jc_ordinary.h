@@ -59,16 +59,19 @@ void computeInternalForceJohnsonCookOrdinary
 		const double* volumeOverlapPtr,
 		const ScalarT* dilatationOwned,
 		const double* bondDamage,
+		const double* scfOwned,
 		ScalarT* fInternalOverlapPtr,
-		ScalarT* partialStressOverlapPtr,
 		const int*  localNeighborList,
 		int numOwnedPoints,
 		double BULK_MODULUS,
 		double SHEAR_MODULUS,
         double horizon,
+        ScalarT* ElasticEnergyDensity,
+        ScalarT* DeviatoricElasticEnergyDensity,
+        ScalarT* VonMisesStress,
+        ScalarT* EquivalentStrain,
         double thermalExpansionCoefficient = 0,
         const double* deltaTemperature = 0
-
 );
 
 }

@@ -61,13 +61,17 @@ void computeInternalForceJohnsonCookOrdinary
 		const double* volumeOverlap,
 		const ScalarT* dilatationOwned,
 		const double* bondDamage,
+		const double* scfOwned,
 		ScalarT* fInternalOverlap,
-		ScalarT* partialStressOverlap,
 		const int*  localNeighborList,
 		int numOwnedPoints,
 		double BULK_MODULUS,
 		double SHEAR_MODULUS,
         double horizon,
+        ScalarT* ElasticEnergyDensity,
+        ScalarT* DeviatoricElasticEnergyDensity,
+        ScalarT* VonMisesStress,
+        ScalarT* EquivalentStrain,
         double thermalExpansionCoefficient,
         const double* deltaTemperature
 )
@@ -84,20 +88,27 @@ void computeInternalForceJohnsonCookOrdinary
     const double *deltaT = deltaTemperature;
 	const double *m = mOwned;
 	const double *v = volumeOverlap;
+    const double *scf = scfOwned;
 	const ScalarT *theta = dilatationOwned;
 	ScalarT *fOwned = fInternalOverlap;
-	ScalarT *psOwned = partialStressOverlap;
+    ScalarT *W  = ElasticEnergyDensity;
+    ScalarT *Wd = DeviatoricElasticEnergyDensity;
+    ScalarT *sigmaVM = VonMisesStress;
+    ScalarT *eps_eq = EquivalentStrain;
 
 	const int *neighPtr = localNeighborList;
 	double cellVolume, alpha, X_dx, X_dy, X_dz, zeta, omega;
 	ScalarT Y_dx, Y_dy, Y_dz, dY, t, fx, fy, fz, e, c1;
-	for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, psOwned+=9, deltaT++, m++, theta++){
+    ScalarT ed;
+	for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, W++, Wd++, sigmaVM++, eps_eq++, deltaT++, m++, theta++, scf++){
 
 		int numNeigh = *neighPtr; neighPtr++;
 		const double *X = xOwned;
 		const ScalarT *Y = yOwned;
 		alpha = 15.0*MU/(*m);
+		alpha *= (*scf);
 		double selfCellVolume = v[p];
+        *Wd=0;
 		for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
 			int localId = *neighPtr;
 			cellVolume = v[localId];
@@ -128,19 +139,15 @@ void computeInternalForceJohnsonCookOrdinary
 			fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
 			fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
 			fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+            
+            // compute deviatoric energy density
+            ed = e - *theta/3;
+            *Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;
 
-			if(partialStressOverlap != 0){
-			  *(psOwned+0) += fx*X_dx*cellVolume;
-			  *(psOwned+1) += fx*X_dy*cellVolume;
-			  *(psOwned+2) += fx*X_dz*cellVolume;
-			  *(psOwned+3) += fy*X_dx*cellVolume;
-			  *(psOwned+4) += fy*X_dy*cellVolume;
-			  *(psOwned+5) += fy*X_dz*cellVolume;
-			  *(psOwned+6) += fz*X_dx*cellVolume;
-			  *(psOwned+7) += fz*X_dy*cellVolume;
-			  *(psOwned+8) += fz*X_dz*cellVolume;
-			}
 		}
+		*W = K/2 * (*theta) * (*theta) + *Wd;
+        *sigmaVM = sqrt(6*MU*(*Wd));
+        *eps_eq = *sigmaVM/(3*MU);
 
 	}
 }
@@ -154,13 +161,17 @@ template void computeInternalForceJohnsonCookOrdinary<double>
 		const double* volumeOverlap,
 		const double* dilatationOwned,
 		const double* bondDamage,
+		const double* scfOwned,
 		double* fInternalOverlap,
-		double* partialStressOverlap,
 		const int*  localNeighborList,
 		int numOwnedPoints,
 		double BULK_MODULUS,
 		double SHEAR_MODULUS,
         double horizon,
+        double* ElasticEnergyDensity,
+        double* DeviatoricElasticEnergyDensity,
+        double* VonMisesStress,
+        double* EquivalentStrain,
         double thermalExpansionCoefficient,
         const double* deltaTemperature
  );
@@ -174,13 +185,17 @@ template void computeInternalForceJohnsonCookOrdinary<Sacado::Fad::DFad<double> 
 		const double* volumeOverlap,
 		const Sacado::Fad::DFad<double>* dilatationOwned,
 		const double* bondDamage,
+		const double* scfOwned,
 		Sacado::Fad::DFad<double>* fInternalOverlap,
-		Sacado::Fad::DFad<double>* partialStressOverlap,
 		const int*  localNeighborList,
 		int numOwnedPoints,
 		double BULK_MODULUS,
 		double SHEAR_MODULUS,
         double horizon,
+        Sacado::Fad::DFad<double>* ElasticEnergyDensity,
+        Sacado::Fad::DFad<double>* DeviatoricElasticEnergyDensity,
+        Sacado::Fad::DFad<double>* VonMisesStress,
+        Sacado::Fad::DFad<double>* EquivalentStrain,
         double thermalExpansionCoefficient,
         const double* deltaTemperature
 );

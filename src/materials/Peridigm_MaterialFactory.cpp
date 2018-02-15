@@ -62,6 +62,7 @@
 #include "Peridigm_VectorPoissonMaterial.hpp"
 #include "Peridigm_Pals_Model.hpp"
 #include "Peridigm_JC_CorrespondenceMaterial.hpp"
+#include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 // #include "Peridigm_ThermalBB_JCCorrMaterial.hpp"
 #ifdef PERIDIGM_PV
 #include "Peridigm_ElasticPVMaterial.hpp"
@@ -94,10 +95,6 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new ViscoelasticMaterial(materialParams) );
   else if (materialModelName == "Elastic Plastic Correspondence")
     materialModel = Teuchos::rcp( new ElasticPlasticCorrespondenceMaterial(materialParams) );
-  else if (materialModelName == "Johnson-Cook Correspondence")
-    materialModel = Teuchos::rcp( new JC_CorrespondenceMaterial(materialParams) );
-//   else if (materialModelName == "Thermal Johnson-Cook Correspondence")
-//     materialModel = Teuchos::rcp( new ThermalBB_JCCorrMaterial(materialParams) );
   else if (materialModelName == "Elastic Correspondence")
     materialModel = Teuchos::rcp( new ElasticCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Viscoplastic Needleman Correspondence")
@@ -140,6 +137,12 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "\n**** Pressure Dependent Elastic Plastic material model unavailable, recompile with -DUSE_CJL.\n");
 #endif
   }
+  else if (materialModelName == "Johnson-Cook Correspondence")
+    materialModel = Teuchos::rcp( new JC_CorrespondenceMaterial(materialParams) );
+  else if (materialModelName == "Johnson-Cook Ordinary")
+    materialModel = Teuchos::rcp( new JohnsonCookOrdinaryMaterial(materialParams) );
+//   else if (materialModelName == "Thermal Johnson-Cook Correspondence")
+//     materialModel = Teuchos::rcp( new ThermalBB_JCCorrMaterial(materialParams) );
   else {
     std::string invalidMaterial("\n**** Unrecognized material model: ");
     invalidMaterial += materialModelName;

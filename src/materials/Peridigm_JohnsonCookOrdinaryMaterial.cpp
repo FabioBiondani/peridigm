@@ -1,4 +1,4 @@
-/*! \file Peridigm_ElasticMaterial.cpp */
+/*! \file Peridigm_JohnsonCookOrdinaryMaterial.cpp */
 
 //@HEADER
 // ************************************************************************

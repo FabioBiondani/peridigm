@@ -364,6 +364,8 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
   string bulkModulusStr, shearModulusStr, youngsModulusStr, poissonsRatioStr, rtcFunctionString;
 
+  double dbl; std::ostringstream strs;
+  
   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcBulk"));
   rtcFunction->addVar("double", "value");
@@ -372,8 +374,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
   if( params.isParameter("Bulk Modulus") ){
     bulkModulusDefined = true;
     if (params.isType<double>("Bulk Modulus")){
-        double dbl = params.get<double>("Bulk Modulus");
-        std::ostringstream strs;
+        dbl = params.get<double>("Bulk Modulus");
         strs << dbl;
         bulkModulusStr = strs.str();
     }
@@ -382,8 +383,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
   }
   if( params.isParameter("Shear Modulus") ){
     if (params.isType<double>("Shear Modulus")){
-        double dbl = params.get<double>("Shear Modulus");
-        std::ostringstream strs;
+        dbl = params.get<double>("Shear Modulus");
         strs << dbl;
         shearModulusStr = strs.str();
     }
@@ -392,8 +392,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
   }
   if( params.isParameter("Young's Modulus") ){
     if (params.isType<double>("Young's Modulus")){
-        double dbl = params.get<double>("Young's Modulus");
-        std::ostringstream strs;
+        dbl = params.get<double>("Young's Modulus");
         strs << dbl;
         youngsModulusStr = strs.str();
     }
@@ -402,8 +401,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
   }
   if( params.isParameter("Poisson's Ratio") ){
     if (params.isType<double>("Poisson's Ratio")){
-        double dbl = params.get<double>("Poisson's Ratio");
-        std::ostringstream strs;
+        dbl = params.get<double>("Poisson's Ratio");
         strs << dbl;
         poissonsRatioStr = strs.str();
     }
@@ -456,6 +454,8 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
   string bulkModulusStr, shearModulusStr, youngsModulusStr, poissonsRatioStr, rtcFunctionString;
   
+  double dbl; std::ostringstream strs;
+  
   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcShear"));
   rtcFunction->addVar("double", "value");
@@ -464,8 +464,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   if( params.isParameter("Bulk Modulus") ){
     bulkModulusDefined = true;
     if (params.isType<double>("Bulk Modulus")){
-        double dbl = params.get<double>("Bulk Modulus");
-        std::ostringstream strs;
+        dbl = params.get<double>("Bulk Modulus");
         strs << dbl;
         bulkModulusStr = strs.str();
     }
@@ -474,8 +473,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   }
   if( params.isParameter("Shear Modulus") ){
     if (params.isType<double>("Shear Modulus")){
-        double dbl = params.get<double>("Shear Modulus");
-        std::ostringstream strs;
+        dbl = params.get<double>("Shear Modulus");
         strs << dbl;
         shearModulusStr = strs.str();
     }
@@ -484,8 +482,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   }
   if( params.isParameter("Young's Modulus") ){
     if (params.isType<double>("Young's Modulus")){
-        double dbl = params.get<double>("Young's Modulus");
-        std::ostringstream strs;
+        dbl = params.get<double>("Young's Modulus");
         strs << dbl;
         youngsModulusStr = strs.str();
     }
@@ -494,8 +491,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   }
   if( params.isParameter("Poisson's Ratio") ){
     if (params.isType<double>("Poisson's Ratio")){
-        double dbl = params.get<double>("Poisson's Ratio");
-        std::ostringstream strs;
+        dbl = params.get<double>("Poisson's Ratio");
         strs << dbl;
         poissonsRatioStr = strs.str();
     }
@@ -547,6 +543,8 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
 {
   string ConstStr, rtcFunctionString;
   
+  double dbl; std::ostringstream strs;
+
   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcShear"));
   rtcFunction->addVar("double", "value");
@@ -554,8 +552,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
 
   if( params.isParameter(ConstName) ){
     if (params.isType<double>(ConstName)){
-        double dbl = params.get<double>(ConstName);
-        std::ostringstream strs;
+        dbl = params.get<double>(ConstName);
         strs << dbl;
         ConstStr = strs.str();
     }

@@ -123,6 +123,21 @@ namespace PeridigmNS {
     bool m_applySurfaceCorrectionFactor;
     bool m_applyThermalStrains;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
+    
+    double m_MeltingTemperature;
+    double m_ReferenceTemperature;
+    double m_A;
+    double m_N;
+    double m_B;
+    double m_C;
+    double m_M;
+    double m_D1;
+    double m_D2;
+    double m_D3;
+    double m_D4;
+    double m_D5;
+    double m_DC;
+
 
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
@@ -136,10 +151,14 @@ namespace PeridigmNS {
     int m_bondDamageFieldId;
     int m_surfaceCorrectionFactorFieldId;
     int m_deltaTemperatureFieldId;
-    int m_ElasticEnergyDensity;
-    int m_DeviatoricElasticEnergyDensity;
-    int m_VonMisesStress;
-    int m_equivalentStrain;
+    int m_ElasticEnergyDensityFieldId;
+    int m_VonMisesStressFieldId;
+    
+    int m_deviatoricPlasticExtensionFieldId;
+    int m_equivalentPlasticStrainFieldId;
+    int m_accumulatedPlasticStrainFieldId;
+    int m_LocalDamageFieldId;
+
   };
 }
 

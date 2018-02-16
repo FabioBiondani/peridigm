@@ -121,6 +121,7 @@ const double constDC
     ScalarT Wd_hat;
     ScalarT Wi_hat;
     ScalarT W0_hat;
+    ScalarT F_hat;
 
     ScalarT *VMstress = VonMisesStress;
     const ScalarT *edpN = deviatoricPlasticExtensionN;
@@ -224,8 +225,10 @@ const double constDC
           (1-pow_hmlgT_M);
         W0_hat = // yielding energy density
           pow(yieldStress0,2.0)/(6*MU);
+          
+        F_hat = Wd_hat - W0_hat ;
 
-        if (Wd_hat > W0_hat){
+        if (F_hat > 0.0){
             // std::cout << "YIELDING: " << yieldStress0 << " " << ed << " " << *VMstress <<  std::endl;
         }
         else{ // step is elastic

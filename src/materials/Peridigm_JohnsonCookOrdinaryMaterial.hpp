@@ -117,8 +117,11 @@ namespace PeridigmNS {
     // material parameters
     double m_bulkModulus;
     double m_shearModulus;
-    double m_density;
     double m_alpha;
+    BulkMod obj_bulkModulus;
+    ShearMod obj_shearModulus;
+    TempDepConst obj_alphaVol;
+    double m_density;
     double m_horizon;
     bool m_applySurfaceCorrectionFactor;
     bool m_applyThermalStrains;

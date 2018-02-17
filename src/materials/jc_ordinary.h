@@ -47,6 +47,8 @@
 #ifndef JCORDINARY_H
 #define JCORDINARY_H
 
+#include "Peridigm_Material.hpp"
+
 namespace MATERIAL_EVALUATION {
 
 //! Computes contributions to the internal force resulting from owned points.
@@ -63,9 +65,9 @@ const double* scfOwned,
 ScalarT* fInternalOverlapPtr,
 const int*  localNeighborList,
 int numOwnedPoints,
-double BULK_MODULUS,
-double SHEAR_MODULUS,
-double thermalExpansionCoefficient,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 ScalarT* ElasticEnergyDensity,
 ScalarT* VonMisesStress,

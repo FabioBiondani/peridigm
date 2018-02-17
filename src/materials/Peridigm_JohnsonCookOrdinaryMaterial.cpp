@@ -58,7 +58,7 @@ using namespace std;
 
 PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuchos::ParameterList& params)
   : Material(params),
-    m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_alpha(0.0), m_horizon(0.0),
+    m_bulkModulus(0.0), m_shearModulus(0.0), m_alpha(0.0),  m_density(0.0), m_horizon(0.0),
     m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
@@ -68,8 +68,10 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
     m_deviatoricPlasticExtensionFieldId(-1),m_equivalentPlasticStrainFieldId(-1),m_accumulatedPlasticStrainFieldId(-1),m_LocalDamageFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
-  m_bulkModulus = calculateBulkModulus(params);
-  m_shearModulus = calculateShearModulus(params);
+  obj_bulkModulus.set(params);
+  obj_shearModulus.set(params);
+  m_bulkModulus = obj_bulkModulus.compute(0.0);
+  m_shearModulus = obj_shearModulus.compute(0.0);
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
   
@@ -90,7 +92,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   
 
   if(params.isParameter("Thermal Expansion Coefficient")){
-    m_alpha = params.get<double>("Thermal Expansion Coefficient");
+    obj_alphaVol.set(params,"Thermal Expansion Coefficient");
+    m_alpha= obj_alphaVol.compute(0.0);
     m_applyThermalStrains = true;
   }
   
@@ -229,9 +232,9 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       force,
       neighborhoodList,
       numOwnedPoints,
-      m_bulkModulus,
-      m_shearModulus,
-      m_alpha,
+      obj_bulkModulus,
+      obj_shearModulus,
+      obj_alphaVol,
       m_horizon,
       W,
       sigmaVM,

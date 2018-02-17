@@ -45,6 +45,8 @@
 // ************************************************************************
 //@HEADER
 
+#include "jc_ordinary.h"
+#include "Peridigm_Material.hpp"
 #include <cmath>
 #include <Sacado.hpp>
 #include "jc_ordinary.h"
@@ -69,9 +71,9 @@ const double* scfOwned,
 ScalarT* fInternalOverlap,
 const int*  localNeighborList,
 int numOwnedPoints,
-double BULK_MODULUS,
-double SHEAR_MODULUS,
-double thermalExpansionCoefficient,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 ScalarT* ElasticEnergyDensity,
 ScalarT* VonMisesStress,
@@ -104,8 +106,10 @@ const double constDC
 	/*
 	 * Compute processor local contribution to internal force
 	 */
-	double K = BULK_MODULUS;
-	double MU = SHEAR_MODULUS;
+	double K = obj_bulkModulus.compute(0.0);
+	double MU = obj_shearModulus.compute(0.0);
+    double thermalExpansionCoefficient;
+    if(deltaTemperature) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
 
 	const double *xOwned = xOverlap;
 	const ScalarT *yOwned = yOverlap;
@@ -135,7 +139,6 @@ const double constDC
     
     double hmlgT;
     
-
     ScalarT pow_eqps_n;
     ScalarT pow_hmlgT_M;
     ScalarT yieldStress0;
@@ -168,6 +171,14 @@ const double constDC
 	ScalarT Y_dx, Y_dy, Y_dz, dY, t, fx, fy, fz, e/*, c1*/;
     ScalarT ed;
 	for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, W++, VMstress++, eqpsN++, eqpsNP1++, dapsN++, dapsNP1++, DaN++, DaNP1++, deltaT++, m++, theta++, scf++){
+        
+        if(deltaTemperature){
+            K    = obj_bulkModulus.compute(*deltaT);
+            MU   = obj_shearModulus.compute(*deltaT);
+            thermalExpansionCoefficient = obj_alphaVol.compute(*deltaT);
+        }
+
+        
 		int numNeigh = *neighPtr; neighPtr++; neighPtrOverLap++;
 		const double *X = xOwned;
 		const ScalarT *Y = yOwned;
@@ -192,7 +203,7 @@ const double constDC
 			Y_dz = YP[2]-Y[2];
 			dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
             e = dY - zeta;
-            if(thermalExpansionCoefficient>0){
+            if(deltaTemperature){
 //                 std::cout << *deltaT << std::endl;
               e -= thermalExpansionCoefficient*(*deltaT)*zeta;
             }
@@ -205,7 +216,7 @@ const double constDC
 		
 		*VMstress = sqrt(6*MU*Wd_hat);
         
-        if(thermalExpansionCoefficient>0) hmlgT = (*deltaT - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
+        if(deltaTemperature) hmlgT = (*deltaT - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
         else hmlgT=0.0;
         
         // update strains and damage
@@ -250,7 +261,7 @@ const double constDC
 			Y_dz = YP[2]-Y[2];
 			dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
             e = dY - zeta;
-            if(thermalExpansionCoefficient>0)
+            if(deltaTemperature)
               e -= thermalExpansionCoefficient*(*deltaT)*zeta;
 			omega = scalarInfluenceFunction(zeta,horizon);
             ed = e - *theta/3*zeta - *edpNP1; // deviatoric Extension
@@ -293,9 +304,9 @@ const double* scfOwned,
 double* fInternalOverlap,
 const int*  localNeighborList,
 int numOwnedPoints,
-double BULK_MODULUS,
-double SHEAR_MODULUS,
-double thermalExpansionCoefficient,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 double* ElasticEnergyDensity,
 double* VonMisesStress,
@@ -337,9 +348,9 @@ const double* scfOwned,
 Sacado::Fad::DFad<double>* fInternalOverlap,
 const int*  localNeighborList,
 int numOwnedPoints,
-double BULK_MODULUS,
-double SHEAR_MODULUS,
-double thermalExpansionCoefficient,
+PeridigmNS::Material::BulkMod obj_bulkModulus,
+PeridigmNS::Material::ShearMod obj_shearModulus,
+PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 Sacado::Fad::DFad<double>* ElasticEnergyDensity,
 Sacado::Fad::DFad<double>* VonMisesStress,

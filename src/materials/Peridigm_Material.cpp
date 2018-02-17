@@ -377,6 +377,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
         dbl = params.get<double>("Bulk Modulus");
         strs << dbl;
         bulkModulusStr = strs.str();
+        strs.str("");
     }
     else bulkModulusStr = params.get<string>("Bulk Modulus");
     
@@ -386,6 +387,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
         dbl = params.get<double>("Shear Modulus");
         strs << dbl;
         shearModulusStr = strs.str();
+        strs.str("");
     }
     else shearModulusStr = params.get<string>("Shear Modulus");
     shearModulusDefined = true;
@@ -395,6 +397,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
         dbl = params.get<double>("Young's Modulus");
         strs << dbl;
         youngsModulusStr = strs.str();
+        strs.str("");
     }
     else youngsModulusStr = params.get<string>("Young's Modulus");
     youngsModulusDefined = true;
@@ -404,6 +407,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
         dbl = params.get<double>("Poisson's Ratio");
         strs << dbl;
         poissonsRatioStr = strs.str();
+        strs.str("");
     }
     else poissonsRatioStr = params.get<string>("Poisson's Ratio");
     poissonsRatioDefined = true;
@@ -467,6 +471,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         dbl = params.get<double>("Bulk Modulus");
         strs << dbl;
         bulkModulusStr = strs.str();
+        strs.str("");
     }
     else bulkModulusStr = params.get<string>("Bulk Modulus");
     
@@ -476,6 +481,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         dbl = params.get<double>("Shear Modulus");
         strs << dbl;
         shearModulusStr = strs.str();
+        strs.str("");
     }
     else shearModulusStr = params.get<string>("Shear Modulus");
     shearModulusDefined = true;
@@ -485,6 +491,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         dbl = params.get<double>("Young's Modulus");
         strs << dbl;
         youngsModulusStr = strs.str();
+        strs.str("");
     }
     else youngsModulusStr = params.get<string>("Young's Modulus");
     youngsModulusDefined = true;
@@ -494,6 +501,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         dbl = params.get<double>("Poisson's Ratio");
         strs << dbl;
         poissonsRatioStr = strs.str();
+        strs.str("");
     }
     else poissonsRatioStr = params.get<string>("Poisson's Ratio");
     poissonsRatioDefined = true;
@@ -555,6 +563,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
         dbl = params.get<double>(ConstName);
         strs << dbl;
         ConstStr = strs.str();
+        strs.str("");
     }
     else ConstStr = params.get<string>(ConstName);
   }else{

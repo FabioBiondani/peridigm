@@ -155,6 +155,7 @@ namespace PeridigmNS {
     int m_surfaceCorrectionFactorFieldId;
     int m_deltaTemperatureFieldId;
     int m_ElasticEnergyDensityFieldId;
+    int m_microPotentialFieldId;
     int m_VonMisesStressFieldId;
     
     int m_deviatoricPlasticExtensionFieldId;

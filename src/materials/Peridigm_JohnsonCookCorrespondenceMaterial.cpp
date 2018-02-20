@@ -45,9 +45,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "Peridigm_JC_CorrespondenceMaterial.hpp"
+#include "Peridigm_JohnsonCookCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
-#include "JC_correspondence.h"
+#include "jc_correspondence.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 #include "correspondence.h"

@@ -76,6 +76,8 @@ PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 ScalarT* ElasticEnergyDensity,
+const ScalarT* microPotentialN,
+ScalarT* microPotentialNP1,
 ScalarT* VonMisesStress,
 const ScalarT* deviatoricPlasticExtensionN,
 ScalarT* deviatoricPlasticExtensionNP1,
@@ -120,8 +122,9 @@ const double constDC
 	const ScalarT *theta = dilatationOwned;
 	ScalarT *fOwned = fInternalOverlap;
     
-    
-    ScalarT *W  = ElasticEnergyDensity;
+    const ScalarT *muW_N = microPotentialN;
+    ScalarT *muW_NP1 = microPotentialNP1;
+    ScalarT *W   = ElasticEnergyDensity;
     ScalarT Wd_hat;
     ScalarT Wi_hat;
     ScalarT W0_hat;
@@ -309,6 +312,8 @@ PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 double* ElasticEnergyDensity,
+const double* microPotentialN,
+double* microPotentialNP1,
 double* VonMisesStress,
 const double* deviatoricPlasticExtensionN,
 double* deviatoricPlasticExtensionNP1,
@@ -353,6 +358,8 @@ PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
 double horizon,
 Sacado::Fad::DFad<double>* ElasticEnergyDensity,
+const Sacado::Fad::DFad<double>* microPotentialN,
+Sacado::Fad::DFad<double>* microPotentialNP1,
 Sacado::Fad::DFad<double>* VonMisesStress,
 const Sacado::Fad::DFad<double>* deviatoricPlasticExtensionN,
 Sacado::Fad::DFad<double>* deviatoricPlasticExtensionNP1,

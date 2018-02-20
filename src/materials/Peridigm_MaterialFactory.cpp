@@ -61,7 +61,7 @@
 #include "Peridigm_ElasticBondBasedMaterial.hpp"
 #include "Peridigm_VectorPoissonMaterial.hpp"
 #include "Peridigm_Pals_Model.hpp"
-#include "Peridigm_JC_CorrespondenceMaterial.hpp"
+#include "Peridigm_JohnsonCookCorrespondenceMaterial.hpp"
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 // #include "Peridigm_ThermalBB_JCCorrMaterial.hpp"
 #ifdef PERIDIGM_PV

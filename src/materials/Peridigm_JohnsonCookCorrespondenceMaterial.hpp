@@ -1,4 +1,4 @@
-//! \file Peridigm_JC_CorrespondenceMaterial.hpp
+//! \file Peridigm_JohnsonCookCorrespondenceMaterial.hpp
 
 //@HEADER
 // ************************************************************************
@@ -45,8 +45,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
-#define PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
+#ifndef PERIDIGM_JOHNSONCOOKCORRESPONDENCEMATERIAL_HPP
+#define PERIDIGM_JOHNSONCOOKCORRESPONDENCEMATERIAL_HPP
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include <map>
@@ -121,4 +121,4 @@ namespace PeridigmNS {
   };
 }
 
-#endif // PERIDIGM_JC_CORRESPONDENCEMATERIAL_HPP
+#endif // PERIDIGM_JOHNSONCOOKCORRESPONDENCEMATERIAL_HPP

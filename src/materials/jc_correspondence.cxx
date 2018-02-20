@@ -45,7 +45,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "JC_correspondence.h"
+#include "jc_correspondence.h"
 #include "correspondence.h"
 #include "material_utilities.h"
 #include "Peridigm_Material.hpp"

@@ -53,14 +53,14 @@
 
 namespace PeridigmNS {
 
-  class JC_CorrespondenceMaterial : public CorrespondenceMaterial{
+  class JohnsonCookCorrespondenceMaterial : public CorrespondenceMaterial{
   public:
 
 	//! Constructor.
-    JC_CorrespondenceMaterial(const Teuchos::ParameterList& params);
+    JohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList& params);
 
     //! Destructor.
-    virtual ~JC_CorrespondenceMaterial();
+    virtual ~JohnsonCookCorrespondenceMaterial();
 
     //! Return name of material type
     virtual std::string Name() const { return("Johnson-Cook Correspondence"); }

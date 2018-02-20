@@ -55,7 +55,7 @@
 
 using namespace std;
 
-PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::ParameterList& params)
+PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),m_DC(0.0),
@@ -101,12 +101,12 @@ PeridigmNS::JC_CorrespondenceMaterial::JC_CorrespondenceMaterial(const Teuchos::
   m_fieldIds.push_back(m_DissipationFieldId);
 }
 
-PeridigmNS::JC_CorrespondenceMaterial::~JC_CorrespondenceMaterial()
+PeridigmNS::JohnsonCookCorrespondenceMaterial::~JohnsonCookCorrespondenceMaterial()
 {
 }
 
 void
-PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
+PeridigmNS::JohnsonCookCorrespondenceMaterial::initialize(const double dt,
                                                              const int numOwnedPoints,
                                                              const int* ownedIDs,
                                                              const int* neighborhoodList,
@@ -136,7 +136,7 @@ PeridigmNS::JC_CorrespondenceMaterial::initialize(const double dt,
 }
 
 void
-PeridigmNS::JC_CorrespondenceMaterial::computeCauchyStress(const double dt,
+PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
                                                                const int* neighborhoodList,
                                                                PeridigmNS::DataManager& dataManager) const

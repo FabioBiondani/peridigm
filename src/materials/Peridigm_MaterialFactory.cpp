@@ -138,7 +138,7 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
 #endif
   }
   else if (materialModelName == "Johnson-Cook Correspondence")
-    materialModel = Teuchos::rcp( new JC_CorrespondenceMaterial(materialParams) );
+    materialModel = Teuchos::rcp( new JohnsonCookCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Johnson-Cook Ordinary")
     materialModel = Teuchos::rcp( new JohnsonCookOrdinaryMaterial(materialParams) );
 //   else if (materialModelName == "Thermal Johnson-Cook Correspondence")

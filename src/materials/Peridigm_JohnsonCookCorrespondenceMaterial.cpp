@@ -58,12 +58,9 @@ using namespace std;
 PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
-    m_D1(0.0),m_D2(0.0),m_D3(0.0),m_D4(0.0),m_D5(0.0),m_DC(0.0),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
-    m_equivalentPlasticStrainFieldId(-1),    m_accumulatedPlasticStrainFieldId(-1),    m_LocalDamageFieldId(-1), m_bondDamageFieldId(-1),
-    m_deltaTemperatureFieldId(-1), m_DissipationFieldId(-1)
-
-
+    m_equivalentPlasticStrainFieldId(-1),m_bondDamageFieldId(-1),
+    m_deltaTemperatureFieldId(-1)
 {
   m_MeltingTemperature = params.get<double>("Melting Temperature");
   m_ReferenceTemperature = params.get<double>("Reference Temperature");
@@ -72,12 +69,6 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
   m_B  = params.get<double>("Constant B");
   m_C  = params.get<double>("Constant C");
   m_M  = params.get<double>("Constant M");
-  m_D1 = params.get<double>("Constant D1");
-  m_D2 = params.get<double>("Constant D2");
-  m_D3 = params.get<double>("Constant D3");
-  m_D4 = params.get<double>("Constant D4");
-  m_D5 = params.get<double>("Constant D5");
-  m_DC = params.get<double>("Constant DC");
   
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
@@ -85,20 +76,14 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
   m_unrotatedCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
-  m_accumulatedPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Accumulated_Plastic_Strain");
-  m_LocalDamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Local_Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
   m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
-  m_DissipationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Dissipation");
   
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
-  m_fieldIds.push_back(m_accumulatedPlasticStrainFieldId);
-  m_fieldIds.push_back(m_LocalDamageFieldId);
   m_fieldIds.push_back(m_deltaTemperatureFieldId);
-  m_fieldIds.push_back(m_DissipationFieldId);
 }
 
 PeridigmNS::JohnsonCookCorrespondenceMaterial::~JohnsonCookCorrespondenceMaterial()
@@ -123,16 +108,10 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
-  dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
-  dataManager.getData(m_LocalDamageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  dataManager.getData(m_LocalDamageFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
-  dataManager.getData(m_DissipationFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  dataManager.getData(m_DissipationFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
 }
 
 void
@@ -156,31 +135,16 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double 
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
 
-  double *accumulatedPlasticStrainN, *accumulatedPlasticStrainNP1;
-  dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&accumulatedPlasticStrainNP1);
-  dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&accumulatedPlasticStrainN);
-
-  double *LocalDamageN, *LocalDamageNP1;
-  dataManager.getData(m_LocalDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&LocalDamageNP1);
-  dataManager.getData(m_LocalDamageFieldId, PeridigmField::STEP_N)->ExtractView(&LocalDamageN);
-
   double *deltaTemperatureN, *deltaTemperatureNP1;
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
 
-  double *DissipationNP1;
-  dataManager.getData(m_DissipationFieldId, PeridigmField::STEP_NP1)->ExtractView(&DissipationNP1);
-  
   CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
                                                 unrotatedCauchyStressN, 
                                                 unrotatedCauchyStressNP1, 
                                                 vonMisesStressNP1,
                                                 equivalentPlasticStrainN, 
-                                                accumulatedPlasticStrainN, 
-                                                LocalDamageN, 
                                                 equivalentPlasticStrainNP1, 
-                                                accumulatedPlasticStrainNP1, 
-                                                LocalDamageNP1, 
                                                 numOwnedPoints, 
                                                 obj_bulkModulus, 
                                                 obj_shearModulus,
@@ -194,14 +158,7 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double 
                                                 m_N,
                                                 m_B,
                                                 m_C,
-                                                m_M,
-                                                m_D1,
-                                                m_D2,
-                                                m_D3,
-                                                m_D4,
-                                                m_D5,
-                                                m_DC,
-                                                DissipationNP1
+                                                m_M
                                                );
   
   

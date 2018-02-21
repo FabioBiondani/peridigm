@@ -1,4 +1,4 @@
-//! \file JC_correspondence.h
+//! \file JohnsonCook.h
 
 //@HEADER
 // ************************************************************************
@@ -44,36 +44,27 @@
 //
 // ************************************************************************
 //@HEADER
-#ifndef JC_CORRESPONDENCE_H
-#define JC_CORRESPONDENCE_H
+#ifndef JOHNSONCOOK_H
+#define JOHNSONCOOK_H
 
-#include "Peridigm_Material.hpp"
-
-namespace CORRESPONDENCE {
+namespace MATERIAL_EVALUATION {
+    
 template<typename ScalarT>
-void updateJohnsonCookCauchyStress
+void JohnsonCookSolve
 (
-const ScalarT* unrotatedRateOfDeformation, 
-const ScalarT* cauchyStressN, 
-ScalarT* cauchyStressNP1, 
-ScalarT* vonMisesStressNP1,
-const ScalarT* equivalentPlasticStrainN,
-ScalarT* equivalentPlasticStrainNP1,
-const int numPoints, 
-PeridigmNS::Material::BulkMod obj_bulkModulus,
-PeridigmNS::Material::ShearMod obj_shearModulus,
-PeridigmNS::Material::TempDepConst obj_alphaVol,
-const double* deltaTemperatureN,
-const double* deltaTemperatureNP1,
-const double dt,
-const double MeltingTemperature,
-const double ReferenceTemperature,
+const ScalarT vmStressTrial,
+const ScalarT* eqpsN,
+ScalarT* eqpsNP1,
+ScalarT* yieldStress,
+const double shearModulus,
 const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double pow_hmlgT_M,
+const double dt
 );
+
 }
 
-#endif // ELASTIC_PLASTIC_CORRESPONDENCE_H
+#endif // JOHNSONCOOK_H

@@ -134,12 +134,6 @@ namespace PeridigmNS {
     double m_B;
     double m_C;
     double m_M;
-    double m_D1;
-    double m_D2;
-    double m_D3;
-    double m_D4;
-    double m_D5;
-    double m_DC;
 
 
     // field spec ids for all relevant data
@@ -154,14 +148,12 @@ namespace PeridigmNS {
     int m_bondDamageFieldId;
     int m_surfaceCorrectionFactorFieldId;
     int m_deltaTemperatureFieldId;
-    int m_ElasticEnergyDensityFieldId;
     int m_microPotentialFieldId;
     int m_VonMisesStressFieldId;
     
     int m_deviatoricPlasticExtensionFieldId;
     int m_equivalentPlasticStrainFieldId;
-    int m_accumulatedPlasticStrainFieldId;
-    int m_LocalDamageFieldId;
+    int m_deviatoricForceDensityFieldId;
 
   };
 }

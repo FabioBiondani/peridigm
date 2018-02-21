@@ -86,7 +86,6 @@ namespace PeridigmNS {
 //                       PeridigmNS::DataManager& dataManager) const;
 
 
-
     //! Returns the requested material property
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
@@ -101,23 +100,14 @@ namespace PeridigmNS {
     double m_B;
     double m_C;
     double m_M;
-    double m_D1;
-    double m_D2;
-    double m_D3;
-    double m_D4;
-    double m_D5;
-    double m_DC;
 
     // field spec ids for all relevant data
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
-    int m_accumulatedPlasticStrainFieldId;
-    int m_LocalDamageFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
-    int m_DissipationFieldId;
   };
 }
 

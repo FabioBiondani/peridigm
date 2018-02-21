@@ -61,11 +61,12 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
     m_bulkModulus(0.0), m_shearModulus(0.0), m_alpha(0.0),  m_density(0.0), m_horizon(0.0),
     m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
+    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
     m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1), m_surfaceCorrectionFactorFieldId(-1),
     m_deltaTemperatureFieldId(-1),
-    m_ElasticEnergyDensityFieldId(-1),m_microPotentialFieldId(-1), m_VonMisesStressFieldId(-1),
-    m_deviatoricPlasticExtensionFieldId(-1),m_equivalentPlasticStrainFieldId(-1),m_accumulatedPlasticStrainFieldId(-1),m_LocalDamageFieldId(-1)
+    m_microPotentialFieldId(-1), m_VonMisesStressFieldId(-1),
+    m_deviatoricPlasticExtensionFieldId(-1),m_equivalentPlasticStrainFieldId(-1),m_deviatoricForceDensityFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);
@@ -82,13 +83,6 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   m_B  = params.get<double>("Constant B");
   m_C  = params.get<double>("Constant C");
   m_M  = params.get<double>("Constant M");
-  m_D1 = params.get<double>("Constant D1");
-  m_D2 = params.get<double>("Constant D2");
-  m_D3 = params.get<double>("Constant D3");
-  m_D4 = params.get<double>("Constant D4");
-  m_D5 = params.get<double>("Constant D5");
-  m_DC = params.get<double>("Constant DC");
-
   
 
   if(params.isParameter("Thermal Expansion Coefficient")){
@@ -113,17 +107,12 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   if(m_applyThermalStrains)
     m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature_Change");
 
-  m_ElasticEnergyDensityFieldId    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Elastic_Energy_Density");
   m_microPotentialFieldId    = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "MicroPotential");
   m_VonMisesStressFieldId                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Von_Mises_Stress");
 
   m_deviatoricPlasticExtensionFieldId              = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Deviatoric_Plastic_Extension");
   m_equivalentPlasticStrainFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
-  m_accumulatedPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Accumulated_Plastic_Strain");
-  m_LocalDamageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Local_Damage");
-
-
-  
+  m_deviatoricForceDensityFieldId              = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Deviatoric_Force_Density");
   
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_damageFieldId);
@@ -137,14 +126,12 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   if(m_applyThermalStrains)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
   
-  m_fieldIds.push_back(m_ElasticEnergyDensityFieldId);
   m_fieldIds.push_back(m_microPotentialFieldId);
   m_fieldIds.push_back(m_VonMisesStressFieldId);
   
   m_fieldIds.push_back(m_deviatoricPlasticExtensionFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
-  m_fieldIds.push_back(m_accumulatedPlasticStrainFieldId);
-  m_fieldIds.push_back(m_LocalDamageFieldId);
+  m_fieldIds.push_back(m_deviatoricForceDensityFieldId);
   
 }
 
@@ -188,7 +175,6 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
 {
   // Zero out the forces
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  dataManager.getData(m_ElasticEnergyDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_VonMisesStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
 
   // Extract pointers to the underlying data
@@ -206,22 +192,18 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   if(m_applyThermalStrains)
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
   
-  double *W, *muW_N, *muW_NP1, *sigmaVM;
+  double *muW_N, *muW_NP1, *sigmaVM;
   
-  dataManager.getData(m_ElasticEnergyDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&W);
   dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_N)->ExtractView(&muW_N);
   dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&muW_NP1);
   dataManager.getData(m_VonMisesStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&sigmaVM);
   
-  double *edN, *eqpsN, *dapsN, *DaN, *edNP1, *eqpsNP1, *dapsNP1, *DaNP1;
+  double *edN, *eqpsN, *edNP1, *eqpsNP1, *deviatoricForceDensity;
   dataManager.getData(m_deviatoricPlasticExtensionFieldId, PeridigmField::STEP_N)->ExtractView(&edN);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&eqpsN);
-  dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&dapsN);
-  dataManager.getData(m_LocalDamageFieldId, PeridigmField::STEP_N)->ExtractView(&DaN);
   dataManager.getData(m_deviatoricPlasticExtensionFieldId, PeridigmField::STEP_NP1)->ExtractView(&edNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&eqpsNP1);
-  dataManager.getData(m_accumulatedPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&dapsNP1);
-  dataManager.getData(m_LocalDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&DaNP1);
+  dataManager.getData(m_deviatoricForceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&deviatoricForceDensity);
 
 
   MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
@@ -236,23 +218,17 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       force,
       neighborhoodList,
       numOwnedPoints,
-      obj_bulkModulus,
-      obj_shearModulus,
-      obj_alphaVol,
-      m_horizon,
-      W,
-      muW_N,
-      muW_NP1,
       sigmaVM,
       edN,
       edNP1,
       eqpsN,
       eqpsNP1,
-      dapsN,
-      dapsNP1,
-      DaN,
-      DaNP1,
+      deviatoricForceDensity,
       deltaTemperature,
+      obj_bulkModulus,
+      obj_shearModulus,
+      obj_alphaVol,
+      m_horizon,
       dt,
       m_MeltingTemperature,
       m_ReferenceTemperature,
@@ -260,12 +236,6 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       m_N,
       m_B,
       m_C,
-      m_M,
-      m_D1,
-      m_D2,
-      m_D3,
-      m_D4,
-      m_D5,
-      m_DC
+      m_M
 );
 }

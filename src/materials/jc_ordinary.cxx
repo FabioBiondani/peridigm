@@ -138,9 +138,9 @@ const double constM
     ScalarT ed;
 
     const int *neighPtrOverLap = localNeighborList;
-    const ScalarT *edpN_OverLap = edpN;
-    ScalarT *edpNP1_OverLap = edpNP1;
-    ScalarT *td_OverLap = td;
+    const ScalarT *edpN_OverLap = deviatoricPlasticExtensionN;
+    ScalarT *edpNP1_OverLap = deviatoricPlasticExtensionNP1;
+    ScalarT *td_OverLap = deviatoricForceDensity;
     const double *bondDamageOverLap = bondDamage;
 
 
@@ -160,10 +160,11 @@ const double constM
 		alpha = 15.0*MU/(*m);
 		alpha *= (*scf);
 		double selfCellVolume = v[p];
-                
+
         Wd=0.0;
 		for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++){
             *edpNP1=*edpN;
+            
 
 			int localId = *neighPtr;
 			cellVolume = v[localId];
@@ -179,6 +180,8 @@ const double constM
             ed = e - *theta/3*zeta - *edpNP1; // deviatoric Extension
 
             *td = (1.0-*bondDamage)*(omega * alpha * ed);
+
+            if (*edpN/zeta>0.2) std::cout << *edpN << "  " << *edpNP1 << std::endl;
 
             // compute deviatoric energy density
             Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;

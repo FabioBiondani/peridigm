@@ -52,6 +52,7 @@
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
 #include "Peridigm_FakeDamageModel.hpp"
 #include "Peridigm_MeanLocalDamageModel.hpp"
+#include "Peridigm_MicropotentialDamageModel.hpp"
 
 using namespace std;
 
@@ -72,10 +73,12 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
   else if(damageModelName == "Mean Local Damage")
     damageModel = Teuchos::rcp( new MeanLocalDamageModel(damageModelParams) );
+  else if(damageModelName == "Mean Local Damage")
+    damageModel = Teuchos::rcp( new MicropotentialDamageModel(damageModelParams) );
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
-    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\" or \"Fake\".\n";
+    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Micropotential\" or \"Fake\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
   }
   

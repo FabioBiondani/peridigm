@@ -49,6 +49,7 @@
 
 #include <Sacado.hpp>
 #include <math.h>
+#include <JohnsonCook.h>
 
 
 namespace MATERIAL_EVALUATION {

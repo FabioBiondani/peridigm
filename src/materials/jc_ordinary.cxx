@@ -78,6 +78,7 @@ ScalarT* deviatoricPlasticExtensionNP1,
 const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
+ScalarT* bondForceDensity,
 const double* deltaTemperature,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
@@ -94,22 +95,22 @@ const double constM
 )
 {
 
-	/*
-	 * Compute processor local contribution to internal force
-	 */
-	double K = obj_bulkModulus.compute(0.0);
-	double MU = obj_shearModulus.compute(0.0);
+    /*
+     * Compute processor local contribution to internal force
+     */
+    double K = obj_bulkModulus.compute(0.0);
+    double MU = obj_shearModulus.compute(0.0);
     double thermalExpansionCoefficient;
     if(deltaTemperature) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
 
-	const double *xOwned = xOverlap;
-	const ScalarT *yOwned = yOverlap;
+    const double *xOwned = xOverlap;
+    const ScalarT *yOwned = yOverlap;
     const double *deltaT = deltaTemperature;
-	const double *m = mOwned;
-	const double *v = volumeOverlap;
+    const double *m = mOwned;
+    const double *v = volumeOverlap;
     const double *scf = scfOwned;
-	const ScalarT *theta = dilatationOwned;
-	ScalarT *fOwned = fInternalOverlap;
+    const ScalarT *theta = dilatationOwned;
+    ScalarT *fOwned = fInternalOverlap;
     
     ScalarT Wd;
     
@@ -154,29 +155,29 @@ const double constM
         }
         else hmlgT=0.0;
 
-		int numNeigh = *neighPtr; neighPtr++; neighPtrOverLap++;
-		const double *X = xOwned;
-		const ScalarT *Y = yOwned;
-		alpha = 15.0*MU/(*m);
-		alpha *= (*scf);
-		double selfCellVolume = v[p];
+        int numNeigh = *neighPtr; neighPtr++; neighPtrOverLap++;
+        const double *X = xOwned;
+        const ScalarT *Y = yOwned;
+        alpha = 15.0*MU/(*m);
+        alpha *= (*scf);
+        double selfCellVolume = v[p];
 
         Wd=0.0;
-		for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++){
+        for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++){
             *edpNP1=*edpN;
             
 
-			int localId = *neighPtr;
-			cellVolume = v[localId];
-			const double *XP = &xOverlap[3*localId];
-			const ScalarT *YP = &yOverlap[3*localId];
+            int localId = *neighPtr;
+            cellVolume = v[localId];
+            const double *XP = &xOverlap[3*localId];
+            const ScalarT *YP = &yOverlap[3*localId];
             X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
             zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
             Y_dx = YP[0]-Y[0];  Y_dy = YP[1]-Y[1];  Y_dz = YP[2]-Y[2];
             dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
             e = dY - zeta;
             if(deltaTemperature) e -= thermalExpansionCoefficient*(*deltaT)*zeta;
-			omega = scalarInfluenceFunction(zeta,horizon);
+            omega = scalarInfluenceFunction(zeta,horizon);
             ed = e - *theta/3*zeta - *edpNP1; // deviatoric Extension
 
             *td = (1.0-*bondDamage)*(omega * alpha * ed);
@@ -185,9 +186,9 @@ const double constM
 
             // compute deviatoric energy density
             Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;
-		}
+        }
 
-		vmStressTrial = sqrt(6*MU*Wd);
+        vmStressTrial = sqrt(6*MU*Wd);
         
         if ((hmlgT<0.) && (constM<1.)) pow_hmlgT_M=hmlgT;
         else pow_hmlgT_M=pow(hmlgT,constM);
@@ -284,7 +285,7 @@ const double constM
             
         }; // end if yield
 
-	}
+    }
 }
 
 /** Explicit template instantiation for double. */
@@ -306,6 +307,7 @@ double* deviatoricPlasticExtensionNP1,
 const double* EquivalentPlasticStrainN,
 double* EquivalentPlasticStrainNP1,
 double* deviatoricForceDensity,
+double* bondForceDensity,
 const double* deltaTemperature,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
@@ -340,6 +342,7 @@ Sacado::Fad::DFad<double>* deviatoricPlasticExtensionNP1,
 const Sacado::Fad::DFad<double>* EquivalentPlasticStrainN,
 Sacado::Fad::DFad<double>* EquivalentPlasticStrainNP1,
 Sacado::Fad::DFad<double>* deviatoricForceDensity,
+Sacado::Fad::DFad<double>* bondForceDensity,
 const double* deltaTemperature,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,

@@ -1,4 +1,4 @@
-/*! \file Peridigm_MicropotentialDamageModel.hpp */
+//! \file micropotential.cxx
 
 //@HEADER
 // ************************************************************************
@@ -45,71 +45,29 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_MICROPOTENTIALDAMAGEMODEL_HPP
-#define PERIDIGM_MICROPOTENTIALDAMAGEMODEL_HPP
 
-#include "Peridigm_DamageModel.hpp"
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Epetra_Vector.h>
-#include <Epetra_Map.h>
 
-namespace PeridigmNS {
+#include <Sacado.hpp>
+#include <math.h>
+#include <computeMicroPotential.h>
 
-  //! Base class defining the Peridigm damage model interface.
-  class MicropotentialDamageModel : public DamageModel{
+namespace MATERIAL_EVALUATION {
 
-  public:
-	
-    //! Standard constructor.
-    MicropotentialDamageModel(const Teuchos::ParameterList& params);
-
-    //! Destructor.
-    virtual ~MicropotentialDamageModel();
-
-    //! Return name of the model.
-    virtual std::string Name() const { return("Micropotential"); }
-
-    //! Returns a vector of field IDs corresponding to the variables associated with the model.
-    virtual std::vector<int> FieldIds() const { return m_fieldIds; }
-
-    //! Initialize the damage model.
-    virtual void
-    initialize(const double dt,
-               const int numOwnedPoints,
-               const int* ownedIDs,
-               const int* neighborhoodList,
-               PeridigmNS::DataManager& dataManager) const ;
-
-    //! Evaluate the damage
-    virtual void
-    computeDamage(const double dt,
-                  const int numOwnedPoints,
-                  const int* ownedIDs,
-                  const int* neighborhoodList,
-                  PeridigmNS::DataManager& dataManager) const ;
-
-  protected:
-
-	//! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
-	inline double distance(double a1, double a2, double a3,
-						   double b1, double b2, double b3) const
-	{
-	  return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
-	}
-
-    double m_criticalStretch;
-    double m_alpha;
-
-    // field ids for all relevant data
-    std::vector<int> m_fieldIds;
-    int m_modelCoordinatesFieldId;
-    int m_coordinatesFieldId;
-    int m_damageFieldId;
-    int m_bondDamageFieldId;
-    int m_deltaTemperatureFieldId;
-  };
-
+template<typename ScalarT>
+void computeMicroPotential
+(
+)
+{
 }
 
-#endif // PERIDIGM_MICROPOTENTIALDAMAGEMODEL_HPP
+// Explicit template instantiation for double
+template void computeMicroPotential<double>
+(
+);
+
+/* Explicit template instantiation for Sacado::Fad::DFad<double>. */
+template void computeMicroPotential<Sacado::Fad::DFad<double>>
+(
+);
+
+}

@@ -72,6 +72,7 @@ ScalarT* deviatoricPlasticExtensionNP1,
 const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
+ScalarT* bondForceDensity,
 const double* deltaTemperature,
  
 PeridigmNS::Material::BulkMod obj_bulkModulus,

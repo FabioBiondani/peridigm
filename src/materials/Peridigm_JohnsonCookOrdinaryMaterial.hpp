@@ -145,6 +145,7 @@ namespace PeridigmNS {
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
     int m_forceDensityFieldId;
+    int m_bondForceDensityFieldId;
     int m_bondDamageFieldId;
     int m_surfaceCorrectionFactorFieldId;
     int m_deltaTemperatureFieldId;

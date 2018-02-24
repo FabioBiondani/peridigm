@@ -51,13 +51,12 @@
 using namespace std;
 
 PeridigmNS::MicropotentialDamageModel::MicropotentialDamageModel(const Teuchos::ParameterList& params)
-  : DamageModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), /*m_bondsLeftFieldId(-1),*/ m_deltaTemperatureFieldId(-1)
+  : DamageModel(params), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1)
 {
   m_criticalStretch = params.get<double>("Critical Stretch");
 
   if(params.isParameter("Thermal Expansion Coefficient")){
     m_alpha = params.get<double>("Thermal Expansion Coefficient");
-    m_applyThermalStrains = true;
   }
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
@@ -65,19 +64,13 @@ PeridigmNS::MicropotentialDamageModel::MicropotentialDamageModel(const Teuchos::
   m_coordinatesFieldId = fieldManager.getFieldId("Coordinates");
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
-//   m_bondsLeftFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bonds_Left");
-  
-  
-  if(m_applyThermalStrains)
-    m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
+  m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
 
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
-//   m_fieldIds.push_back(m_bondsLeftFieldId);
-  if(m_applyThermalStrains)
-    m_fieldIds.push_back(m_deltaTemperatureFieldId);
+  m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
 PeridigmNS::MicropotentialDamageModel::~MicropotentialDamageModel()
@@ -94,7 +87,6 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
   double *damage, *bondDamage/*, *BondsLeft*/;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-//   dataManager.getData(m_bondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeft);
 
   // Initialize damage to zero
   int neighborhoodListIndex = 0;
@@ -104,7 +96,6 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
     damage[nodeID] = 0.0;
 	int numNeighbors = neighborhoodList[neighborhoodListIndex++];
     neighborhoodListIndex += numNeighbors;
-//     *BondsLeft = numNeighbors;
 	for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
       bondDamage[bondIndex++] = 0.0;
 	}
@@ -118,16 +109,13 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
                                                       const int* neighborhoodList,
                                                       PeridigmNS::DataManager& dataManager) const
 {
-  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature/*, *BondsLeftNP1*/;
+  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-//   dataManager.getData(m_bondsLeftFieldId, PeridigmField::STEP_NP1)->ExtractView(&BondsLeftNP1);
-  deltaTemperature = NULL;
-  if(m_applyThermalStrains)
-    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
+  dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
 
   double trialDamage(0.0);
   int neighborhoodListIndex(0), bondIndex(0);
@@ -158,8 +146,7 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
       currentDistance = 
         distance(nodeCurrentX[0], nodeCurrentX[1], nodeCurrentX[2],
                  y[neighborID*3], y[neighborID*3+1], y[neighborID*3+2]);
-      if(m_applyThermalStrains)
-        currentDistance -= m_alpha*deltaTemperature[nodeId]*initialDistance;
+      currentDistance -= m_alpha*deltaTemperature[nodeId]*initialDistance;
       relativeExtension = (currentDistance - initialDistance)/initialDistance;
       trialDamage = 0.0;
       if(relativeExtension > m_criticalStretch)

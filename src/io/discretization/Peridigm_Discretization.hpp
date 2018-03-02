@@ -157,6 +157,8 @@ namespace PeridigmNS {
     static Epetra_BlockMap getOverlapMap(const Epetra_Comm& comm, const QUICKGRID::Data& gridData, int ndf);
 
     void createBondFilters(const Teuchos::RCP<Teuchos::ParameterList>& params);
+    
+    void createSpecularPosNeighList(int numOwnedPoints,int* neighborhoodPtr ,int neighborListSize,int* neighborList,int* specularPosNeighList);
 
     //! Get the block id for a given block name
     int blockNameToBlockId(std::string blockName) const;

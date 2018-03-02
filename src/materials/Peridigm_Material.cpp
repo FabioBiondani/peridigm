@@ -568,7 +568,7 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
     else ConstStr = params.get<string>(ConstName);
   }else{
       ConstStr="0.0";
-      cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;
+//       cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;
 }
   
   rtcFunctionString = "value=" + ConstStr;

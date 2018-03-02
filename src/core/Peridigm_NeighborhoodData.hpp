@@ -55,16 +55,17 @@ class NeighborhoodData {
 public:
 
   NeighborhoodData() 
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0) {}
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), specularPosNeighList(0) {}
 
   NeighborhoodData(const NeighborhoodData& other)
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0)
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), specularPosNeighList(0)
   {
     SetNumOwned(other.NumOwnedPoints());
     SetNeighborhoodListSize(other.NeighborhoodListSize());
     memcpy(ownedIDs, other.ownedIDs, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodPtr, other.neighborhoodPtr, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodList, other.neighborhoodList, neighborhoodListSize*sizeof(int));
+    memcpy(specularPosNeighList, other.specularPosNeighList, (neighborhoodListSize-numOwnedPoints)*sizeof(int));
   }
 
   ~NeighborhoodData(){
@@ -74,6 +75,8 @@ public:
 	  delete[] neighborhoodList;
     if(neighborhoodPtr != 0)
       delete[] neighborhoodPtr;
+    if(specularPosNeighList != 0)
+      delete[] specularPosNeighList;
   }
 
   void SetNumOwned(int numOwned){
@@ -91,6 +94,12 @@ public:
 	if(neighborhoodList != 0)
 	  delete[] neighborhoodList;
 	neighborhoodList = new int[neighborhoodListSize];
+  }
+
+  void SetSpecularPosNeighListSize(){
+	if(specularPosNeighList != 0)
+	  delete[] specularPosNeighList;
+	specularPosNeighList = new int[ neighborhoodListSize-numOwnedPoints];
   }
 
   int NumOwnedPoints() const{
@@ -112,10 +121,15 @@ public:
   int* NeighborhoodList() const{
 	return neighborhoodList;
   }
+  
+  int* SpecularPosNeighList() const{
+	return specularPosNeighList;
+  }
+  
 
   double memorySize() const{
     int sizeInBytes =
-      (2*numOwnedPoints + neighborhoodListSize + 2)*sizeof(int) + 3*sizeof(int*);
+      ( numOwnedPoints + 2*neighborhoodListSize + 2 )*sizeof(int) + 3*sizeof(int*);
     double sizeInMegabytes = sizeInBytes/1048576.0;
     return sizeInMegabytes;
   }
@@ -126,6 +140,7 @@ protected:
   int neighborhoodListSize;
   int* neighborhoodList;
   int* neighborhoodPtr;
+  int* specularPosNeighList;
 };
 
 }

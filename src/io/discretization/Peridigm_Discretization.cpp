@@ -183,28 +183,30 @@ void PeridigmNS::Discretization::createSpecularPosNeighList(int numOwnedPoints,i
     
   int ID=-1;
   int k=0;
-  for(int i=0 ; i<neighborListSize ; ++i){
-      std::cout << i << "  " << *(neighborList+i) << std::endl;
-//       cout << (ID<numOwnedPoints) << " " << (i==neighborhoodPtr[ID+1]) << endl;
+  int i=0;
+  while( i<neighborListSize ){
+//       std::cout << i << "  " << *(neighborList+i) << std::endl;
+//       std::cout << (ID<numOwnedPoints) << " " << (i==neighborhoodPtr[ID+1]) << std::endl;
       if ((ID<numOwnedPoints) && (i==*(neighborhoodPtr+ID+1))) {
           ++ID;
-          std::cout << "ID:  " << ID << std::endl;
+//           std::cout << "ID:  " << ID << std::endl;
       } else {
           int NeighPtr = *(neighborhoodPtr+ *(neighborList+i));
-          std::cout << "NP:    " << NeighPtr << std::endl;
+//           std::cout << "NP:    " << NeighPtr << std::endl;
           int j=1; int m=0;
           while (m==0) {
               if (j==(*(neighborhoodPtr+ *(neighborList+i)+1)-NeighPtr)){
                   break;
-                  std::cout << "Pointer to specular node not found" << std::endl;
+//                   std::cout << "Pointer to specular node not found" << std::endl;
               } else if (*(neighborList+NeighPtr+j)==ID){
                   m=1;
                   *(specularPosNeighList+k)=NeighPtr+j;
                   ++k;
-                  std::cout << "SPNL:    " << NeighPtr+j << std::endl;
+//                   std::cout << "SPNL:    " << NeighPtr+j << std::endl;
               } else ++j;
           }
       }
+      ++i;
   }
 
 }

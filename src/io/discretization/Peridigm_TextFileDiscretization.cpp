@@ -366,6 +366,8 @@ PeridigmNS::TextFileDiscretization::createMaps(const QUICKGRID::Data& decomp)
 void
 PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data& decomp)
 {
+   vector<int> vecSpecularPosNeighList(decomp.sizeNeighborhoodList-decomp.numPoints);
+
    neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
    neighborhoodData->SetNumOwned(decomp.numPoints);
    memcpy(neighborhoodData->OwnedIDs(), 
@@ -379,6 +381,9 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
  		 Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.sizeNeighborhoodList*sizeof(int));
    neighborhoodData = filterBonds(neighborhoodData);
+   neighborhoodData->SetSpecularPosNeighListSize();
+   createSpecularPosNeighList(decomp.numPoints,decomp.neighborhoodPtr.get(),decomp.sizeNeighborhoodList, Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(), &vecSpecularPosNeighList[0]);
+   memcpy(neighborhoodData->SpecularPosNeighList(), &vecSpecularPosNeighList[0], (decomp.sizeNeighborhoodList-decomp.numPoints)*sizeof(int));
 }
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData>

@@ -126,6 +126,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     contactForceDensityFieldId(-1),
     externalForceDensityFieldId(-1),
     partialVolumeFieldId(-1),
+    specularBondPositionFieldId(-1),
     fluidPressureYFieldId(-1),
     fluidPressureUFieldId(-1),
     fluidPressureVFieldId(-1),
@@ -339,8 +340,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   contactForceDensityFieldId         = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Contact_Force_Density");
   externalForceDensityFieldId        = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "External_Force_Density");
 
+  // Specular bond position field id
+  specularBondPositionFieldId        = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Specular_Bond_Position");
+
   // Create field ids that may be required for output
   fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Proc_Num");
+
 
   // Instantiate the contact manager
   Teuchos::ParameterList contactParams;
@@ -495,6 +500,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   auxiliaryFieldIds.push_back(displacementFieldId);
   auxiliaryFieldIds.push_back(velocityFieldId);
   auxiliaryFieldIds.push_back(externalForceDensityFieldId);
+  auxiliaryFieldIds.push_back(specularBondPositionFieldId);
   if(analysisHasContact)
     auxiliaryFieldIds.push_back(contactForceDensityFieldId);
   if(analysisHasMultiphysics) {
@@ -549,16 +555,24 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   Epetra_Vector elementIds(*(peridigmDiscretization->getCellVolume()));
   for(int i=0 ; i<elementIds.MyLength() ; ++i)
     elementIds[i] = elementIds.Map().GID(i);
+  
+  // Create a temporary vector for storing the specular bond positions
+  Epetra_Vector vecSpecularPosNeighList(*bondMap);
+  for(int i=0 ; i<vecSpecularPosNeighList.MyLength() ; ++i)
+    vecSpecularPosNeighList[i] = *(globalNeighborhoodData->SpecularPosNeighList() + i);
+  
 
   // Load initial data into the blocks
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-    blockIt->importData(*(peridigmDiscretization->getBlockID()),    blockIdFieldId,          PeridigmField::STEP_NONE, Insert);
-    blockIt->importData(*(peridigmDiscretization->getHorizon()),    horizonFieldId,          PeridigmField::STEP_NONE, Insert);
-    blockIt->importData(*(peridigmDiscretization->getCellVolume()), volumeFieldId,           PeridigmField::STEP_NONE, Insert);
-    blockIt->importData(*(peridigmDiscretization->getInitialX()),   modelCoordinatesFieldId, PeridigmField::STEP_NONE, Insert);
-    blockIt->importData(*(peridigmDiscretization->getInitialX()),   coordinatesFieldId,      PeridigmField::STEP_N,    Insert);
-    blockIt->importData(*(peridigmDiscretization->getInitialX()),   coordinatesFieldId,      PeridigmField::STEP_NP1,  Insert);
-    blockIt->importData(elementIds,                                 elementIdFieldId,        PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(*(peridigmDiscretization->getBlockID()),     blockIdFieldId,              PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(*(peridigmDiscretization->getHorizon()),     horizonFieldId,              PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(*(peridigmDiscretization->getCellVolume()),  volumeFieldId,               PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(*(peridigmDiscretization->getInitialX()),    modelCoordinatesFieldId,     PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(*(peridigmDiscretization->getInitialX()),    coordinatesFieldId,          PeridigmField::STEP_N,    Insert);
+    blockIt->importData(*(peridigmDiscretization->getInitialX()),    coordinatesFieldId,          PeridigmField::STEP_NP1,  Insert);
+    blockIt->importData(elementIds,                                  elementIdFieldId,            PeridigmField::STEP_NONE, Insert);
+    
+    blockIt->importData(vecSpecularPosNeighList,                     specularBondPositionFieldId, PeridigmField::STEP_NONE, Insert);
 
 		if(analysisHasMultiphysics){
 			scratchOneD->PutScalar(0.0);

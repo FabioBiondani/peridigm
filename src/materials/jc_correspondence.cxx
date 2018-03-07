@@ -82,7 +82,9 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double* specularBondPosition,
+const double* elementId
 )
 {
     const ScalarT* rateOfDef = unrotatedRateOfDeformation;
@@ -283,7 +285,9 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double* specularBondPosition,
+const double* elementId
 );
 
 /* Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -308,7 +312,9 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double* specularBondPosition,
+const double* elementId
 );
 
 }

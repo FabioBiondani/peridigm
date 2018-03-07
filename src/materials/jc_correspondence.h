@@ -72,7 +72,9 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double* specularBondPosition,
+const double* elementId
 );
 }
 

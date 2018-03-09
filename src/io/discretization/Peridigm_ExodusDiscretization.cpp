@@ -713,7 +713,6 @@ PeridigmNS::ExodusDiscretization::createNeighborhoodData(int neighborListSize, i
 
    vector<int> ownedLocalIds(numOwnedIds);
    vector<int> neighborhoodPtr(numOwnedIds);
-   vector<int> vecSpecularPosNeighList(neighborListSize-numOwnedIds);
 
    int numNeighbors(0), neighborListIndex(0);
    for(int i=0 ; i<numOwnedIds ; ++i){
@@ -730,9 +729,6 @@ PeridigmNS::ExodusDiscretization::createNeighborhoodData(int neighborListSize, i
    neighborhoodData->SetNeighborhoodListSize(neighborListSize);
    memcpy(neighborhoodData->NeighborhoodList(), neighborList, neighborListSize*sizeof(int));
    neighborhoodData = filterBonds(neighborhoodData);
-   neighborhoodData->SetSpecularPosNeighListSize();
-   createSpecularPosNeighList(numOwnedIds,&neighborhoodPtr[0],neighborListSize, neighborList, &vecSpecularPosNeighList[0]);
-   memcpy(neighborhoodData->SpecularPosNeighList(), &vecSpecularPosNeighList[0], (neighborListSize-numOwnedIds)*sizeof(int));
 }
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData>

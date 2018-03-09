@@ -1,4 +1,4 @@
-/*! \file Peridigm_NeighborhoodData.hpp */
+//! \file Peridigm_SpecularBondPosition.hpp
 
 //@HEADER
 // ************************************************************************
@@ -45,89 +45,26 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_NEIGHBORHOODDATA_HPP
-#define PERIDIGM_NEIGHBORHOODDATA_HPP
+#ifndef PERIDIGM_SPECULARBONDPOSITION_HPP
+#define PERIDIGM_SPECULARBONDPOSITION_HPP
 
 namespace PeridigmNS {
 
-class NeighborhoodData {
+  class SpecularBondPosition{
+  public:
+    int* specularPosNeighList ;
 
-public:
+	//! Constructor.
+    SpecularBondPosition(int numOwnedPoints,int* neighborhoodPtr ,int neighborListSize,int* neighborList);
 
-  NeighborhoodData() 
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0) {}
+    //! Destructor.
+    ~SpecularBondPosition(){};
 
-  NeighborhoodData(const NeighborhoodData& other)
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0)
-  {
-    SetNumOwned(other.NumOwnedPoints());
-    SetNeighborhoodListSize(other.NeighborhoodListSize());
-    memcpy(ownedIDs, other.ownedIDs, numOwnedPoints*sizeof(int));
-    memcpy(neighborhoodPtr, other.neighborhoodPtr, numOwnedPoints*sizeof(int));
-    memcpy(neighborhoodList, other.neighborhoodList, neighborhoodListSize*sizeof(int));
-  }
+    int* getPtr(){return specularPosNeighList;};
 
-  ~NeighborhoodData(){
-	if(ownedIDs != 0)
-	  delete[] ownedIDs;
-	if(neighborhoodList != 0)
-	  delete[] neighborhoodList;
-    if(neighborhoodPtr != 0)
-      delete[] neighborhoodPtr;
-  }
+  protected:
 
-  void SetNumOwned(int numOwned){
-	numOwnedPoints = numOwned;
-	if(ownedIDs != 0)
-	  delete[] ownedIDs;
-	ownedIDs = new int[numOwned];
-    if(neighborhoodPtr != 0)
-      delete[] neighborhoodPtr;
-    neighborhoodPtr = new int[numOwned];
-  }
-
-  void SetNeighborhoodListSize(int neighborhoodSize){
-	neighborhoodListSize = neighborhoodSize;
-	if(neighborhoodList != 0)
-	  delete[] neighborhoodList;
-	neighborhoodList = new int[neighborhoodListSize];
-  }
-
-  int NumOwnedPoints() const{
-	return numOwnedPoints;
-  }
-
-  int* OwnedIDs() const{
-	return ownedIDs;
-  }
-
-  int* NeighborhoodPtr() const{
-	return neighborhoodPtr;
-  }
-
-  int NeighborhoodListSize() const{
-	return neighborhoodListSize;
-  }
-
-  int* NeighborhoodList() const{
-	return neighborhoodList;
-  }
-
-  double memorySize() const{
-    int sizeInBytes =
-      (2*numOwnedPoints + neighborhoodListSize + 2)*sizeof(int) + 3*sizeof(int*);
-    double sizeInMegabytes = sizeInBytes/1048576.0;
-    return sizeInMegabytes;
-  }
-
-protected:
-  int numOwnedPoints;
-  int* ownedIDs;
-  int neighborhoodListSize;
-  int* neighborhoodList;
-  int* neighborhoodPtr;
-};
-
+  };
 }
 
-#endif // PERIDIGM_NEIGHBORHOODDATA_HPP
+#endif // PERIDIGM_SPECULARBONDPOSITION_HPP

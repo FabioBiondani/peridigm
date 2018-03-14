@@ -273,7 +273,6 @@ Array<int> NeighborhoodList::createLocalNeighborList(const Epetra_BlockMap& over
 		for(int n=1;n<=numNeigh;n++){
 			int gid = neigh[ptr+n];
 			int localId = overlapMap.LID(gid);
-            std::cout << "p " << *(owned_gids.get()+p) << " | LID " << localId << " | GID " << gid << std::endl;
 			localNeig[ptr+n] = localId;
 		}
 	}

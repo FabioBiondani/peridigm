@@ -641,9 +641,6 @@ namespace PeridigmNS {
     int externalForceDensityFieldId;
     int partialVolumeFieldId;
 
-    int bondIdFieldId;
-    int specularBondPositionFieldId;
-
     // multiphyics information
     int fluidPressureYFieldId;
     int fluidPressureUFieldId;

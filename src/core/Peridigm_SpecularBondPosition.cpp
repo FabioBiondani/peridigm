@@ -46,38 +46,92 @@
 //@HEADER
 
 #include "Peridigm_SpecularBondPosition.hpp"
+#include <vector>
+#include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
+#include <Epetra_Vector.h>
+#include <Epetra_Import.h>
+#include <Epetra_MpiComm.h>
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Ionit_Initializer.h>
 #include <iostream>
 
-PeridigmNS::SpecularBondPosition::SpecularBondPosition(int numOwnedPoints,int* neighborhoodPtr ,int neighborListSize,int* neighborList){
-  
-  specularPosNeighList = new int[neighborListSize-numOwnedPoints];
-  int ID=-1;
-  int k=0;
-  int i=0;
-  while( i<neighborListSize ){
-//       std::cout << i << "  " << *(neighborList+i) << std::endl;
-//       std::cout << (ID<numOwnedPoints) << " " << (i==neighborhoodPtr[ID+1]) << std::endl;
-      if ((ID<numOwnedPoints) && (i==*(neighborhoodPtr+ID+1))) {
-          ++ID;
-//           std::cout << "ID:  " << ID << std::endl;
-      } else {
-          int NeighPtr = *(neighborhoodPtr+ *(neighborList+i));
-//           std::cout << "NP:    " << NeighPtr << std::endl;
-          int j=1; int m=0;
-          while (m==0) {
-              if (j==(*(neighborhoodPtr+ *(neighborList+i)+1)-NeighPtr)){
-                  break;
-                  std::cout << "Pointer to specular node not found" << std::endl;
-              } else if (*(neighborList+NeighPtr+j)==ID){
-                  m=1;
-                  *(specularPosNeighList+k)=NeighPtr+j-*(neighborList+i)-1;
-                  ++k;
-//                   std::cout << "SPNL:    " << NeighPtr+j-*(neighborList+i)-1 << std::endl;
-              } else ++j;
-          }
-      }
-      ++i;
-  }
+using namespace std;
+
+PeridigmNS::SpecularBondPosition::SpecularBondPosition(const Teuchos::RCP<const Epetra_Comm>& comm, Teuchos::RCP<const Epetra_BlockMap> map1D, Teuchos::RCP<const Epetra_BlockMap> map1Doverlap, Teuchos::RCP<const Epetra_BlockMap> bondMap, int neighborListSize,int* neighborList){
+
+    // vector of number of neighbors
+    Epetra_Vector numNeigh(*map1D);
+    double* numNeighPtr;
+    numNeigh.ExtractView(&numNeighPtr);
+    int i=0;
+    while (  i<neighborListSize ){
+        *(numNeighPtr++)+= *(neighborList+i);
+        i+= *(neighborList+i)+1;
+    }
+
+    // vector of number of neighbors with ghosted points
+    Epetra_Import importerMap1D(*map1Doverlap,*map1D);
+    Epetra_Vector numNeighOverlap(*map1Doverlap);
+    numNeighOverlap.Import(numNeigh,importerMap1D,Insert);
+
+    // create bondMap with ghosted points
+    int* elementSizeList  = new int[map1Doverlap->NumMyElements()];
+    int* myGlobalElements = new int[map1Doverlap->NumMyElements()];
+    for(int i=0;i<map1Doverlap->NumMyElements();++i){
+        *(elementSizeList+i)  = numNeighOverlap[i];
+        *(myGlobalElements+i) = map1Doverlap->GID(i);
+    }
+
+    bondMapOverlap = Teuchos::rcp(new Epetra_BlockMap(-1, map1Doverlap->NumMyElements(), myGlobalElements, elementSizeList, 0, *comm));
+    delete[] myGlobalElements;
+    delete[] elementSizeList;
+
+    // 
+    Epetra_Vector NeighborsGID(*bondMap);
+    int j=0;
+    for (int i=0;i<map1D->NumMyElements();++i,++j){
+        int numNeigh_i = numNeigh[i];
+        for(int k=0;k<numNeigh_i;++k,++j){
+            NeighborsGID[j-i]=map1Doverlap->GID( *(neighborList+j+1) );
+        }
+    }
+
+    //
+    Epetra_Import importerBondMap(*bondMapOverlap,*bondMap);
+    NeighborsGIDoverlap = Teuchos::rcp(new Epetra_Vector(*bondMapOverlap));
+    NeighborsGIDoverlap->Import(NeighborsGID,importerBondMap,Insert);
+//     cout << NeighborsGIDoverlap << endl;
+
+    //
+    specularBondPos = Teuchos::rcp(new Epetra_Vector(*bondMap));
+    double* specularBondPosPtr;
+    specularBondPos->ExtractView(&specularBondPosPtr);
+    double* NeighborsGIDoverlapPtr;
+    NeighborsGIDoverlap->ExtractView(&NeighborsGIDoverlapPtr);
+    int GID1;
+    for (int i=0;i<(neighborListSize-map1D->NumMyElements());++i){
+        for(int j=0;j<map1D->NumMyElements();++j){
+            if (i>=bondMap->FirstPointInElement(j)) {
+                GID1 = map1D->GID(j);
+                continue;
+            }
+        }
+        int GID2 = NeighborsGID[i];
+        int LID2 = map1Doverlap->LID(GID2);
+        int numNeighborsSpecularPoint = numNeighOverlap[LID2];
+        int firstpoint = bondMapOverlap->FirstPointInElement(LID2);
+        for (int j=0;j<numNeighborsSpecularPoint;++j){
+            if (*(NeighborsGIDoverlapPtr+j)==GID1){
+                *(specularBondPosPtr+i) = firstpoint+j;
+                continue;
+            }
+        }
+    }
+//     cout << *specularBondPos << endl;
 
 }
 

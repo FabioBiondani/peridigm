@@ -128,8 +128,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     contactForceDensityFieldId(-1),
     externalForceDensityFieldId(-1),
     partialVolumeFieldId(-1),
-    bondIdFieldId(-1),
-    specularBondPositionFieldId(-1),
     fluidPressureYFieldId(-1),
     fluidPressureUFieldId(-1),
     fluidPressureVFieldId(-1),
@@ -251,8 +249,10 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   initializeDiscretization(peridigmDiscretization);
 
   // obtain the specular bond positions list
-  SpecularBondPosition SpecularBondPosObject(globalNeighborhoodData->NumOwnedPoints(),globalNeighborhoodData->NeighborhoodPtr(),globalNeighborhoodData->NeighborhoodListSize(),globalNeighborhoodData->NeighborhoodList());
-
+  SpecularBondPosition SpecularBondPosObject(peridigmComm,oneDimensionalMap,oneDimensionalOverlapMap,bondMap,globalNeighborhoodData->NeighborhoodListSize(),globalNeighborhoodData->NeighborhoodList());
+  
+  Teuchos::RCP<Epetra_BlockMap> bondMapOverlap = SpecularBondPosObject.getBondMapOverlap();
+  Teuchos::RCP<Epetra_Vector>   NeighborsGID   = SpecularBondPosObject.getNeighborGID();
 
   // Create a list containing parameters for each solver
   for (Teuchos::ParameterList::ConstIterator it = peridigmParams->begin(); it != peridigmParams->end(); ++it) {
@@ -346,10 +346,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   forceDensityFieldId                = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
   contactForceDensityFieldId         = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Contact_Force_Density");
   externalForceDensityFieldId        = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "External_Force_Density");
-
-  // Specular bond position field id
-  bondIdFieldId                      = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Bond_Id");
-  specularBondPositionFieldId        = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Specular_Bond_Position");
 
   // Create field ids that may be required for output
   fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Proc_Num");
@@ -508,8 +504,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   auxiliaryFieldIds.push_back(displacementFieldId);
   auxiliaryFieldIds.push_back(velocityFieldId);
   auxiliaryFieldIds.push_back(externalForceDensityFieldId);
-  auxiliaryFieldIds.push_back(specularBondPositionFieldId);
-  auxiliaryFieldIds.push_back(bondIdFieldId);
   if(analysisHasContact)
     auxiliaryFieldIds.push_back(contactForceDensityFieldId);
   if(analysisHasMultiphysics) {
@@ -565,19 +559,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   for(int i=0 ; i<elementIds.MyLength() ; ++i)
     elementIds[i] = elementIds.Map().GID(i);
 
-  // Create a temporary vector for storing the global element ids
-  Epetra_Vector bondIds(*bondMap);
-  for(int i=0 ; i<bondIds.MyLength() ; ++i)
-    bondIds[i] = bondIds.Map().GID(i);
-  
-  // Create a temporary vector for storing the specular bond positions
-  Epetra_Vector vecSpecularPosNeighList(*bondMap);
-  int* SpecularBondPosPtr = SpecularBondPosObject.getPtr();
-  for(int i=0 ; i<vecSpecularPosNeighList.MyLength() ; ++i){
-    vecSpecularPosNeighList[i] = *(SpecularBondPosPtr + i);
-    cout << *(SpecularBondPosPtr + i) << endl;
-  }
-
   // Load initial data into the blocks
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
     blockIt->importData(*(peridigmDiscretization->getBlockID()),     blockIdFieldId,              PeridigmField::STEP_NONE, Insert);
@@ -588,9 +569,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     blockIt->importData(*(peridigmDiscretization->getInitialX()),    coordinatesFieldId,          PeridigmField::STEP_NP1,  Insert);
     blockIt->importData(elementIds,                                  elementIdFieldId,            PeridigmField::STEP_NONE, Insert);
     
-    blockIt->importData(bondIds,                                     bondIdFieldId,               PeridigmField::STEP_NONE, Insert);
-    blockIt->importData(vecSpecularPosNeighList,                     specularBondPositionFieldId, PeridigmField::STEP_NONE, Insert);
-
 		if(analysisHasMultiphysics){
 			scratchOneD->PutScalar(0.0);
 			blockIt->importData(*scratchOneD, fluidPressureYFieldId, PeridigmField::STEP_N, Insert);
@@ -903,9 +881,6 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   // bondConstitutiveDataMap
   // a non-overlapping map used for storing constitutive data on bonds
   bondMap = peridigmDisc->getGlobalBondMap();
-
-  cout << "BOND MAP" << *bondMap << endl;
-
 
   // Create mothership vectors
 

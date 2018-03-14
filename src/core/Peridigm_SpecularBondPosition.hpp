@@ -48,19 +48,28 @@
 #ifndef PERIDIGM_SPECULARBONDPOSITION_HPP
 #define PERIDIGM_SPECULARBONDPOSITION_HPP
 
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+
 namespace PeridigmNS {
 
   class SpecularBondPosition{
   public:
-    int* specularPosNeighList ;
+    Teuchos::RCP<Epetra_BlockMap> bondMapOverlap;
+    Teuchos::RCP<Epetra_Vector> specularBondPos;
+    Teuchos::RCP<Epetra_Vector> NeighborsGIDoverlap;
 
 	//! Constructor.
-    SpecularBondPosition(int numOwnedPoints,int* neighborhoodPtr ,int neighborListSize,int* neighborList);
+    SpecularBondPosition(const Teuchos::RCP<const Epetra_Comm>& comm, Teuchos::RCP<const Epetra_BlockMap> map1D, Teuchos::RCP<const Epetra_BlockMap> map1Doverlap, Teuchos::RCP<const Epetra_BlockMap> bondMap, int neighborListSize,int* neighborList);
 
     //! Destructor.
     ~SpecularBondPosition(){};
 
-    int* getPtr(){return specularPosNeighList;};
+    Teuchos::RCP<Epetra_Vector> get(){return specularBondPos;};
+    Teuchos::RCP<Epetra_Vector> getNeighborGID(){return NeighborsGIDoverlap;};
+    Teuchos::RCP<Epetra_BlockMap> getBondMapOverlap(){return bondMapOverlap;};
 
   protected:
 

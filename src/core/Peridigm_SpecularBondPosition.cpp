@@ -105,33 +105,34 @@ PeridigmNS::SpecularBondPosition::SpecularBondPosition(const Teuchos::RCP<const 
     NeighborsGIDoverlap = Teuchos::rcp(new Epetra_Vector(*bondMapOverlap));
     NeighborsGIDoverlap->Import(NeighborsGID,importerBondMap,Insert);
 //     cout << NeighborsGIDoverlap << endl;
-
-    //
-    specularBondPos = Teuchos::rcp(new Epetra_Vector(*bondMap));
-    double* specularBondPosPtr;
-    specularBondPos->ExtractView(&specularBondPosPtr);
-    double* NeighborsGIDoverlapPtr;
-    NeighborsGIDoverlap->ExtractView(&NeighborsGIDoverlapPtr);
-    int GID1;
-    for (int i=0;i<(neighborListSize-map1D->NumMyElements());++i){
-        for(int j=0;j<map1D->NumMyElements();++j){
-            if (i>=bondMap->FirstPointInElement(j)) {
-                GID1 = map1D->GID(j);
-                continue;
-            }
-        }
-        int GID2 = NeighborsGID[i];
-        int LID2 = map1Doverlap->LID(GID2);
-        int numNeighborsSpecularPoint = numNeighOverlap[LID2];
-        int firstpoint = bondMapOverlap->FirstPointInElement(LID2);
-        for (int j=0;j<numNeighborsSpecularPoint;++j){
-            if (*(NeighborsGIDoverlapPtr+j)==GID1){
-                *(specularBondPosPtr+i) = firstpoint+j;
-                continue;
-            }
-        }
-    }
-//     cout << *specularBondPos << endl;
-
 }
+// // // /*
+// // //     //
+// // //     specularBondPos = Teuchos::rcp(new Epetra_Vector(*bondMap));
+// // //     double* specularBondPosPtr;
+// // //     specularBondPos->ExtractView(&specularBondPosPtr);
+// // //     double* NeighborsGIDoverlapPtr;
+// // //     NeighborsGIDoverlap->ExtractView(&NeighborsGIDoverlapPtr);
+// // //     int GID1;
+// // //     for (int i=0;i<(neighborListSize-map1D->NumMyElements());++i){
+// // //         for(int j=0;j<map1D->NumMyElements();++j){
+// // //             if (i>=bondMap->FirstPointInElement(j)) {
+// // //                 GID1 = map1D->GID(j);
+// // //                 continue;
+// // //             }
+// // //         }
+// // //         int GID2 = NeighborsGID[i];
+// // //         int LID2 = map1Doverlap->LID(GID2);
+// // //         int numNeighborsSpecularPoint = numNeighOverlap[LID2];
+// // //         int firstpoint = bondMapOverlap->FirstPointInElement(LID2);
+// // //         for (int j=0;j<numNeighborsSpecularPoint;++j){
+// // //             if (*(NeighborsGIDoverlapPtr+j)==GID1){
+// // //                 *(specularBondPosPtr+i) = firstpoint+j;
+// // //                 continue;
+// // //             }
+// // //         }
+// // //     }
+// // // //     cout << *specularBondPos << endl;
+// // // 
+// // // }*/
 

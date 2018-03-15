@@ -95,6 +95,9 @@ namespace PeridigmNS {
      *   a non-overlapping map. */
     virtual Teuchos::RCP<const Epetra_BlockMap> getGlobalBondMap() const = 0;
 
+    /** \brief Bond map, used for constitutive data stored on each bond. overlapping map. */
+    virtual Teuchos::RCP<const Epetra_BlockMap> getGlobalBondOverlapMap() const = 0;
+
     //! Get initial positions
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const = 0;
 

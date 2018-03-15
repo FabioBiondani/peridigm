@@ -78,6 +78,9 @@ namespace PeridigmNS {
     //! Bond map, used for constitutive data stored on each bond. This is a non-overlapping map.
     virtual Teuchos::RCP<const Epetra_BlockMap> getGlobalBondMap() const;
 
+    //! Bond map, used for constitutive data stored on each bond. overlapping map.
+    virtual Teuchos::RCP<const Epetra_BlockMap> getGlobalBondOverlapMap() const;
+
     //! Get initial positions
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
 
@@ -121,6 +124,9 @@ namespace PeridigmNS {
 
     //! Get the node positions in the original Exodus hex/tet mesh.
     virtual void getExodusMeshNodePositions(int globalNodeID, std::vector<double>& nodePositions);
+
+    //!
+    void createBondOverlapMapAndNeighborsGIDoverlap(int neighborListSize,int* neighborList);
 
   private:
 
@@ -178,6 +184,10 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalMap;
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalOverlapMap;
     Teuchos::RCP<Epetra_BlockMap> bondMap;
+    Teuchos::RCP<Epetra_BlockMap> bondOverlapMap;
+
+    //! vector of neighbors' GID, on bondOverlapMap;
+    Teuchos::RCP<Epetra_Vector> NeighborsGIDoverlap;
 
     //! Minimum element radius
     double minElementRadius;

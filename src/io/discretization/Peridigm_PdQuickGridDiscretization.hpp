@@ -80,6 +80,9 @@ namespace PeridigmNS {
     //! Bond map, used for constitutive data stored on each bond. This is a non-overlapping map.
     virtual Teuchos::RCP<const Epetra_BlockMap> getGlobalBondMap() const;
 
+    //! Bond map, used for constitutive data stored on each bond. overlapping map.
+    virtual Teuchos::RCP<const Epetra_BlockMap> getGlobalBondOverlapMap() const;
+
     //! Get initial positions
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
 
@@ -119,6 +122,9 @@ namespace PeridigmNS {
     //! Get the maximum element dimension (for example the diagonal of a hex element, used for partial volume neighbor search).
     virtual double getMaxElementDimension() const { return maxElementDimension; }
 
+    //!
+    void createBondOverlapMapAndNeighborsGIDoverlap(int neighborListSize,int* neighborList);
+
   private:
 
     //! Private to prohibit copying
@@ -147,6 +153,10 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalMap;
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalOverlapMap;
     Teuchos::RCP<Epetra_BlockMap> bondMap;
+    Teuchos::RCP<Epetra_BlockMap> bondOverlapMap;
+
+    //! vector of neighbors' GID, on bondOverlapMap;
+    Teuchos::RCP<Epetra_Vector> NeighborsGIDoverlap;
 
     //! Minimum element radius
     double minElementRadius;

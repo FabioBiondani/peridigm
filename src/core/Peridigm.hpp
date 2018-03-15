@@ -82,7 +82,6 @@
 #include "Peridigm_Material.hpp"
 #include "Peridigm_DamageModel.hpp"
 #include "Peridigm_ContactModel.hpp"
-#include "Peridigm_SpecularBondPosition.hpp"
 
 namespace PeridigmNS {
 
@@ -398,6 +397,7 @@ namespace PeridigmNS {
     Teuchos::RCP<const Epetra_BlockMap> threeDimensionalMap;
     Teuchos::RCP<const Epetra_BlockMap> nDimensionalMap;
     Teuchos::RCP<const Epetra_BlockMap> bondMap;
+    Teuchos::RCP<const Epetra_BlockMap> bondOverlapMap;
     Teuchos::RCP<const Epetra_BlockMap> oneDimensionalOverlapMap;
 
     //! Global current time
@@ -597,9 +597,6 @@ namespace PeridigmNS {
 
     //! List of neighbors for all locally-owned nodes
     Teuchos::RCP<PeridigmNS::NeighborhoodData> globalNeighborhoodData;
-
-    //! List of neighbors for all locally-owned nodes
-    Teuchos::RCP<PeridigmNS::SpecularBondPosition> SpecularBondPosObject;
 
     // information about internal interfaces in the domain
     Teuchos::RCP<PeridigmNS::InterfaceData> interfaceData;

@@ -83,8 +83,6 @@
   #include "Peridigm_PartialVolumeCalculator.hpp"
 #endif
 
-#include "Peridigm_SpecularBondPosition.hpp"
-
 #include <Epetra_Import.h>
 #include <Epetra_LinearProblem.h>
 #include <EpetraExt_MultiVectorOut.h>
@@ -247,12 +245,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     peridigmDiscretization = discFactory.create(peridigmComm);
   }
   initializeDiscretization(peridigmDiscretization);
-
-  // obtain the specular bond positions list
-  SpecularBondPosition SpecularBondPosObject(peridigmComm,oneDimensionalMap,oneDimensionalOverlapMap,bondMap,globalNeighborhoodData->NeighborhoodListSize(),globalNeighborhoodData->NeighborhoodList());
-  
-  Teuchos::RCP<Epetra_BlockMap> bondMapOverlap = SpecularBondPosObject.getBondMapOverlap();
-  Teuchos::RCP<Epetra_Vector>   NeighborsGID   = SpecularBondPosObject.getNeighborGID();
 
   // Create a list containing parameters for each solver
   for (Teuchos::ParameterList::ConstIterator it = peridigmParams->begin(); it != peridigmParams->end(); ++it) {
@@ -881,6 +873,8 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   // bondConstitutiveDataMap
   // a non-overlapping map used for storing constitutive data on bonds
   bondMap = peridigmDisc->getGlobalBondMap();
+  // an overlapping map used for storing constitutive data on bonds
+  bondOverlapMap = peridigmDisc->getGlobalBondOverlapMap();
 
   // Create mothership vectors
 

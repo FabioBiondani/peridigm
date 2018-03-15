@@ -51,6 +51,16 @@
 #include "PdZoltan.h"
 #include <vector>
 #include <sstream>
+#include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
+#include <Epetra_Vector.h>
+#include <Epetra_Import.h>
+#include <Epetra_MpiComm.h>
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Ionit_Initializer.h>
 
 using namespace std;
 using std::shared_ptr;
@@ -107,6 +117,8 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
   bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
   delete[] myGlobalElements;
   delete[] elementSizeList;
+
+  createBondOverlapMapAndNeighborsGIDoverlap(decomp.sizeNeighborhoodList, decomp.neighborhood.get());
 
   // 3D only
   TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
@@ -370,6 +382,12 @@ PeridigmNS::PdQuickGridDiscretization::getGlobalBondMap() const
   return bondMap;
 }
 
+Teuchos::RCP<const Epetra_BlockMap>
+PeridigmNS::PdQuickGridDiscretization::getGlobalBondOverlapMap() const
+{
+  return bondOverlapMap;
+}
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::PdQuickGridDiscretization::getInitialX() const
 {
@@ -412,4 +430,48 @@ PeridigmNS::PdQuickGridDiscretization::getMaxNumBondsPerElem() const
   return maxNumBondsPerElem;
 }
 
+void PeridigmNS::PdQuickGridDiscretization::createBondOverlapMapAndNeighborsGIDoverlap(int neighborListSize,int* neighborList)
+{
+    // vector of number of neighbors
+    Epetra_Vector numNeigh(*oneDimensionalMap);
+    double* numNeighPtr;
+    numNeigh.ExtractView(&numNeighPtr);
+    int i=0;
+    while (  i<neighborListSize ){
+        *(numNeighPtr++)+= *(neighborList+i);
+        i+= *(neighborList+i)+1;
+    }
+
+    // vector of number of neighbors with ghosted points
+    Epetra_Import importerOneDimensionalMap(*oneDimensionalOverlapMap,*oneDimensionalMap);
+    Epetra_Vector numNeighOverlap(*oneDimensionalOverlapMap);
+    numNeighOverlap.Import(numNeigh,importerOneDimensionalMap,Insert);
+
+    // create bondMap with ghosted points
+    int* elementSizeList  = new int[oneDimensionalOverlapMap->NumMyElements()];
+    int* myGlobalElements = new int[oneDimensionalOverlapMap->NumMyElements()];
+    for(int i=0;i<oneDimensionalOverlapMap->NumMyElements();++i){
+        *(elementSizeList+i)  = numNeighOverlap[i];
+        *(myGlobalElements+i) = oneDimensionalOverlapMap->GID(i);
+    }
+
+    bondOverlapMap = Teuchos::rcp(new Epetra_BlockMap(-1, oneDimensionalOverlapMap->NumMyElements(), myGlobalElements, elementSizeList, 0, *comm));
+    delete[] myGlobalElements;
+    delete[] elementSizeList;
+
+    // 
+    Epetra_Vector NeighborsGID(*bondMap);
+    int j=0;
+    for (int i=0;i<oneDimensionalMap->NumMyElements();++i,++j){
+        int numNeigh_i = numNeigh[i];
+        for(int k=0;k<numNeigh_i;++k,++j){
+            NeighborsGID[j-i]=oneDimensionalOverlapMap->GID( *(neighborList+j+1) );
+        }
+    }
+
+    //
+    Epetra_Import importerBondMap(*bondOverlapMap,*bondMap);
+    NeighborsGIDoverlap = Teuchos::rcp(new Epetra_Vector(*bondOverlapMap));
+    NeighborsGIDoverlap->Import(NeighborsGID,importerBondMap,Insert);
+}
 

@@ -47,6 +47,7 @@
 
 #include "Peridigm_Discretization.hpp"
 #include <sstream>
+#include <Epetra_Import.h>
 
 using std::set;
 using std::string;
@@ -187,3 +188,4 @@ int PeridigmNS::Discretization::blockNameToBlockId(string blockName) const {
   blockIDSS >> bID;
   return bID;
 }
+

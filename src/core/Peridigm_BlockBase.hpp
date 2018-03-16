@@ -103,6 +103,7 @@ namespace PeridigmNS {
                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
                     Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                    Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                     Teuchos::RCP<const Epetra_Vector> globalBlockIds,
                     Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData);
 
@@ -185,14 +186,14 @@ namespace PeridigmNS {
      */
     void createMapsFromGlobalMaps(Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarPointMap,
                                   Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarPointMap,
-                                  Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
-                                  Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                                   Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                                  Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                                   Teuchos::RCP<const Epetra_Vector>   globalBlockIds,
                                   Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData);
 
     //! Create the block-specific neighborhood data.
     Teuchos::RCP<PeridigmNS::NeighborhoodData> createNeighborhoodDataFromGlobalNeighborhoodData(Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarPointMap,
+                                                                                                Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                                                                                                 Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData);
 
     /*! \brief Initialize the data manager.
@@ -217,6 +218,8 @@ namespace PeridigmNS {
     Teuchos::RCP<const Epetra_BlockMap> overlapVectorPointMap;
     //! Bond map for owned points; the map contains one element for each owned point, the element length is equal to the number of bonds for that point.
     Teuchos::RCP<const Epetra_BlockMap> ownedScalarBondMap;
+    //! Bond overlap map for owned points and ghosts.
+    Teuchos::RCP<const Epetra_BlockMap> overlapScalarBondMap;
     //@}
 
     //! One-dimensional Importer from global to overlapped vectors
@@ -224,6 +227,9 @@ namespace PeridigmNS {
 
     //! One-dimensional Importer from global to overlapped vectors
     Teuchos::RCP<const Epetra_Import> threeDimensionalImporter;
+
+    //! One-dimensional Importer from global to overlapped vectors
+    Teuchos::RCP<const Epetra_Import> bondImporter;
 
     //! The neighborhood data
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData;

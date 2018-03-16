@@ -48,6 +48,8 @@
 #ifndef PERIDIGM_NEIGHBORHOODDATA_HPP
 #define PERIDIGM_NEIGHBORHOODDATA_HPP
 
+// #include "mpi.h"
+
 namespace PeridigmNS {
 
 class NeighborhoodData {
@@ -55,16 +57,18 @@ class NeighborhoodData {
 public:
 
   NeighborhoodData() 
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0) {}
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), overlapNeighborhoodListSize(0), overlapNeighborhoodList(0), specularBondPositions(0){}
 
   NeighborhoodData(const NeighborhoodData& other)
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0)
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), overlapNeighborhoodListSize(0), overlapNeighborhoodList(0), specularBondPositions(0)
   {
     SetNumOwned(other.NumOwnedPoints());
     SetNeighborhoodListSize(other.NeighborhoodListSize());
+    SetOverlapNeighborhoodListSize(other.OverlapNeighborhoodListSize());
     memcpy(ownedIDs, other.ownedIDs, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodPtr, other.neighborhoodPtr, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodList, other.neighborhoodList, neighborhoodListSize*sizeof(int));
+    memcpy(overlapNeighborhoodList, other.overlapNeighborhoodList, overlapNeighborhoodListSize*sizeof(int));
   }
 
   ~NeighborhoodData(){
@@ -74,6 +78,8 @@ public:
 	  delete[] neighborhoodList;
     if(neighborhoodPtr != 0)
       delete[] neighborhoodPtr;
+	if(overlapNeighborhoodList != 0)
+	  delete[] overlapNeighborhoodList;
   }
 
   void SetNumOwned(int numOwned){
@@ -84,6 +90,8 @@ public:
     if(neighborhoodPtr != 0)
       delete[] neighborhoodPtr;
     neighborhoodPtr = new int[numOwned];
+	if(neighborhoodListSize != 0)
+        specularBondPositions = new int[neighborhoodListSize-numOwnedPoints];
   }
 
   void SetNeighborhoodListSize(int neighborhoodSize){
@@ -91,6 +99,8 @@ public:
 	if(neighborhoodList != 0)
 	  delete[] neighborhoodList;
 	neighborhoodList = new int[neighborhoodListSize];
+	if(numOwnedPoints != 0)
+        specularBondPositions = new int[neighborhoodListSize-numOwnedPoints];
   }
 
   int NumOwnedPoints() const{
@@ -113,19 +123,71 @@ public:
 	return neighborhoodList;
   }
 
+  void SetOverlapNeighborhoodListSize(int overlapneighborhoodSize){
+	overlapNeighborhoodListSize = overlapneighborhoodSize;
+	if(overlapNeighborhoodList != 0)
+	  delete[] overlapNeighborhoodList ;
+	overlapNeighborhoodList  = new int[overlapNeighborhoodListSize];
+  }
+
+  int OverlapNeighborhoodListSize() const{
+	return overlapNeighborhoodListSize;
+  }
+
+  int* OverlapNeighborhoodList() const{
+	return overlapNeighborhoodList;
+  }
+
+  void SetSpecularBondPositions(Teuchos::RCP<const Epetra_BlockMap> overlapScalarBondMap){
+    int GID1;
+    for (int i=0;i<(neighborhoodListSize-numOwnedPoints);++i){
+        for(int j=0;j<overlapScalarBondMap->NumMyElements();++j){
+            if ((i-overlapScalarBondMap->FirstPointInElement(j))<overlapScalarBondMap->ElementSize(j)) {
+                GID1 = overlapScalarBondMap->GID(j);
+                break;
+            }
+        }
+        int GID2 = *(overlapNeighborhoodList+i);
+        int LID2 = overlapScalarBondMap->LID(GID2);
+        int numNeighborsSpecularPoint = overlapScalarBondMap->ElementSize(LID2);
+        int firstpoint = overlapScalarBondMap->FirstPointInElement(LID2);
+        int j=0;
+        for (j=0;j<numNeighborsSpecularPoint;++j){
+            if (*(overlapNeighborhoodList+firstpoint+j)==GID1){
+                *(specularBondPositions+i) = firstpoint+j;
+                break;
+            }
+        }
+//         int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//         std::cout << "Proc: " << rank << "  Pos: " << i << "  GID1: " << GID1 << "  GID2: " << GID2 << "  Specu: " << firstpoint+j << std::endl;
+    }
+  }
+
+  int SpecularBondPositionsSize() const{
+	return (neighborhoodListSize-numOwnedPoints);
+  }
+
+  int* SpecularBondPositions() const{
+	return specularBondPositions;
+  }
+
   double memorySize() const{
     int sizeInBytes =
-      (2*numOwnedPoints + neighborhoodListSize + 2)*sizeof(int) + 3*sizeof(int*);
+      (numOwnedPoints + 2*neighborhoodListSize + overlapNeighborhoodListSize + 2 )*sizeof(int) + 4*sizeof(int*);
     double sizeInMegabytes = sizeInBytes/1048576.0;
     return sizeInMegabytes;
   }
 
 protected:
   int numOwnedPoints;
+  int numOverlapPoints;
   int* ownedIDs;
   int neighborhoodListSize;
   int* neighborhoodList;
   int* neighborhoodPtr;
+  int overlapNeighborhoodListSize;
+  int* overlapNeighborhoodList;
+  int* specularBondPositions;
 };
 
 }

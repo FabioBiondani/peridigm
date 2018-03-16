@@ -76,6 +76,7 @@ namespace PeridigmNS {
                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
                     Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                    Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                     Teuchos::RCP<const Epetra_Vector> globalBlockIds,
                     Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData);
 

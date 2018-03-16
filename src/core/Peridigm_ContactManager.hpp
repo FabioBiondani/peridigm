@@ -89,6 +89,7 @@ namespace PeridigmNS {
                     Teuchos::RCP<const Epetra_BlockMap> threeDimensionalMap_,
                     Teuchos::RCP<const Epetra_BlockMap> oneDimensionalOverlapMap_,
                     Teuchos::RCP<const Epetra_BlockMap> bondMap_,
+                    Teuchos::RCP<const Epetra_BlockMap> bondOverlapMap_,
                     Teuchos::RCP<PeridigmNS::NeighborhoodData> globalNeighborhoodData_,
                     Teuchos::RCP<const Epetra_Vector> blockIds_);
 
@@ -122,6 +123,10 @@ namespace PeridigmNS {
 
     //! Destructor.
     ~ContactManager(){}
+    
+    //!
+    void createBondOverlapMapAndOverlapNeighborsList();
+
 
   protected:
 
@@ -172,6 +177,15 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_BlockMap> oneDimensionalOverlapMap;
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalOverlapMap;
     Teuchos::RCP<Epetra_BlockMap> bondMap;
+    Teuchos::RCP<Epetra_BlockMap> bondOverlapMap;
+
+    //! Rebalanced maps for contact calculations.
+    Teuchos::RCP<Epetra_BlockMap> rebalancedOneDimensionalMap;
+    Teuchos::RCP<Epetra_BlockMap> rebalancedThreeDimensionalMap;
+    Teuchos::RCP<Epetra_BlockMap> rebalancedOneDimensionalOverlapMap;
+    Teuchos::RCP<Epetra_BlockMap> rebalancedThreeDimensionalOverlapMap;
+    Teuchos::RCP<Epetra_BlockMap> rebalancedBondMap;
+    Teuchos::RCP<Epetra_BlockMap> rebalancedBondOverlapMap;
 
     //! Internal maps for contact calculations.
     Teuchos::RCP<const Epetra_BlockMap> oneDimensionalContactMap;
@@ -179,6 +193,7 @@ namespace PeridigmNS {
     Teuchos::RCP<const Epetra_BlockMap> oneDimensionalOverlapContactMap;
     Teuchos::RCP<const Epetra_BlockMap> threeDimensionalOverlapContactMap;
     Teuchos::RCP<const Epetra_BlockMap> bondContactMap;
+    Teuchos::RCP<const Epetra_BlockMap> bondOverlapContactMap;
 
     //! Contact mothership multivector for three-dimensional data.
     Teuchos::RCP<Epetra_MultiVector> threeDimensionalContactMothership;

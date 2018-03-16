@@ -114,6 +114,7 @@ TEUCHOS_UNIT_TEST(ElasticMaterial, testTwoPts) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 
@@ -235,6 +236,7 @@ TEUCHOS_UNIT_TEST(ElasticMaterial, testEightPts) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
  
@@ -502,6 +504,7 @@ TEUCHOS_UNIT_TEST(ElasticMaterial, testThreePts) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 
@@ -706,6 +709,7 @@ TEUCHOS_UNIT_TEST(ElasticMaterial, twoPointTangentStiffnessMatrix) {
                       Teuchos::rcp(&scalarPointMap, false),
                       Teuchos::rcp(&vectorPointMap, false),
                       Teuchos::rcp(&vectorPointMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 
@@ -806,6 +810,7 @@ TEUCHOS_UNIT_TEST(ElasticMaterial, twoPointTangentStiffnessMatrixJAM) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 

@@ -75,6 +75,7 @@ class ContactBlock : public BlockBase {
                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
                     Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                    Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                     Teuchos::RCP<const Epetra_Vector> globalBlockIds,
                     Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData);
 
@@ -94,6 +95,7 @@ class ContactBlock : public BlockBase {
                    Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOwnedVectorPointMap,
                    Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOverlapVectorPointMap,
                    Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOwnedScalarBondMap,
+                   Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOverlapScalarBondMap,
                    Teuchos::RCP<const Epetra_Vector> rebalancedGlobalBlockIds,
                    Teuchos::RCP<const PeridigmNS::NeighborhoodData> rebalancedGlobalNeighborhoodData);
 

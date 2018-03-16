@@ -477,6 +477,8 @@ Teuchos::RCP<const Epetra_Comm> PeridigmNS::DataManager::getEpetraComm()
     comm = Teuchos::rcpFromRef(overlapVectorPointMap->Comm());
   else if(!ownedBondMap.is_null())
     comm = Teuchos::rcpFromRef(ownedBondMap->Comm());
+  else if(!overlapBondMap.is_null())
+    comm = Teuchos::rcpFromRef(overlapBondMap->Comm());
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::NullReferenceError, 
                                "Error in PeridigmNS::DataManager::getEpetraComm(), no comm object available (forget setMaps()?).");

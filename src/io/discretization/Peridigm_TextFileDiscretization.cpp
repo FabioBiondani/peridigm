@@ -129,7 +129,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   delete[] myGlobalElements;
   delete[] elementSizeList;
 
-  createBondOverlapMapAndNeighborsGIDoverlap(decomp.sizeNeighborhoodList, decomp.neighborhood.get());
+  createBondOverlapMapAndOverlapNeighborsList();
 
   // 3D only
   TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
@@ -544,8 +544,11 @@ PeridigmNS::TextFileDiscretization::getMaxNumBondsPerElem() const
   return maxNumBondsPerElem;
 }
 
-void PeridigmNS::TextFileDiscretization::createBondOverlapMapAndNeighborsGIDoverlap(int neighborListSize,int* neighborList)
+void PeridigmNS::TextFileDiscretization::createBondOverlapMapAndOverlapNeighborsList()
 {
+    int neighborListSize = neighborhoodData->NeighborhoodListSize();
+    int* neighborList    = neighborhoodData->NeighborhoodList();
+
     // vector of number of neighbors
     Epetra_Vector numNeigh(*oneDimensionalMap);
     double* numNeighPtr;
@@ -564,7 +567,9 @@ void PeridigmNS::TextFileDiscretization::createBondOverlapMapAndNeighborsGIDover
     // create bondMap with ghosted points
     int* elementSizeList  = new int[oneDimensionalOverlapMap->NumMyElements()];
     int* myGlobalElements = new int[oneDimensionalOverlapMap->NumMyElements()];
+    int  numOverlapBonds  = 0;
     for(int i=0;i<oneDimensionalOverlapMap->NumMyElements();++i){
+        numOverlapBonds      += numNeighOverlap[i];
         *(elementSizeList+i)  = numNeighOverlap[i];
         *(myGlobalElements+i) = oneDimensionalOverlapMap->GID(i);
     }
@@ -585,7 +590,15 @@ void PeridigmNS::TextFileDiscretization::createBondOverlapMapAndNeighborsGIDover
 
     //
     Epetra_Import importerBondMap(*bondOverlapMap,*bondMap);
-    NeighborsGIDoverlap = Teuchos::rcp(new Epetra_Vector(*bondOverlapMap));
-    NeighborsGIDoverlap->Import(NeighborsGID,importerBondMap,Insert);
+    Epetra_Vector NeighborsGIDoverlap(*bondOverlapMap);
+    NeighborsGIDoverlap.Import(NeighborsGID,importerBondMap,Insert);
+
+    vector<int> vecNeighborsGIDoverlap(numOverlapBonds);
+    for (int i=0;i<numOverlapBonds;++i){
+        vecNeighborsGIDoverlap[i]=NeighborsGIDoverlap[i];
+    }
+
+    neighborhoodData->SetOverlapNeighborhoodListSize(numOverlapBonds);
+    memcpy(neighborhoodData->OverlapNeighborhoodList(), &vecNeighborsGIDoverlap[0], numOverlapBonds*sizeof(int));
 }
 

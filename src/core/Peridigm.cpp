@@ -355,6 +355,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
                                threeDimensionalMap,
                                oneDimensionalOverlapMap,
                                bondMap,
+                               bondOverlapMap,
                                globalNeighborhoodData,
                                peridigmDiscretization->getBlockID());
     // contactManager->loadNeighborhoodData(globalNeighborhoodData,
@@ -543,6 +544,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
                         peridigmDiscretization->getGlobalOwnedMap(3),
                         peridigmDiscretization->getGlobalOverlapMap(3),
                         peridigmDiscretization->getGlobalBondMap(),
+                        peridigmDiscretization->getGlobalBondOverlapMap(),
                         blockIDs,
                         globalNeighborhoodData);
 
@@ -1133,6 +1135,7 @@ restartFiles["deltaU"] = pathname;
 sprintf(pathname,"%s/scratch.mat",restart_directory_namePtr);
 restartFiles["scratch"] = pathname;
 }
+
 void PeridigmNS::Peridigm::instantiateComputeManager(Teuchos::RCP<Discretization> peridigmDiscretization) {
 
   Teuchos::RCP<Teuchos::ParameterList> computeParams = Teuchos::rcp( new Teuchos::ParameterList("Compute Manager") );

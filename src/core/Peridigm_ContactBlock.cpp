@@ -57,7 +57,8 @@ void PeridigmNS::ContactBlock::initialize(Teuchos::RCP<const Epetra_BlockMap> gl
                                    Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
                                    Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                                    Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
-                                   Teuchos::RCP<const Epetra_Vector>   globalBlockIds,
+                                   Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
+                                   Teuchos::RCP<const Epetra_Vector> globalBlockIds,
                                    Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData)
 {
   // Initialize the base class to create maps and neighborhood data
@@ -66,6 +67,7 @@ void PeridigmNS::ContactBlock::initialize(Teuchos::RCP<const Epetra_BlockMap> gl
                     globalOwnedVectorPointMap,
                     globalOverlapVectorPointMap,
                     globalOwnedScalarBondMap,
+                    globalOverlapScalarBondMap,
                     globalBlockIds,
                     globalNeighborhoodData);
 
@@ -90,18 +92,19 @@ void PeridigmNS::ContactBlock::rebalance(Teuchos::RCP<const Epetra_BlockMap> reb
                                   Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOwnedVectorPointMap,
                                   Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOverlapVectorPointMap,
                                   Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOwnedScalarBondMap,
+                                  Teuchos::RCP<const Epetra_BlockMap> rebalancedGlobalOverlapScalarBondMap,
                                   Teuchos::RCP<const Epetra_Vector> rebalancedGlobalBlockIds,
                                   Teuchos::RCP<const PeridigmNS::NeighborhoodData> rebalancedGlobalNeighborhoodData)
 {
   createMapsFromGlobalMaps(rebalancedGlobalOwnedScalarPointMap,
                            rebalancedGlobalOverlapScalarPointMap,
-                           rebalancedGlobalOwnedVectorPointMap,
-                           rebalancedGlobalOverlapVectorPointMap,
                            rebalancedGlobalOwnedScalarBondMap,
+                           rebalancedGlobalOverlapScalarBondMap,
                            rebalancedGlobalBlockIds,
                            rebalancedGlobalNeighborhoodData);
 
   neighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(rebalancedGlobalOverlapScalarPointMap,
+                                                                      rebalancedGlobalOverlapScalarBondMap,
                                                                       rebalancedGlobalNeighborhoodData);
 
   dataManager->rebalance(ownedScalarPointMap,

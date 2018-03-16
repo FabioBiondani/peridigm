@@ -61,18 +61,19 @@ void PeridigmNS::BlockBase::initialize(Teuchos::RCP<const Epetra_BlockMap> globa
                                    Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
                                    Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                                    Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                                   Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                                    Teuchos::RCP<const Epetra_Vector>   globalBlockIds,
                                    Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData)
 {
   createMapsFromGlobalMaps(globalOwnedScalarPointMap,
                            globalOverlapScalarPointMap,
-                           globalOwnedVectorPointMap,
-                           globalOverlapVectorPointMap,
                            globalOwnedScalarBondMap,
+                           globalOverlapScalarBondMap,
                            globalBlockIds,
                            globalNeighborhoodData);
 
   neighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(globalOverlapScalarPointMap,
+                                                                      globalOverlapScalarBondMap,
                                                                       globalNeighborhoodData);
 }
 
@@ -80,8 +81,15 @@ void PeridigmNS::BlockBase::importData(const Epetra_Vector& source, int fieldId,
 {
   if(dataManager->hasData(fieldId, step)){
 
+    // bond data
+    if(source.Map().ConstantElementSize() == 0){
+      if(bondImporter.is_null())
+        bondImporter = Teuchos::rcp(new Epetra_Import(*dataManager->getOverlapBondMap(), source.Map()));
+      dataManager->getData(fieldId, step)->Import(source, *bondImporter, combineMode);        
+    }
+
     // scalar data
-    if(source.Map().ElementSize() == 1){
+    else if(source.Map().ElementSize() == 1){
       if(oneDimensionalImporter.is_null())
         oneDimensionalImporter = Teuchos::rcp(new Epetra_Import(*dataManager->getOverlapScalarPointMap(), source.Map()));
       dataManager->getData(fieldId, step)->Import(source, *oneDimensionalImporter, combineMode);
@@ -100,8 +108,15 @@ void PeridigmNS::BlockBase::exportData(Epetra_Vector& target, int fieldId, Perid
 {
   if(dataManager->hasData(fieldId, step)){
 
+    // bond data
+    if(target.Map().ConstantElementSize() == 0){
+      if(bondImporter.is_null())
+        bondImporter = Teuchos::rcp(new Epetra_Import(*dataManager->getOverlapBondMap(), target.Map()));
+      target.Export(*(dataManager->getData(fieldId, step)), *bondImporter, combineMode);  
+    }
+
     // scalar data
-    if(target.Map().ElementSize() == 1){
+    else if(target.Map().ElementSize() == 1){
       if(oneDimensionalImporter.is_null())
         oneDimensionalImporter = Teuchos::rcp(new Epetra_Import(*dataManager->getOverlapScalarPointMap(), target.Map()));
       target.Export(*(dataManager->getData(fieldId, step)), *oneDimensionalImporter, combineMode);  
@@ -118,9 +133,8 @@ void PeridigmNS::BlockBase::exportData(Epetra_Vector& target, int fieldId, Perid
 
 void PeridigmNS::BlockBase::createMapsFromGlobalMaps(Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarPointMap,
                                                      Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarPointMap,
-                                                     Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
-                                                     Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                                                      Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                                                     Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                                                      Teuchos::RCP<const Epetra_Vector>   globalBlockIds,
                                                      Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData)
 {
@@ -225,12 +239,30 @@ void PeridigmNS::BlockBase::createMapsFromGlobalMaps(Teuchos::RCP<const Epetra_B
   overlapVectorPointMap =
     Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSize, indexBase, globalOwnedScalarPointMap->Comm()));
 
+  //
+  vector<int> overlapBondElementSize;
+  overlapBondElementSize.reserve(overlapScalarPointMap->NumMyElements());
+  for(int iLID=0 ; iLID<overlapScalarPointMap->NumMyElements() ; ++iLID){
+    int globalID = overlapScalarPointMap->GID(iLID);
+    int localID = globalOverlapScalarBondMap->LID(globalID);
+    overlapBondElementSize.push_back(globalOverlapScalarBondMap->ElementSize(localID));
+  }
+
+  int* elementSizeOverlapList = 0;
+  if(numMyElements > 0){
+    elementSizeOverlapList = &overlapBondElementSize.at(0);
+  }
+  overlapScalarBondMap =
+    Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeOverlapList, indexBase, globalOwnedScalarPointMap->Comm()));
+
   // Invalidate the importers
   oneDimensionalImporter = Teuchos::RCP<Epetra_Import>();
   threeDimensionalImporter = Teuchos::RCP<Epetra_Import>();
+  bondImporter = Teuchos::RCP<Epetra_Import>();
 }
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighborhoodDataFromGlobalNeighborhoodData(Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarPointMap,
+                                                                                                               Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                                                                                                                Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData)
 {
   int numOwnedPoints = ownedScalarPointMap->NumMyElements();
@@ -281,6 +313,33 @@ Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighbor
            neighborhoodList.size()*sizeof(int));
   }
 
+  int  numOverlapBonds  = 0;
+  for(int i=0;i<overlapScalarBondMap->NumMyElements();++i){
+        numOverlapBonds += overlapScalarBondMap->ElementSize(i);
+  }
+
+  int const globalOverlapNeighborhoodListSize = globalNeighborhoodData->OverlapNeighborhoodListSize();
+  int* const globalOverlapNeighborhoodList    = globalNeighborhoodData->OverlapNeighborhoodList();
+  Epetra_Vector globalNeighborsGIDoverlap(*globalOverlapScalarBondMap);
+  
+  for(int i=0;i<globalOverlapNeighborhoodListSize;++i){
+      globalNeighborsGIDoverlap[i]=*(globalOverlapNeighborhoodList+i);
+  }
+
+  Epetra_Import importerBondMap(*overlapScalarBondMap,*globalOverlapScalarBondMap);
+  Epetra_Vector NeighborsGIDoverlap(*overlapScalarBondMap);
+  NeighborsGIDoverlap.Import(globalNeighborsGIDoverlap,importerBondMap,Insert);
+
+  vector<int> vecNeighborsGIDoverlap(numOverlapBonds);
+  for (int i=0;i<numOverlapBonds;++i){
+      vecNeighborsGIDoverlap[i]=NeighborsGIDoverlap[i];
+  }
+
+  blockNeighborhoodData->SetOverlapNeighborhoodListSize(numOverlapBonds);
+  memcpy(blockNeighborhoodData->OverlapNeighborhoodList(), &vecNeighborsGIDoverlap[0], numOverlapBonds*sizeof(int));
+
+  blockNeighborhoodData->SetSpecularBondPositions(overlapScalarBondMap);
+
   return blockNeighborhoodData;
 }
 
@@ -292,7 +351,8 @@ void PeridigmNS::BlockBase::initializeDataManager(vector<int> fieldIds)
                               ownedVectorPointMap.is_null() ||
                               overlapScalarPointMap.is_null() ||
                               overlapVectorPointMap.is_null() ||
-                              ownedScalarBondMap.is_null(),
+                              ownedScalarBondMap.is_null() ||
+                              overlapScalarBondMap.is_null(),
                               "\n**** Maps must be set prior to calling BlockBase::initializeDataManager()\n");
   
   dataManager = Teuchos::rcp(new PeridigmNS::DataManager);
@@ -301,7 +361,8 @@ void PeridigmNS::BlockBase::initializeDataManager(vector<int> fieldIds)
                        overlapScalarPointMap,
                        ownedVectorPointMap,
                        overlapVectorPointMap,
-                       ownedScalarBondMap);
+                       ownedScalarBondMap,
+                       overlapScalarBondMap);
   
   // remove duplicates
   sort(fieldIds.begin(), fieldIds.end());

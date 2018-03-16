@@ -135,6 +135,7 @@ TEUCHOS_UNIT_TEST(MultiphysicsElasticMaterial, testTwoPts) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 
@@ -276,6 +277,7 @@ TEUCHOS_UNIT_TEST(MultiphysicsElasticMaterial, testEightPts) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
  
@@ -563,6 +565,7 @@ TEUCHOS_UNIT_TEST(MultiphysicsElasticMaterial, testThreePts) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 
@@ -804,11 +807,13 @@ TEUCHOS_UNIT_TEST(MultiphysicsElasticMaterial, twoPointADJacobian) {
 											tempOneDimensionalMap,
 											tempThreeDimensionalMap,
 											tempThreeDimensionalMap,
+											tempBondMap,
 											tempBondMap);
 	dataManagerSolids.setMaps(tempOneDimensionalMap,
 														tempOneDimensionalMap,
 														tempThreeDimensionalMap,
 														tempThreeDimensionalMap,
+														tempBondMap,
 														tempBondMap);
 
   dataManager.allocateData(mat.FieldIds());
@@ -969,6 +974,7 @@ TEUCHOS_UNIT_TEST(MultiphysicsElasticMaterial, twoPointProbeJacobianJAM) {
                       Teuchos::rcp(&nodeMap, false),
                       Teuchos::rcp(&unknownMap, false),
                       Teuchos::rcp(&unknownMap, false),
+                      Teuchos::rcp(&bondMap, false),
                       Teuchos::rcp(&bondMap, false));
   dataManager.allocateData(mat.FieldIds());
 

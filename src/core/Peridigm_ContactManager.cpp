@@ -51,6 +51,16 @@
 #include "Peridigm_Timer.hpp"
 #include <boost/algorithm/string/trim.hpp> // \todo Replace this include with correct include for istream_iterator.
 #include "Peridigm_PdQuickGridDiscretization.hpp"
+#include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
+#include <Epetra_Vector.h>
+#include <Epetra_Import.h>
+#include <Epetra_MpiComm.h>
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Ionit_Initializer.h>
 
 #include "PdZoltan.h"
 #include "NeighborhoodList.h"
@@ -232,6 +242,7 @@ void PeridigmNS::ContactManager::initialize(Teuchos::RCP<const Epetra_BlockMap> 
                                             Teuchos::RCP<const Epetra_BlockMap> threeDimensionalMap_,
                                             Teuchos::RCP<const Epetra_BlockMap> oneDimensionalOverlapMap_,
                                             Teuchos::RCP<const Epetra_BlockMap> bondMap_,
+                                            Teuchos::RCP<const Epetra_BlockMap> bondOverlapMap_,
                                             Teuchos::RCP<PeridigmNS::NeighborhoodData> globalNeighborhoodData_,
                                             Teuchos::RCP<const Epetra_Vector> blockIds_)
 {
@@ -260,6 +271,7 @@ void PeridigmNS::ContactManager::initialize(Teuchos::RCP<const Epetra_BlockMap> 
   threeDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(*threeDimensionalMap_));
   oneDimensionalOverlapMap = Teuchos::rcp(new Epetra_BlockMap(*oneDimensionalOverlapMap_));
   bondMap = Teuchos::rcp(new Epetra_BlockMap(*bondMap_));
+  bondOverlapMap = Teuchos::rcp(new Epetra_BlockMap(*bondOverlapMap_));
 
   threeDimensionalOverlapMap = Teuchos::rcp(new Epetra_BlockMap(oneDimensionalOverlapMap->NumGlobalElements(),
                                                                 oneDimensionalOverlapMap->NumMyElements(),
@@ -338,6 +350,7 @@ void PeridigmNS::ContactManager::initialize(Teuchos::RCP<const Epetra_BlockMap> 
   oneDimensionalOverlapContactMap = Teuchos::rcp(new Epetra_BlockMap(*oneDimensionalOverlapMap));
   threeDimensionalOverlapContactMap = Teuchos::rcp(new Epetra_BlockMap(-1, oneDimensionalOverlapContactMap->NumMyElements(), oneDimensionalOverlapContactMap->MyGlobalElements(), 3, 0, oneDimensionalMap_->Comm()));
   bondContactMap = Teuchos::rcp(new Epetra_BlockMap(*bondMap));
+  bondOverlapContactMap = Teuchos::rcp(new Epetra_BlockMap(*bondOverlapMap));
 
   loadNeighborhoodData(globalNeighborhoodData_, oneDimensionalMap_, oneDimensionalOverlapMap_);
 
@@ -447,6 +460,7 @@ void PeridigmNS::ContactManager::initializeContactBlocks()
                                threeDimensionalContactMap,
                                threeDimensionalOverlapContactMap,
                                bondContactMap,
+                               bondOverlapContactMap,
                                contactBlockIDs,
                                contactNeighborhoodData);
 
@@ -496,13 +510,13 @@ void PeridigmNS::ContactManager::rebalance(int step)
   // \todo Handle serial case.  We don't need to rebalance, but we still want to update the contact search.
   QUICKGRID::Data rebalancedDecomp = currentConfigurationDecomp();
 
-  Teuchos::RCP<Epetra_BlockMap> rebalancedOneDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(PdQuickGridDiscretization::getOwnedMap(comm, rebalancedDecomp, 1)));
+  rebalancedOneDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(PdQuickGridDiscretization::getOwnedMap(comm, rebalancedDecomp, 1)));
   Teuchos::RCP<const Epetra_Import> oneDimensionalMapImporter = Teuchos::rcp(new Epetra_Import(*rebalancedOneDimensionalMap, *oneDimensionalContactMap));
 
-  Teuchos::RCP<Epetra_BlockMap> rebalancedThreeDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(PdQuickGridDiscretization::getOwnedMap(comm, rebalancedDecomp, 3)));
+  rebalancedThreeDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(PdQuickGridDiscretization::getOwnedMap(comm, rebalancedDecomp, 3)));
   Teuchos::RCP<const Epetra_Import> threeDimensionalMapImporter = Teuchos::rcp(new Epetra_Import(*rebalancedThreeDimensionalMap, *threeDimensionalContactMap));
 
-  Teuchos::RCP<Epetra_BlockMap> rebalancedBondMap = createRebalancedBondMap(rebalancedOneDimensionalMap, oneDimensionalMapImporter);
+  rebalancedBondMap = createRebalancedBondMap(rebalancedOneDimensionalMap, oneDimensionalMapImporter);
   Teuchos::RCP<const Epetra_Import> bondMapImporter = Teuchos::rcp(new Epetra_Import(*rebalancedBondMap, *bondContactMap));
 
   // create a list of neighbors in the rebalanced configuration
@@ -542,9 +556,9 @@ void PeridigmNS::ContactManager::rebalance(int step)
   }
   int indexBase = 0;
 
-  Teuchos::RCP<Epetra_BlockMap> rebalancedOneDimensionalOverlapMap =
+  rebalancedOneDimensionalOverlapMap =
     Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm));
-  Teuchos::RCP<Epetra_BlockMap> rebalancedThreeDimensionalOverlapMap =
+  rebalancedThreeDimensionalOverlapMap =
     Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 3, indexBase, comm));
   delete[] myGlobalElements;
 
@@ -559,6 +573,9 @@ void PeridigmNS::ContactManager::rebalance(int step)
                                                                     rebalancedOneDimensionalMap,
                                                                     rebalancedOneDimensionalOverlapMap);
   
+  // rebalanced Bond Overlapping Map
+  createBondOverlapMapAndOverlapNeighborsList();
+
   // rebalance the mothership (global) contact vectors
   Teuchos::RCP<Epetra_MultiVector> rebalancedOneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*rebalancedOneDimensionalMap, oneDimensionalContactMothership->NumVectors()));
   rebalancedOneDimensionalMothership->Import(*oneDimensionalContactMothership, *oneDimensionalMapImporter, Insert);
@@ -581,6 +598,7 @@ void PeridigmNS::ContactManager::rebalance(int step)
                               rebalancedThreeDimensionalMap,
                               rebalancedThreeDimensionalOverlapMap,
                               rebalancedBondMap,
+                              rebalancedBondOverlapMap,
                               contactBlockIDs,
                               contactNeighborhoodData);
 
@@ -599,6 +617,7 @@ void PeridigmNS::ContactManager::rebalance(int step)
   threeDimensionalOverlapContactMap = rebalancedThreeDimensionalOverlapMap;
   threeDimensionalContactMap = rebalancedThreeDimensionalMap;
   bondContactMap = rebalancedBondMap;
+  bondOverlapContactMap = rebalancedBondOverlapMap;
 
   // Reset the importers for passing data between the mothership and contact mothership vectors
   oneDimensionalMothershipToContactMothershipImporter = Teuchos::rcp(new Epetra_Import(*oneDimensionalContactMap, *oneDimensionalMap));
@@ -886,4 +905,63 @@ void PeridigmNS::ContactManager::evaluateContactForce(double dt)
                                  neighborhoodList,
                                  *dataManager);
   }
+}
+
+void PeridigmNS::ContactManager::createBondOverlapMapAndOverlapNeighborsList()
+{
+    int neighborListSize = neighborhoodData->NeighborhoodListSize();
+    int* neighborList    = neighborhoodData->NeighborhoodList();
+    
+    // vector of number of neighbors
+    Epetra_Vector numNeigh(*rebalancedOneDimensionalMap);
+    double* numNeighPtr;
+    numNeigh.ExtractView(&numNeighPtr);
+    int i=0;
+    while (  i<neighborListSize ){
+        *(numNeighPtr++)+= *(neighborList+i);
+        i+= *(neighborList+i)+1;
+    }
+
+    // vector of number of neighbors with ghosted points
+    Epetra_Import importerOneDimensionalMap(*rebalancedOneDimensionalOverlapMap,*rebalancedOneDimensionalMap);
+    Epetra_Vector numNeighOverlap(*rebalancedOneDimensionalOverlapMap);
+    numNeighOverlap.Import(numNeigh,importerOneDimensionalMap,Insert);
+
+    // create bondMap with ghosted points
+    int* elementSizeList  = new int[rebalancedOneDimensionalOverlapMap->NumMyElements()];
+    int* myGlobalElements = new int[rebalancedOneDimensionalOverlapMap->NumMyElements()];
+    int  numOverlapBonds  = 0;
+    for(int i=0;i<rebalancedOneDimensionalOverlapMap->NumMyElements();++i){
+        numOverlapBonds      += numNeighOverlap[i];
+        *(elementSizeList+i)  = numNeighOverlap[i];
+        *(myGlobalElements+i) = rebalancedOneDimensionalOverlapMap->GID(i);
+    }
+
+    rebalancedBondOverlapMap = Teuchos::rcp(new Epetra_BlockMap(-1, rebalancedOneDimensionalOverlapMap->NumMyElements(), myGlobalElements, elementSizeList, 0, rebalancedOneDimensionalOverlapMap->Comm()));
+    delete[] myGlobalElements;
+    delete[] elementSizeList;
+
+    // 
+    Epetra_Vector NeighborsGID(*rebalancedBondMap);
+    int j=0;
+    for (int i=0;i<rebalancedOneDimensionalMap->NumMyElements();++i,++j){
+        int numNeigh_i = numNeigh[i];
+        for(int k=0;k<numNeigh_i;++k,++j){
+            NeighborsGID[j-i]=rebalancedOneDimensionalOverlapMap->GID( *(neighborList+j+1) );
+        }
+    }
+
+    //
+    Epetra_Import importerBondMap(*rebalancedBondOverlapMap,*rebalancedBondMap);
+    Epetra_Vector neighborsGIDoverlap(*rebalancedBondOverlapMap);
+    neighborsGIDoverlap.Import(NeighborsGID,importerBondMap,Insert);
+
+    vector<int> vecNeighborsGIDoverlap(numOverlapBonds);
+    for (int i=0;i<numOverlapBonds;++i){
+        vecNeighborsGIDoverlap[i]=neighborsGIDoverlap[i];
+    }
+
+    neighborhoodData->SetOverlapNeighborhoodListSize(numOverlapBonds);
+    memcpy(neighborhoodData->OverlapNeighborhoodList(), &vecNeighborsGIDoverlap[0], numOverlapBonds*sizeof(int));
+
 }

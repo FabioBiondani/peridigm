@@ -119,7 +119,7 @@ namespace PeridigmNS {
     virtual double getMaxElementDimension() const { return maxElementDimension; }
 
     //!
-    void createBondOverlapMapAndNeighborsGIDoverlap(int neighborListSize,int* neighborList);
+    void createBondOverlapMapAndOverlapNeighborsList();
 
   private:
 
@@ -159,9 +159,6 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_BlockMap> threeDimensionalOverlapMap;
     Teuchos::RCP<Epetra_BlockMap> bondMap;
     Teuchos::RCP<Epetra_BlockMap> bondOverlapMap;
-
-    //! vector of neighbors' GID, on bondOverlapMap;
-    Teuchos::RCP<Epetra_Vector> NeighborsGIDoverlap;
 
     //! Minimum element radius
     double minElementRadius;

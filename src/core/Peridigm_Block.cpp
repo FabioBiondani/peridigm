@@ -57,6 +57,7 @@ void PeridigmNS::Block::initialize(Teuchos::RCP<const Epetra_BlockMap> globalOwn
                                    Teuchos::RCP<const Epetra_BlockMap> globalOwnedVectorPointMap,
                                    Teuchos::RCP<const Epetra_BlockMap> globalOverlapVectorPointMap,
                                    Teuchos::RCP<const Epetra_BlockMap> globalOwnedScalarBondMap,
+                                   Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
                                    Teuchos::RCP<const Epetra_Vector>   globalBlockIds,
                                    Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData)
 {
@@ -66,6 +67,7 @@ void PeridigmNS::Block::initialize(Teuchos::RCP<const Epetra_BlockMap> globalOwn
                         globalOwnedVectorPointMap,
                         globalOverlapVectorPointMap,
                         globalOwnedScalarBondMap,
+                        globalOverlapScalarBondMap,
                         globalBlockIds,
                         globalNeighborhoodData);
 

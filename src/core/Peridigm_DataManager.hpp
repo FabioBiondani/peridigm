@@ -91,12 +91,14 @@ public:
                Teuchos::RCP<const Epetra_BlockMap> overlapScalarPointMap_,
                Teuchos::RCP<const Epetra_BlockMap> ownedVectorPointMap_,
                Teuchos::RCP<const Epetra_BlockMap> overlapVectorPointMap_,
-               Teuchos::RCP<const Epetra_BlockMap> ownedBondMap_){
-    ownedScalarPointMap = ownedScalarPointMap_;
+               Teuchos::RCP<const Epetra_BlockMap> ownedBondMap_,
+               Teuchos::RCP<const Epetra_BlockMap> overlapBondMap_){
+    ownedScalarPointMap   = ownedScalarPointMap_;
     overlapScalarPointMap = overlapScalarPointMap_;
-    ownedVectorPointMap = ownedVectorPointMap_;
+    ownedVectorPointMap   = ownedVectorPointMap_;
     overlapVectorPointMap = overlapVectorPointMap_;
-    ownedBondMap = ownedBondMap_;
+    ownedBondMap          = ownedBondMap_;
+    overlapBondMap        = overlapBondMap_;
   }
 
   //! Instantiates State objects corresponding to the given list of field Ids. 
@@ -129,6 +131,12 @@ public:
 
   //! Returns RCP to overlap vector map
   Teuchos::RCP<const Epetra_BlockMap> getOverlapVectorPointMap(){ return overlapVectorPointMap; }
+
+  //! Returns RCP to owned bond map
+  Teuchos::RCP<const Epetra_BlockMap> getOwnedBondMap(){ return ownedBondMap; }
+
+  //! Returns RCP to overlap bond map
+  Teuchos::RCP<const Epetra_BlockMap> getOverlapBondMap(){ return overlapBondMap; }
 
   //! Returns RCP to the State N object
   Teuchos::RCP<State> getStateN() const { return stateN; }
@@ -224,6 +232,8 @@ protected:
   Teuchos::RCP<const Epetra_BlockMap> overlapVectorPointMap;
   //! Bond map for owned points; the map contains one element for each owned point, the element length is equal to the number of bonds for that point.
   Teuchos::RCP<const Epetra_BlockMap> ownedBondMap;
+  //! Bond map for owned points and ghosts; the map contains one element for each overlap point, the element length is equal to the number of bonds for that point.
+  Teuchos::RCP<const Epetra_BlockMap> overlapBondMap;
   //@}
 
   //! @name Global data

@@ -74,7 +74,8 @@ void PeridigmNS::BlockBase::initialize(Teuchos::RCP<const Epetra_BlockMap> globa
 
   neighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(globalOverlapScalarPointMap,
                                                                       globalOverlapScalarBondMap,
-                                                                      globalNeighborhoodData);
+                                                                      globalNeighborhoodData,
+                                                                      true);
 }
 
 void PeridigmNS::BlockBase::importData(const Epetra_Vector& source, int fieldId, PeridigmField::Step step, Epetra_CombineMode combineMode)
@@ -263,7 +264,7 @@ void PeridigmNS::BlockBase::createMapsFromGlobalMaps(Teuchos::RCP<const Epetra_B
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighborhoodDataFromGlobalNeighborhoodData(Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarPointMap,
                                                                                                                Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
-                                                                                                               Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData)
+                                                                                                               Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData,                                                                                                bool computeSpecularBondPositions)
 {
   int numOwnedPoints = ownedScalarPointMap->NumMyElements();
   int* ownedPointGlobalIDs = ownedScalarPointMap->MyGlobalElements();
@@ -313,32 +314,35 @@ Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighbor
            neighborhoodList.size()*sizeof(int));
   }
 
-  int  numOverlapBonds  = 0;
-  for(int i=0;i<overlapScalarBondMap->NumMyElements();++i){
-        numOverlapBonds += overlapScalarBondMap->ElementSize(i);
-  }
 
-  int const globalOverlapNeighborhoodListSize = globalNeighborhoodData->OverlapNeighborhoodListSize();
-  int* const globalOverlapNeighborhoodList    = globalNeighborhoodData->OverlapNeighborhoodList();
-  Epetra_Vector globalNeighborsGIDoverlap(*globalOverlapScalarBondMap);
+  if (computeSpecularBondPositions){
+      int  numOverlapBonds  = 0;
+      for(int i=0;i<overlapScalarBondMap->NumMyElements();++i){
+          numOverlapBonds += overlapScalarBondMap->ElementSize(i);
+      }
+
+    int const globalOverlapNeighborhoodListSize = globalNeighborhoodData->OverlapNeighborhoodListSize();
+    int* const globalOverlapNeighborhoodList    = globalNeighborhoodData->OverlapNeighborhoodList();
+    Epetra_Vector globalNeighborsGIDoverlap(*globalOverlapScalarBondMap);
   
-  for(int i=0;i<globalOverlapNeighborhoodListSize;++i){
+    for(int i=0;i<globalOverlapNeighborhoodListSize;++i){
       globalNeighborsGIDoverlap[i]=*(globalOverlapNeighborhoodList+i);
+    }
+
+    Epetra_Import importerBondMap(*overlapScalarBondMap,*globalOverlapScalarBondMap);
+    Epetra_Vector NeighborsGIDoverlap(*overlapScalarBondMap);
+    NeighborsGIDoverlap.Import(globalNeighborsGIDoverlap,importerBondMap,Insert);
+
+    vector<int> vecNeighborsGIDoverlap(numOverlapBonds);
+    for (int i=0;i<numOverlapBonds;++i){
+        vecNeighborsGIDoverlap[i]=NeighborsGIDoverlap[i];
+    }
+
+    blockNeighborhoodData->SetOverlapNeighborhoodListSize(numOverlapBonds);
+    memcpy(blockNeighborhoodData->OverlapNeighborhoodList(), &vecNeighborsGIDoverlap[0], numOverlapBonds*sizeof(int));
+
+    blockNeighborhoodData->SetSpecularBondPositions(overlapScalarBondMap);
   }
-
-  Epetra_Import importerBondMap(*overlapScalarBondMap,*globalOverlapScalarBondMap);
-  Epetra_Vector NeighborsGIDoverlap(*overlapScalarBondMap);
-  NeighborsGIDoverlap.Import(globalNeighborsGIDoverlap,importerBondMap,Insert);
-
-  vector<int> vecNeighborsGIDoverlap(numOverlapBonds);
-  for (int i=0;i<numOverlapBonds;++i){
-      vecNeighborsGIDoverlap[i]=NeighborsGIDoverlap[i];
-  }
-
-  blockNeighborhoodData->SetOverlapNeighborhoodListSize(numOverlapBonds);
-  memcpy(blockNeighborhoodData->OverlapNeighborhoodList(), &vecNeighborsGIDoverlap[0], numOverlapBonds*sizeof(int));
-
-  blockNeighborhoodData->SetSpecularBondPositions(overlapScalarBondMap);
 
   return blockNeighborhoodData;
 }

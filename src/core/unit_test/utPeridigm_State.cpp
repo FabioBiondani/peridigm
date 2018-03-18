@@ -26,7 +26,7 @@ using namespace PeridigmNS;
 using namespace std;
 
 //! Create a two-point problem for testing.
-PeridigmNS::State createTwoPointProblem(Teuchos::RCP<Epetra_Comm> comm, Teuchos::RCP<Epetra_BlockMap> &overlapScalarPointMap, Teuchos::RCP<Epetra_BlockMap> &overlapVectorPointMap, Teuchos::RCP<Epetra_BlockMap> &ownedScalarBondMap, vector<int> &scalarPointFieldIds, vector<int> &vectorPointFieldIds, vector<int> &bondFieldIds)
+PeridigmNS::State createTwoPointProblem(Teuchos::RCP<Epetra_Comm> comm, Teuchos::RCP<Epetra_BlockMap> &overlapScalarPointMap, Teuchos::RCP<Epetra_BlockMap> &overlapVectorPointMap, Teuchos::RCP<Epetra_BlockMap> &overlapScalarBondMap, vector<int> &scalarPointFieldIds, vector<int> &vectorPointFieldIds, vector<int> &bondFieldIds)
 {
   
   // set up a hard-coded layout for two points
@@ -47,10 +47,10 @@ PeridigmNS::State createTwoPointProblem(Teuchos::RCP<Epetra_Comm> comm, Teuchos:
   elementSize = 3;
   overlapVectorPointMap = 
     Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, &myGlobalElements[0], elementSize, indexBase, *comm)); 
-  // ownedScalarBondMap
+  // overlapScalarBondMap
   // used for bond damage and bond constitutive data
   std::vector<int> bondElementSize(numMyElements, 1);
-  ownedScalarBondMap = 
+  overlapScalarBondMap = 
     Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, &myGlobalElements[0], &bondElementSize[0], indexBase, *comm));
 
   // create a state object
@@ -88,7 +88,7 @@ PeridigmNS::State createTwoPointProblem(Teuchos::RCP<Epetra_Comm> comm, Teuchos:
   
   bondFieldIds.push_back( fm.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage") );
   bondFieldIds.push_back( fm.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Deviatoric_Plastic_Extension") );
-  state.allocateBondData(bondFieldIds, ownedScalarBondMap);
+  state.allocateBondData(bondFieldIds, overlapScalarBondMap);
 
   return state;
 }
@@ -109,12 +109,12 @@ TEUCHOS_UNIT_TEST(State, TwoPointTest) {
   PeridigmNS::State state;
   Teuchos::RCP<Epetra_BlockMap> overlapScalarPointMap;
   Teuchos::RCP<Epetra_BlockMap> overlapVectorPointMap;
-  Teuchos::RCP<Epetra_BlockMap> ownedScalarBondMap;
+  Teuchos::RCP<Epetra_BlockMap> overlapScalarBondMap;
   vector<int> scalarPointFieldIds;
   vector<int> vectorPointFieldIds;
   vector<int> bondFieldIds;
   
-  state = createTwoPointProblem(comm, overlapScalarPointMap, overlapVectorPointMap, ownedScalarBondMap, scalarPointFieldIds, vectorPointFieldIds, bondFieldIds);
+  state = createTwoPointProblem(comm, overlapScalarPointMap, overlapVectorPointMap, overlapScalarBondMap, scalarPointFieldIds, vectorPointFieldIds, bondFieldIds);
 
 
   TEST_EQUALITY( state.getPointMultiVector(PeridigmField::SCALAR)->NumVectors(), (int)scalarPointFieldIds.size() );
@@ -126,8 +126,8 @@ TEUCHOS_UNIT_TEST(State, TwoPointTest) {
   TEST_ASSERT( state.getPointMultiVector(PeridigmField::VECTOR)->Map().SameAs( *overlapVectorPointMap ) );
 
   TEST_EQUALITY( state.getBondMultiVector()->NumVectors(), (int)bondFieldIds.size() );
-  TEST_EQUALITY( state.getBondMultiVector()->MyLength(), ownedScalarBondMap->NumMyPoints() );
-  TEST_ASSERT( state.getBondMultiVector()->Map().SameAs( *ownedScalarBondMap ) );
+  TEST_EQUALITY( state.getBondMultiVector()->MyLength(), overlapScalarBondMap->NumMyPoints() );
+  TEST_ASSERT( state.getBondMultiVector()->Map().SameAs( *overlapScalarBondMap ) );
 
   FieldManager& fm = FieldManager::self();
   int coordinatesFieldId = fm.getFieldId("Coordinates");
@@ -187,7 +187,7 @@ TEUCHOS_UNIT_TEST(State, TwoPointTest) {
 
 //! Create a three-point problem for testing.
 
-PeridigmNS::State createThreePointProblem(Teuchos::RCP<Epetra_Comm> comm, Teuchos::RCP<Epetra_BlockMap> &overlapScalarPointMap, Teuchos::RCP<Epetra_BlockMap> &overlapVectorPointMap, Teuchos::RCP<Epetra_BlockMap> &ownedScalarBondMap, vector<int> &scalarPointFieldIds, vector<int> &vectorPointFieldIds, vector<int> &bondFieldIds)
+PeridigmNS::State createThreePointProblem(Teuchos::RCP<Epetra_Comm> comm, Teuchos::RCP<Epetra_BlockMap> &overlapScalarPointMap, Teuchos::RCP<Epetra_BlockMap> &overlapVectorPointMap, Teuchos::RCP<Epetra_BlockMap> &overlapScalarBondMap, vector<int> &scalarPointFieldIds, vector<int> &vectorPointFieldIds, vector<int> &bondFieldIds)
 {
   
   int numProcs = comm->NumProc();
@@ -230,7 +230,7 @@ PeridigmNS::State createThreePointProblem(Teuchos::RCP<Epetra_Comm> comm, Teucho
   elementSize = 3;
   overlapVectorPointMap = 
     Teuchos::rcp(new Epetra_BlockMap(-1, numMyElements, &myGlobalElements[0], elementSize, indexBase, *comm)); 
-  // ownedScalarBondMap
+  // overlapScalarBondMap
   // used for bond damage and bond constitutive data
   std::vector<int> bondElementSize;
   if(numProcs == 1){
@@ -262,7 +262,7 @@ PeridigmNS::State createThreePointProblem(Teuchos::RCP<Epetra_Comm> comm, Teucho
       bondElementSize[0] = 1;
     }
   }
-  ownedScalarBondMap = 
+  overlapScalarBondMap = 
     Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, &myGlobalElements[0], &bondElementSize[0], indexBase, *comm));
 
   PeridigmNS::State state;
@@ -297,7 +297,7 @@ PeridigmNS::State createThreePointProblem(Teuchos::RCP<Epetra_Comm> comm, Teucho
   
   bondFieldIds.push_back( fm.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage") );
   bondFieldIds.push_back( fm.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Deviatoric_Plastic_Extension") );
-  state.allocateBondData(bondFieldIds, ownedScalarBondMap);
+  state.allocateBondData(bondFieldIds, overlapScalarBondMap);
 
   return state;
 }
@@ -318,12 +318,12 @@ TEUCHOS_UNIT_TEST(State, ThreePointTest) {
   PeridigmNS::State state;
   Teuchos::RCP<Epetra_BlockMap> overlapScalarPointMap;
   Teuchos::RCP<Epetra_BlockMap> overlapVectorPointMap;
-  Teuchos::RCP<Epetra_BlockMap> ownedScalarBondMap;
+  Teuchos::RCP<Epetra_BlockMap> overlapScalarBondMap;
   vector<int> scalarPointFieldIds;
   vector<int> vectorPointFieldIds;
   vector<int> bondFieldIds;
   
-  state = createThreePointProblem(comm, overlapScalarPointMap, overlapVectorPointMap, ownedScalarBondMap, scalarPointFieldIds, vectorPointFieldIds, bondFieldIds);
+  state = createThreePointProblem(comm, overlapScalarPointMap, overlapVectorPointMap, overlapScalarBondMap, scalarPointFieldIds, vectorPointFieldIds, bondFieldIds);
   
   TEST_EQUALITY( state.getPointMultiVector(PeridigmField::SCALAR)->NumVectors(), (int)scalarPointFieldIds.size() );
   TEST_EQUALITY( state.getPointMultiVector(PeridigmField::SCALAR)->MyLength(), overlapScalarPointMap->NumMyPoints() );
@@ -334,8 +334,8 @@ TEUCHOS_UNIT_TEST(State, ThreePointTest) {
   TEST_ASSERT( state.getPointMultiVector(PeridigmField::VECTOR)->Map().SameAs( *overlapVectorPointMap ) );
 
   TEST_EQUALITY( state.getBondMultiVector()->NumVectors(), (int)bondFieldIds.size() );
-  TEST_EQUALITY( state.getBondMultiVector()->MyLength(), ownedScalarBondMap->NumMyPoints() );
-  TEST_ASSERT( state.getBondMultiVector()->Map().SameAs( *ownedScalarBondMap ) );
+  TEST_EQUALITY( state.getBondMultiVector()->MyLength(), overlapScalarBondMap->NumMyPoints() );
+  TEST_ASSERT( state.getBondMultiVector()->Map().SameAs( *overlapScalarBondMap ) );
 
   FieldManager& fm = FieldManager::self();
   int coordinatesFieldId = fm.getFieldId("Coordinates");
@@ -408,12 +408,12 @@ TEUCHOS_UNIT_TEST(State, CopyFrom) {
   PeridigmNS::State state;
   Teuchos::RCP<Epetra_BlockMap> overlapScalarPointMap;
   Teuchos::RCP<Epetra_BlockMap> overlapVectorPointMap;
-  Teuchos::RCP<Epetra_BlockMap> ownedScalarBondMap;
+  Teuchos::RCP<Epetra_BlockMap> overlapScalarBondMap;
   vector<int> scalarPointFieldIds;
   vector<int> vectorPointFieldIds;
   vector<int> bondFieldIds;
   
-  state = createThreePointProblem(comm, overlapScalarPointMap, overlapVectorPointMap, ownedScalarBondMap, scalarPointFieldIds, vectorPointFieldIds, bondFieldIds);
+  state = createThreePointProblem(comm, overlapScalarPointMap, overlapVectorPointMap, overlapScalarBondMap, scalarPointFieldIds, vectorPointFieldIds, bondFieldIds);
   
   TEST_EQUALITY( state.getPointMultiVector(PeridigmField::SCALAR)->NumVectors(), (int)scalarPointFieldIds.size() );
   TEST_EQUALITY( state.getPointMultiVector(PeridigmField::SCALAR)->MyLength(), overlapScalarPointMap->NumMyPoints() );
@@ -424,8 +424,8 @@ TEUCHOS_UNIT_TEST(State, CopyFrom) {
   TEST_ASSERT( state.getPointMultiVector(PeridigmField::VECTOR)->Map().SameAs( *overlapVectorPointMap ) );
 
   TEST_EQUALITY( state.getBondMultiVector()->NumVectors(), (int)bondFieldIds.size() );
-  TEST_EQUALITY( state.getBondMultiVector()->MyLength(), ownedScalarBondMap->NumMyPoints() );
-  TEST_ASSERT( state.getBondMultiVector()->Map().SameAs( *ownedScalarBondMap ) );
+  TEST_EQUALITY( state.getBondMultiVector()->MyLength(), overlapScalarBondMap->NumMyPoints() );
+  TEST_ASSERT( state.getBondMultiVector()->Map().SameAs( *overlapScalarBondMap ) );
 
   FieldManager& fm = FieldManager::self();
   int elementIdFieldId = fm.getFieldId("Element_Id");

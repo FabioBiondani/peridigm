@@ -112,7 +112,8 @@ public:
                  Teuchos::RCP<const Epetra_BlockMap> rebalancedOverlapScalarPointMap,
                  Teuchos::RCP<const Epetra_BlockMap> rebalancedOwnedVectorPointMap,
                  Teuchos::RCP<const Epetra_BlockMap> rebalancedOverlapVectorPointMap,
-                 Teuchos::RCP<const Epetra_BlockMap> rebalancedOwnedBondMap);
+                 Teuchos::RCP<const Epetra_BlockMap> rebalancedOwnedBondMap,
+                 Teuchos::RCP<const Epetra_BlockMap> rebalancedOverlapBondMap);
 
   //! Returns the number of times rebalance has been called.
   int getRebalanceCount(){ return rebalanceCount; }

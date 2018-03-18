@@ -105,11 +105,13 @@ void PeridigmNS::ContactBlock::rebalance(Teuchos::RCP<const Epetra_BlockMap> reb
 
   neighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(rebalancedGlobalOverlapScalarPointMap,
                                                                       rebalancedGlobalOverlapScalarBondMap,
-                                                                      rebalancedGlobalNeighborhoodData);
+                                                                      rebalancedGlobalNeighborhoodData,
+                                                                      false);
 
   dataManager->rebalance(ownedScalarPointMap,
                          overlapScalarPointMap,
                          ownedVectorPointMap,
                          overlapVectorPointMap,
-                         ownedScalarBondMap);
+                         ownedScalarBondMap,
+                         overlapScalarBondMap);
 }

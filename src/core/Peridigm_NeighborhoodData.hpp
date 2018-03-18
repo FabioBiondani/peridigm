@@ -139,27 +139,28 @@ public:
   }
 
   void SetSpecularBondPositions(Teuchos::RCP<const Epetra_BlockMap> overlapScalarBondMap){
-    int GID1;
-    for (int i=0;i<(neighborhoodListSize-numOwnedPoints);++i){
-        for(int j=0;j<overlapScalarBondMap->NumMyElements();++j){
-            if ((i-overlapScalarBondMap->FirstPointInElement(j))<overlapScalarBondMap->ElementSize(j)) {
-                GID1 = overlapScalarBondMap->GID(j);
-                break;
-            }
+//     int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int size, firstentry1, firstentry2, GID1, GID2, LID2, numNeighborsSpecularPoint, j, k;
+    for (int i=0;i<numOwnedPoints;++i){
+        size = overlapScalarBondMap->ElementSize(i);
+        firstentry1 = overlapScalarBondMap->FirstPointInElement(i);
+        GID1 = overlapScalarBondMap->GID(i);
+        for (j=0;j<size;++j){
+            GID2 = *(overlapNeighborhoodList+firstentry1+j);
+            LID2 = overlapScalarBondMap->LID(GID2);
+            numNeighborsSpecularPoint = overlapScalarBondMap->ElementSize(LID2);
+            firstentry2 = overlapScalarBondMap->FirstPointInElement(LID2);
+            k=0;
+            if (firstentry2!=-1){
+                for (k=0;k<numNeighborsSpecularPoint;++k){
+                    if (*(overlapNeighborhoodList+firstentry2+k)==GID1){
+                        *(specularBondPositions+firstentry1+j) = firstentry2+k;
+                        break;
+                    }
+                }
+            } else std::cout << "SPECULAR NOT FOUND!!!\n";
+//             std::cout << "Proc: " << rank << "  Pos: " << firstentry1+j << "  GID1: " << GID1 << "  GID2: " << GID2 << "  Specu: " << firstentry2+k << std::endl;
         }
-        int GID2 = *(overlapNeighborhoodList+i);
-        int LID2 = overlapScalarBondMap->LID(GID2);
-        int numNeighborsSpecularPoint = overlapScalarBondMap->ElementSize(LID2);
-        int firstpoint = overlapScalarBondMap->FirstPointInElement(LID2);
-        int j=0;
-        for (j=0;j<numNeighborsSpecularPoint;++j){
-            if (*(overlapNeighborhoodList+firstpoint+j)==GID1){
-                *(specularBondPositions+i) = firstpoint+j;
-                break;
-            }
-        }
-//         int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-//         std::cout << "Proc: " << rank << "  Pos: " << i << "  GID1: " << GID1 << "  GID2: " << GID2 << "  Specu: " << firstpoint+j << std::endl;
     }
   }
 

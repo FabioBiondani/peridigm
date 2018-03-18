@@ -194,7 +194,9 @@ namespace PeridigmNS {
     //! Create the block-specific neighborhood data.
     Teuchos::RCP<PeridigmNS::NeighborhoodData> createNeighborhoodDataFromGlobalNeighborhoodData(Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarPointMap,
                                                                                                 Teuchos::RCP<const Epetra_BlockMap> globalOverlapScalarBondMap,
-                                                                                                Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData);
+                                                                                                Teuchos::RCP<const PeridigmNS::NeighborhoodData> globalNeighborhoodData,
+                                                                                                bool computeSpecularBondPositions
+                                                                                               );
 
     /*! \brief Initialize the data manager.
      *

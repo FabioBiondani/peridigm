@@ -374,7 +374,8 @@ void PeridigmNS::DataManager::rebalance(Teuchos::RCP<const Epetra_BlockMap> reba
                                         Teuchos::RCP<const Epetra_BlockMap> rebalancedOverlapScalarPointMap,
                                         Teuchos::RCP<const Epetra_BlockMap> rebalancedOwnedVectorPointMap,
                                         Teuchos::RCP<const Epetra_BlockMap> rebalancedOverlapVectorPointMap,
-                                        Teuchos::RCP<const Epetra_BlockMap> rebalancedOwnedBondMap)
+                                        Teuchos::RCP<const Epetra_BlockMap> rebalancedOwnedBondMap,
+                                        Teuchos::RCP<const Epetra_BlockMap> rebalancedOverlapBondMap)
 {
   rebalanceCount++;
 
@@ -462,6 +463,7 @@ void PeridigmNS::DataManager::rebalance(Teuchos::RCP<const Epetra_BlockMap> reba
   ownedVectorPointMap = rebalancedOwnedVectorPointMap;
   overlapVectorPointMap = rebalancedOverlapVectorPointMap;
   ownedBondMap = rebalancedOwnedBondMap;
+  overlapBondMap = rebalancedOverlapBondMap;
 }
 
 Teuchos::RCP<const Epetra_Comm> PeridigmNS::DataManager::getEpetraComm()

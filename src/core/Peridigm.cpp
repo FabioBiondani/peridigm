@@ -358,6 +358,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
                                bondOverlapMap,
                                globalNeighborhoodData,
                                peridigmDiscretization->getBlockID());
+
     // contactManager->loadNeighborhoodData(globalNeighborhoodData,
     //                                      oneDimensionalMap,
     //                                      oneDimensionalOverlapMap);
@@ -1032,6 +1033,7 @@ std::string firstNumbersSring(std::string const & str)
   }
   return std::string();
 }
+
 void PeridigmNS::Peridigm::InitializeRestart() {
 	std::string str;
 	struct stat sb;

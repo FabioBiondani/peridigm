@@ -160,7 +160,7 @@ void PeridigmNS::DataManager::allocateData(vector<int> fieldIds)
     myGlobalElements = overlapScalarPointMap->MyGlobalElements();
   }
   if(statelessBondFieldIds.size() + statefulBondFieldIds.size() > 0){
-    TEUCHOS_TEST_FOR_EXCEPTION(ownedBondMap.is_null(), Teuchos::NullReferenceError, 
+    TEUCHOS_TEST_FOR_EXCEPTION(overlapBondMap.is_null(), Teuchos::NullReferenceError, 
                                "Error in PeridigmNS::DataManager::allocateData(), attempting to allocate bond data with no map (forget setMaps()?).");
   }
 
@@ -243,7 +243,7 @@ void PeridigmNS::DataManager::allocateData(vector<int> fieldIds)
       stateNONE->allocatePointData(length, fieldIds, map);
     }
     if(statelessBondFieldIds.size() > 0){
-      stateNONE->allocateBondData(statelessBondFieldIds, ownedBondMap);
+      stateNONE->allocateBondData(statelessBondFieldIds, overlapBondMap);
     }
   }
   if(statefulPointFieldIds.size() + statefulBondFieldIds.size() > 0){
@@ -267,8 +267,8 @@ void PeridigmNS::DataManager::allocateData(vector<int> fieldIds)
       stateNP1->allocatePointData(length, fieldIds, map);
     }
     if(statefulBondFieldIds.size() > 0){
-      stateN->allocateBondData(statefulBondFieldIds, ownedBondMap);
-      stateNP1->allocateBondData(statefulBondFieldIds, ownedBondMap);
+      stateN->allocateBondData(statefulBondFieldIds, overlapBondMap);
+      stateNP1->allocateBondData(statefulBondFieldIds, overlapBondMap);
     }
   }
 }

@@ -791,7 +791,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
             for (int j=0;j<size;++j,++s){
                 (*specularBondPosition)[mothershipFirstpoint+j]= *(blockSpecuPtr+s);
                 
-                Checking that the specular bond is correct
+//                 Checking that the specular bond is correct
                 int k=0;
                 for (k=0;k<OverlapScalarBondMap->NumMyElements();++k){
                     int numNeighborsSpecularPoint = OverlapScalarBondMap->ElementSize(k);
@@ -1026,14 +1026,12 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
 
 //   if (analysisHasSpecular){
   if (true){
-      bondMothership = Teuchos::rcp(new Epetra_MultiVector(*bondMap, 4));
+      bondMothership = Teuchos::rcp(new Epetra_MultiVector(*bondMap, 3));
       specularBondPosition = Teuchos::rcp((*bondMothership)(0), false);      // 
       microPotential = Teuchos::rcp((*bondMothership)(1), false);            //
       scratchBond  = Teuchos::rcp((*bondMothership)(2), false);               //
-      scratchBond2 = Teuchos::rcp((*bondMothership)(3), false);               //
 
       scratchBond->PutScalar(0.0);
-      scratchBond2->PutScalar(0.0);
       microPotential->PutScalar(0.0);
   }
 
@@ -1601,6 +1599,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     contactManager->importData(volume, y, v);
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
+
   // \todo The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
 
   Teuchos::RCP< map< string, vector<int> > > nodeSets = boundaryAndInitialConditionManager->getNodeSets();
@@ -1655,13 +1654,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     blockIt->exportData(*scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
     force->Update(1.0, *scratch, 1.0);
   }
-  if (analysisHasThermal)
+  if (analysisHasThermal){
     heatFlow->PutScalar(0.0);
-  for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-    scratch->PutScalar(0.0);
-    blockIt->exportData(*scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
-    force->Update(1.0, *scratch, 1.0);
-    if (analysisHasThermal){
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       scratchOneD->PutScalar(0.0);
       blockIt->exportData(*scratchOneD, heatFlowFieldId, PeridigmField::STEP_NP1, Add);
       heatFlow->Update(1.0, *scratchOneD, 1.0);
@@ -1672,12 +1667,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     force->Update(1.0, *contactForce, 1.0);
   }
 
-  microPotential->PutScalar(0.0);
+  scratchBond -> PutScalar(0.0);
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-    blockIt->exportData(*scratchBond,  microPotentialFieldId, PeridigmField::STEP_N,   Insert);
-    blockIt->exportData(*scratchBond2, microPotentialFieldId, PeridigmField::STEP_NP1, Insert);
-    microPotential->Update(-1.0, *scratchBond, 1.0, *scratchBond2, 1.0);
+      blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
   }
+  microPotential->Update(1.0,*scratchBond,1.0);
 
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
@@ -1784,15 +1778,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
 
     // Copy data from mothership vectors to overlap vectors in data manager
-    cout << "PRE" << endl << *microPotential << endl;
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       blockIt->importData(*u, displacementFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*y, coordinatesFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
-      blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_N, Insert);
-      blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_NP1, Insert);
     }
 
     //
@@ -1805,6 +1796,15 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       contactManager->importData(volume, y, v);
     }
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
+
+    // zeroing scratchBond and inserting it in micropotential STEP_NP1
+    // if(analysisHasSpecular){
+    if(true){
+        scratchBond->PutScalar(0.0);
+        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+            blockIt->importData(     *scratchBond,   microPotentialFieldId, PeridigmField::STEP_NP1, Insert);
+        }
+    }
 
     // Update forces based on new positions
     PeridigmNS::Timer::self().startTimer("Internal Force");
@@ -1836,18 +1836,15 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 			}
     }
 
-    cout << "PREPOST" << endl << *microPotential << endl;
-    scratchBond2->PutScalar(0.0);
+
+    // evalModel puts deltaMicroPotential of STEP_NP1, Add delta to microPotential of STEP_N
+    scratchBond -> PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-      blockIt->exportData(*scratchBond,  microPotentialFieldId, PeridigmField::STEP_N,   Insert);
-      blockIt->exportData(*scratchBond2, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
-      scratchBond2->Update(-1.0,*scratchBond,1.0);
-      cout << "scratchBond2" << endl << *scratchBond2 << endl;
+      blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
     }
-    microPotential->Update(1.0, *scratchBond2, 1.0);
+    microPotential->Update(1.0,*scratchBond,1.0);
 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
-    cout << "POST" << endl << *microPotential << endl;
 
 
     // Update specificHeat definition with the computed temperature
@@ -4300,6 +4297,13 @@ void PeridigmNS::Peridigm::synchDataManagers() {
 			blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
 		}
 	}
+// 	if(analysisHasSpecular){
+	if(true){
+		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+			blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_NP1, Insert);
+		}
+        
+    }
 
   // The hourglass force density is a special case.  It needs to be parallel assembled
   // prior to output.

@@ -176,6 +176,7 @@ const double constM
             
 
             int localId = *neighPtr;
+            int specuId = int(*specu);
             cellVolume = v[localId];
             const double *XP = &xOverlap[3*localId];
             const ScalarT *YP = &yOverlap[3*localId];
@@ -196,9 +197,16 @@ const double constM
             Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;
             
             *miPotNP1 += p;
-            *(miPotNP1_Overlap+int(*specu)) += p;
-//             cout << "MATERIAL " << p << endl;
-//             cout << "MATERIAL   p " << p << "  n " << n << "  specu " << *specu << "  miPotN " << *miPotN << "*(miPotNP1_Overlap+int(*specu)) " << *(miPotNP1_Overlap+int(*specu)) << endl;
+            miPotNP1_Overlap[specuId] += p;
+            *(fOwned+0) += p;  
+            *(fOwned+1) += p;
+            *(fOwned+2) += p;
+            fInternalOverlap[3*localId+0] += p;
+            fInternalOverlap[3*localId+1] += p;
+            fInternalOverlap[3*localId+2] += p;
+            
+            //             cout << "MATERIAL " << p << " " << specuId << " " << *miPotNP1 << " " << miPotNP1_Overlap[specuId] << endl;
+            //             cout << "MATERIAL   p " << p << "  n " << n << "  specu " << *specu << "  miPotN " << *miPotN << "*(miPotNP1_Overlap+int(*specu)) " << *(miPotNP1_Overlap+int(*specu)) << endl;
         }
 
         vmStressTrial = sqrt(6*MU*Wd);
@@ -211,7 +219,7 @@ const double constM
         yieldStress = // actual yield stress if step is elastic
                 (constA+constB*pow_eqps_n)*
                 (1-pow_hmlgT_M);
-
+/*
         if( vmStressTrial - yieldStress >= 0 ) {
             MATERIAL_EVALUATION::JohnsonCookSolve(
                 vmStressTrial,eqpsN,eqpsNP1,&yieldStress,
@@ -296,7 +304,7 @@ const double constM
             }
 //             cout << "elastic " << sqrt(6*MU*Wd) << " " << *vmStress << endl;
             
-        }; // end if yield
+        }; // end if yield*/
 
     }
 }

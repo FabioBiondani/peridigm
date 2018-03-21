@@ -552,7 +552,6 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> combinedScratch;
     
     Teuchos::RCP<Epetra_Vector> scratchBond;
-    Teuchos::RCP<Epetra_Vector> scratchBond2;
     
     //! Vector containing velocities at dof with kinematic bc; used only by NOX solver.
     Teuchos::RCP<Epetra_Vector> noxVelocityAtDOFWithKinematicBC;

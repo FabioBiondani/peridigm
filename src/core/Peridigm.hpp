@@ -416,7 +416,7 @@ namespace PeridigmNS {
     bool hasThermalShock;
 
     //! Specular Bond Position flag
-//     bool analysisHasSpecular; //MODIFIED NOTE
+    bool analysisHasSpecular; //MODIFIED NOTE
 
     //! Flag for computing element-sphere intersections
     bool computeIntersections;

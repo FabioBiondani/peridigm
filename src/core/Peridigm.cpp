@@ -110,6 +110,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     analysisHasMultiphysics(false),
     analysisHasThermal(false),		// MODIFIED NOTE
     hasThermalShock(false),
+    analysisHasSpecular(false),		// MODIFIED NOTE
     computeIntersections(false),
     constructInterfaces(false),
     deltaTemperatureFieldId(-1),
@@ -211,7 +212,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   }
 
   // Check if specular bond calculations are needed
-//   if(peridigmParams->isParameter("Specular Bonds")) if(peridigmParams->get<bool>("Specular Bonds") == true) analysisHasSpecular=true;
+  if(peridigmParams->isParameter("Specular_Bonds")){ if(peridigmParams->get<bool>("Specular_Bonds") == true) {analysisHasSpecular=true;}}
 
   // Initialize the influence function
   string influenceFunctionString = peridigmParams->sublist("Discretization").get<string>("Influence Function", "One");
@@ -329,12 +330,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   if(analysisHasThermal){		// MODIFIED NOTE
   	heatFlowFieldId                = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Heat_Flow");
   	internalHeatSourceFieldId      = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Internal_Heat_Source");
-  }
-
-//   if(analysisHasSpecular){		// MODIFIED NOTE
-  if(true){		// MODIFIED NOTE
-  	specularBondPositionFieldId    = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Specular_Bond_Position");
-  	microPotentialFieldId          = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Micro-Potential");
   }
 
   modelCoordinatesFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -491,6 +486,36 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     }
   }
 
+  // Checking if calculations using specular bonds positions are needed
+  if(!analysisHasSpecular){
+    if(PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
+        analysisHasSpecular=true;
+        if(peridigmComm->MyPID()==0)  cout << "WARNING!!! Material or damage models features Specular_Bond_Position," << endl <<
+                                              "           swiching to an analysis with specular bonds positions:" << endl <<
+                                              "           setting analysisHasSpecular to TRUE" << endl << endl;
+    }
+  }else{
+    if(!PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
+        analysisHasSpecular=false;
+        if(peridigmComm->MyPID()==0)  cout << "WARNING!!! Material and damage models doesn't feature Specular_Bond_Position," << endl <<
+                                              "           swiching to an analysis without specular bonds positions:" << endl <<
+                                              "           setting analysisHasSpecular to FALSE" << endl << endl;
+    }
+  }
+
+  if(analysisHasSpecular){
+    bondMothership = Teuchos::rcp(new Epetra_MultiVector(*bondMap, 3));
+    specularBondPosition = Teuchos::rcp((*bondMothership)(0), false);      // 
+    microPotential = Teuchos::rcp((*bondMothership)(1), false);            //
+    scratchBond  = Teuchos::rcp((*bondMothership)(2), false);              //
+
+    scratchBond->PutScalar(0.0);
+    microPotential->PutScalar(0.0);
+
+    specularBondPositionFieldId    = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Specular_Bond_Position");
+    microPotentialFieldId          = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Micro-Potential");
+  }
+
   // Instantiate compute manager
   instantiateComputeManager(peridigmDiscretization);
 
@@ -518,8 +543,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   	auxiliaryFieldIds.push_back(heatFlowFieldId);
   	auxiliaryFieldIds.push_back(internalHeatSourceFieldId);
   }
-//   if(analysisHasSpecular){		// MODIFIED NOTE
-  if(true){		// MODIFIED NOTE
+  if(analysisHasSpecular){		// MODIFIED NOTE
   	auxiliaryFieldIds.push_back(specularBondPositionFieldId);
   	auxiliaryFieldIds.push_back(microPotentialFieldId);
   }
@@ -567,7 +591,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   globalNeighborhoodData->DeleteOverlapNeighborhoodList();
   globalNeighborhoodData->DeleteSpecularBondPositions();
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-//       blockIt->DeleteOverlapNeighborhoodList();
+      blockIt->DeleteOverlapNeighborhoodList();
+      if(!analysisHasSpecular) blockIt->DeleteSpecularBondPositions();
   }
 
   // Create a temporary vector for storing the global element ids
@@ -597,8 +622,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       blockIt->importData(*scratchOneD, internalHeatSourceFieldId, PeridigmField::STEP_NP1, Insert);
     }
 
-//     if(analysisHasSpecular){
-    if(true){
+    if(analysisHasSpecular){
       blockIt->importData(*microPotential, microPotentialFieldId,  PeridigmField::STEP_N, Insert);
       blockIt->importData(*microPotential, microPotentialFieldId,  PeridigmField::STEP_NP1, Insert);  
     }
@@ -776,8 +800,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
 
   // Set the specular bond positions in the mothership vector and pass it to blocks' data manager
-//   if (analysisHasSpecular){
-  if (true){
+  if (analysisHasSpecular){
       for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         Teuchos::RCP<const Epetra_BlockMap> OwnedScalarBondMap = blockIt->getOwnedScalarBondMap();
         Teuchos::RCP<const Epetra_BlockMap> OverlapScalarBondMap = blockIt->getOverlapScalarBondMap();
@@ -791,16 +814,16 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
             for (int j=0;j<size;++j,++s){
                 (*specularBondPosition)[mothershipFirstpoint+j]= *(blockSpecuPtr+s);
                 
-//                 Checking that the specular bond is correct
-                int k=0;
-                for (k=0;k<OverlapScalarBondMap->NumMyElements();++k){
-                    int numNeighborsSpecularPoint = OverlapScalarBondMap->ElementSize(k);
-                    int firstentry2 = OverlapScalarBondMap->FirstPointInElement(k);
-                    if (firstentry2+numNeighborsSpecularPoint>*(blockSpecuPtr+s)){
-                        break;
-                    }
-                }
-                int GID2 = OverlapScalarBondMap->GID(k);
+// //                 Checking that the specular bond is correct
+//                 int k=0;
+//                 for (k=0;k<OverlapScalarBondMap->NumMyElements();++k){
+//                     int numNeighborsSpecularPoint = OverlapScalarBondMap->ElementSize(k);
+//                     int firstentry2 = OverlapScalarBondMap->FirstPointInElement(k);
+//                     if (firstentry2+numNeighborsSpecularPoint>*(blockSpecuPtr+s)){
+//                         break;
+//                     }
+//                 }
+//                 int GID2 = OverlapScalarBondMap->GID(k);
 //                 cout << "MOTHERSHIP   rank: " << peridigmComm->MyPID() << " |  LID1: " << i << "  LID2: " << k << " |  GID1: " << globalID << "  GID2: " << GID2 << " |  Pos: " << OwnedScalarBondMap->FirstPointInElement(i)+j << "  Specu: " << *(blockSpecuPtr+s) << endl;
             }
         }
@@ -814,6 +837,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   PeridigmNS::Timer::self().startTimer("Apply Initial Conditions");
   boundaryAndInitialConditionManager->applyInitialConditions();
   PeridigmNS::Timer::self().stopTimer("Apply Initial Conditions");
+
 
   // Initialize material models and damage models
   // Initialization functions require valid initial values, e.g. velocities and displacements.
@@ -1023,17 +1047,6 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   externalForce = Teuchos::rcp((*threeDimensionalMothership)(7), false); // external force
   deltaU = Teuchos::rcp((*threeDimensionalMothership)(8), false);        // increment in displacement (used only for implicit time integration)
   scratch = Teuchos::rcp((*threeDimensionalMothership)(9), false);       // scratch space
-
-//   if (analysisHasSpecular){
-  if (true){
-      bondMothership = Teuchos::rcp(new Epetra_MultiVector(*bondMap, 3));
-      specularBondPosition = Teuchos::rcp((*bondMothership)(0), false);      // 
-      microPotential = Teuchos::rcp((*bondMothership)(1), false);            //
-      scratchBond  = Teuchos::rcp((*bondMothership)(2), false);               //
-
-      scratchBond->PutScalar(0.0);
-      microPotential->PutScalar(0.0);
-  }
 
   // Set the block IDs
   double* bID;
@@ -1667,12 +1680,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     force->Update(1.0, *contactForce, 1.0);
   }
 
-  scratchBond -> PutScalar(0.0);
-  for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+  if(analysisHasSpecular){
+    scratchBond -> PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
+    }
+    microPotential->Update(1.0,*scratchBond,1.0);
   }
-  microPotential->Update(1.0,*scratchBond,1.0);
-  cout << "MICROPOTENTIAL\n" << *microPotential << endl;
 
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
@@ -1799,8 +1813,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
     // zeroing scratchBond and inserting it in micropotential STEP_NP1
-    // if(analysisHasSpecular){
-    if(true){
+    if(analysisHasSpecular){
         scratchBond->PutScalar(0.0);
         for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
             blockIt->importData(     *scratchBond,   microPotentialFieldId, PeridigmField::STEP_NP1, Insert);
@@ -1839,12 +1852,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 
     // evalModel puts deltaMicroPotential of STEP_NP1, Add delta to microPotential of STEP_N
-    scratchBond -> PutScalar(0.0);
-    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-      blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
+    if (analysisHasSpecular){
+      scratchBond -> PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
+      }
+      microPotential->Update(1.0,*scratchBond,1.0);
     }
-    microPotential->Update(1.0,*scratchBond,1.0);
-    cout << "MICROPOTENTIAL\n" << *microPotential << endl;
 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
@@ -4299,12 +4313,10 @@ void PeridigmNS::Peridigm::synchDataManagers() {
 			blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
 		}
 	}
-// 	if(analysisHasSpecular){
-	if(true){
+	if(analysisHasSpecular){
 		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
 			blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_NP1, Insert);
 		}
-        
     }
 
   // The hourglass force density is a special case.  It needs to be parallel assembled

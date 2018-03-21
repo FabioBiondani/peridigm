@@ -80,6 +80,8 @@ public:
       delete[] neighborhoodPtr;
 	if(overlapNeighborhoodList != 0)
 	  delete[] overlapNeighborhoodList;
+	if(specularBondPositions != 0)
+	  delete[] specularBondPositions;
   }
 
   void SetNumOwned(int numOwned){
@@ -137,6 +139,11 @@ public:
   int* OverlapNeighborhoodList() const{
 	return overlapNeighborhoodList;
   }
+  
+  void DeleteOverlapNeighborhoodList() {
+    if (overlapNeighborhoodList) delete[] overlapNeighborhoodList;
+    overlapNeighborhoodList = 0;
+  }
 
   void SetSpecularBondPositions(Teuchos::RCP<const Epetra_BlockMap> overlapScalarBondMap){
 //     int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -172,6 +179,11 @@ public:
 	return specularBondPositions;
   }
 
+  void DeleteSpecularBondPositions() {
+    if (specularBondPositions) delete[] specularBondPositions;
+    specularBondPositions = 0;
+  }
+
   double memorySize() const{
     int sizeInBytes =
       (numOwnedPoints + 2*neighborhoodListSize + overlapNeighborhoodListSize + 2 )*sizeof(int) + 4*sizeof(int*);
@@ -180,10 +192,10 @@ public:
   }
 
 protected:
-  int numOwnedPoints;
+  int numOwnedPoints = 0;
   int numOverlapPoints;
   int* ownedIDs;
-  int neighborhoodListSize;
+  int neighborhoodListSize = 0;
   int* neighborhoodList;
   int* neighborhoodPtr;
   int overlapNeighborhoodListSize;

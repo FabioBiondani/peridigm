@@ -78,8 +78,10 @@ ScalarT* deviatoricPlasticExtensionNP1,
 const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
-ScalarT* bondForceDensity,
 const double* deltaTemperature,
+const double* specularBondPosition,
+const ScalarT* microPotentialN,
+ScalarT* microPotentialNP1,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
@@ -120,6 +122,12 @@ const double constM
     const ScalarT *eqpsN = EquivalentPlasticStrainN;
     ScalarT *eqpsNP1 = EquivalentPlasticStrainNP1;
     ScalarT *td = deviatoricForceDensity;
+    
+    const double *specu = specularBondPosition;
+    const ScalarT *miPotN = microPotentialN;
+    const ScalarT *miPotN_Overlap = microPotentialN;
+    ScalarT *miPotNP1 = microPotentialNP1;
+    ScalarT *miPotNP1_Overlap = microPotentialNP1;
     
     double hmlgT;
     
@@ -163,7 +171,7 @@ const double constM
         double selfCellVolume = v[p];
 
         Wd=0.0;
-        for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++){
+        for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++,specu++,miPotN++,miPotNP1++){
             *edpNP1=*edpN;
             
 
@@ -186,6 +194,11 @@ const double constM
 
             // compute deviatoric energy density
             Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;
+            
+            *miPotNP1 += p;
+            *(miPotNP1_Overlap+int(*specu)) += p;
+//             cout << "MATERIAL " << p << endl;
+//             cout << "MATERIAL   p " << p << "  n " << n << "  specu " << *specu << "  miPotN " << *miPotN << "*(miPotNP1_Overlap+int(*specu)) " << *(miPotNP1_Overlap+int(*specu)) << endl;
         }
 
         vmStressTrial = sqrt(6*MU*Wd);
@@ -307,8 +320,10 @@ double* deviatoricPlasticExtensionNP1,
 const double* EquivalentPlasticStrainN,
 double* EquivalentPlasticStrainNP1,
 double* deviatoricForceDensity,
-double* bondForceDensity,
 const double* deltaTemperature,
+const double* specularBondPosition,
+const double* microPotentialN,
+double* microPotentialNP1,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
@@ -342,8 +357,10 @@ Sacado::Fad::DFad<double>* deviatoricPlasticExtensionNP1,
 const Sacado::Fad::DFad<double>* EquivalentPlasticStrainN,
 Sacado::Fad::DFad<double>* EquivalentPlasticStrainNP1,
 Sacado::Fad::DFad<double>* deviatoricForceDensity,
-Sacado::Fad::DFad<double>* bondForceDensity,
 const double* deltaTemperature,
+const double* specularBondPosition,
+const Sacado::Fad::DFad<double>* microPotentialN,
+Sacado::Fad::DFad<double>* microPotentialNP1,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,

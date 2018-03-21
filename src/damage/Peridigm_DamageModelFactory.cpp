@@ -73,7 +73,7 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     damageModel = Teuchos::rcp( new FakeDamageModel(damageModelParams) );
   else if(damageModelName == "Mean Local Damage")
     damageModel = Teuchos::rcp( new MeanLocalDamageModel(damageModelParams) );
-  else if(damageModelName == "Mean Local Damage")
+  else if(damageModelName == "Critical Micro-Potential")
     damageModel = Teuchos::rcp( new MicropotentialDamageModel(damageModelParams) );
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");

@@ -87,6 +87,8 @@ namespace PeridigmNS {
     Teuchos::RCP<const Epetra_BlockMap> getOverlapVectorPointMap(){ return overlapVectorPointMap; }
     //! Get the map for scalar data stored at owned bonds
     Teuchos::RCP<const Epetra_BlockMap> getOwnedScalarBondMap(){ return ownedScalarBondMap; }
+    //! Get the map for scalar data stored at owned + overlap bonds
+    Teuchos::RCP<const Epetra_BlockMap> getOverlapScalarBondMap(){ return overlapScalarBondMap; }
     //@}
 
     //! Get the neighborhood data
@@ -175,6 +177,10 @@ namespace PeridigmNS {
 
     //! Read block data
     void readBlockfromDisk(std::string blockName, char const * path){ dataManager->readBlockfromDisk(blockName, path); }
+    
+    //! Release memory from neighborhoodData when needed
+    void DeleteOverlapNeighborhoodList() {neighborhoodData->DeleteOverlapNeighborhoodList();}
+    void DeleteSpecularBondPositions() {neighborhoodData->DeleteSpecularBondPositions();}
 
   protected:
     

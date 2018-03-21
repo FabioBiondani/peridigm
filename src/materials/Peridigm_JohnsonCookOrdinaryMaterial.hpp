@@ -145,17 +145,17 @@ namespace PeridigmNS {
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
     int m_forceDensityFieldId;
-    int m_bondForceDensityFieldId;
     int m_bondDamageFieldId;
     int m_surfaceCorrectionFactorFieldId;
     int m_deltaTemperatureFieldId;
-    int m_microPotentialFieldId;
     int m_VonMisesStressFieldId;
     
     int m_deviatoricPlasticExtensionFieldId;
     int m_equivalentPlasticStrainFieldId;
     int m_deviatoricForceDensityFieldId;
 
+    int m_specularBondPositionFieldId;
+    int m_microPotentialFieldId;
   };
 }
 

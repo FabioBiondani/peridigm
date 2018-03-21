@@ -63,20 +63,22 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
     m_deltaTemperatureFieldId(-1),
     m_specularBondPositionFieldId(-1),m_elementIdFieldId(-1)
 {
-  m_MeltingTemperature = params.get<double>("Melting Temperature");
-  m_ReferenceTemperature = params.get<double>("Reference Temperature");
   if (params.isParameter("Constant A")){
       m_A  = params.get<double>("Constant A");
       m_N  = params.get<double>("Constant N");
       m_B  = params.get<double>("Constant B");
       m_C  = params.get<double>("Constant C");
       m_M  = params.get<double>("Constant M");
+      m_MeltingTemperature = params.get<double>("Melting Temperature");
+      m_ReferenceTemperature = params.get<double>("Reference Temperature");
   } else {
       m_A = 1e100;
       m_N = 0.0;
       m_B = 0.0;
       m_C = 0.0;
-      m_M = 0.0;
+      m_M = 1e-100;
+      m_MeltingTemperature = 1e100;
+      m_ReferenceTemperature = 0.0;
   }
   
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();

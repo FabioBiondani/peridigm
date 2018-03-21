@@ -415,6 +415,9 @@ namespace PeridigmNS {
     //! Robin boundary condition fot thermal shock flag
     bool hasThermalShock;
 
+    //! Specular Bond Position flag
+//     bool analysisHasSpecular; //MODIFIED NOTE
+
     //! Flag for computing element-sphere intersections
     bool computeIntersections;
 
@@ -454,6 +457,9 @@ namespace PeridigmNS {
 
     //! Mothership multivector that contains all the one-dimensional global vectors (blockID, volume)
     Teuchos::RCP<Epetra_MultiVector> oneDimensionalMothership;
+
+    //! Mothership multivector that contains all the bond global vectors (specularBondPosition, microPotential)
+    Teuchos::RCP<Epetra_MultiVector> bondMothership;
 
     //! Blocks
     Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks;
@@ -532,13 +538,22 @@ namespace PeridigmNS {
 
     Teuchos::RCP<Epetra_Vector> combinedDeltaU;
 
+  	//! Global vector for specular bond positions
+  	Teuchos::RCP<Epetra_Vector> specularBondPosition;
+
+  	//! Global vector for micro-potential
+  	Teuchos::RCP<Epetra_Vector> microPotential;
+
     //! Global scratch space vector
     Teuchos::RCP<Epetra_Vector> scratch;
 
     Teuchos::RCP<Epetra_Vector> scratchOneD;
 
     Teuchos::RCP<Epetra_Vector> combinedScratch;
-
+    
+    Teuchos::RCP<Epetra_Vector> scratchBond;
+    Teuchos::RCP<Epetra_Vector> scratchBond2;
+    
     //! Vector containing velocities at dof with kinematic bc; used only by NOX solver.
     Teuchos::RCP<Epetra_Vector> noxVelocityAtDOFWithKinematicBC;
 
@@ -645,6 +660,10 @@ namespace PeridigmNS {
     int fluidFlowDensityFieldId;
     int numMultiphysDoFs;
     string textMultiphysDoFs;
+
+    // specular bonds quantities
+    int specularBondPositionFieldId;
+    int microPotentialFieldId;
 
     // Map for restart files
     map<string, string> restartFiles;

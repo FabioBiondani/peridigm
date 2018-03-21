@@ -72,9 +72,12 @@ ScalarT* deviatoricPlasticExtensionNP1,
 const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
-ScalarT* bondForceDensity,
 const double* deltaTemperature,
  
+const double* specularBondPosition,
+const ScalarT* microPotentialN,
+ScalarT* microPotentialNP1,
+
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,

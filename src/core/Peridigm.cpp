@@ -801,7 +801,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
                     }
                 }
                 int GID2 = OverlapScalarBondMap->GID(k);
-                cout << "MOTHERSHIP   rank: " << peridigmComm->MyPID() << " |  LID1: " << i << "  LID2: " << k << " |  GID1: " << globalID << "  GID2: " << GID2 << " |  Pos: " << OwnedScalarBondMap->FirstPointInElement(i)+j << "  Specu: " << *(blockSpecuPtr+s) << endl;
+//                 cout << "MOTHERSHIP   rank: " << peridigmComm->MyPID() << " |  LID1: " << i << "  LID2: " << k << " |  GID1: " << globalID << "  GID2: " << GID2 << " |  Pos: " << OwnedScalarBondMap->FirstPointInElement(i)+j << "  Specu: " << *(blockSpecuPtr+s) << endl;
             }
         }
       }
@@ -1672,6 +1672,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
   }
   microPotential->Update(1.0,*scratchBond,1.0);
+  cout << "MICROPOTENTIAL\n" << *microPotential << endl;
 
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
@@ -1843,6 +1844,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
     }
     microPotential->Update(1.0,*scratchBond,1.0);
+    cout << "MICROPOTENTIAL\n" << *microPotential << endl;
 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 

@@ -211,9 +211,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   	numThermalDoFs = 0;
   }
 
-  // Check if specular bond calculations are needed
-  if(peridigmParams->isParameter("Specular_Bonds")){ if(peridigmParams->get<bool>("Specular_Bonds") == true) {analysisHasSpecular=true;}}
-
   // Initialize the influence function
   string influenceFunctionString = peridigmParams->sublist("Discretization").get<string>("Influence Function", "One");
   PeridigmNS::InfluenceFunction::self().setInfluenceFunction( influenceFunctionString );
@@ -487,20 +484,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   }
 
   // Checking if calculations using specular bonds positions are needed
-  if(!analysisHasSpecular){
-    if(PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
-        analysisHasSpecular=true;
-        if(peridigmComm->MyPID()==0)  cout << "WARNING!!! Material or damage models features Specular_Bond_Position," << endl <<
-                                              "           swiching to an analysis with specular bonds positions:" << endl <<
-                                              "           setting analysisHasSpecular to TRUE" << endl << endl;
-    }
-  }else{
-    if(!PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
-        analysisHasSpecular=false;
-        if(peridigmComm->MyPID()==0)  cout << "WARNING!!! Material and damage models doesn't feature Specular_Bond_Position," << endl <<
-                                              "           swiching to an analysis without specular bonds positions:" << endl <<
-                                              "           setting analysisHasSpecular to FALSE" << endl << endl;
-    }
+  if(PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
+    analysisHasSpecular=true;
+    if(peridigmComm->MyPID()==0)  cout << "** Material or damage models features Specular_Bond_Position," << endl <<
+                                          "** swiching to an analysis with specular bonds positions:" << endl <<
+                                          "** setting analysisHasSpecular to TRUE" << endl << endl;
   }
 
   if(analysisHasSpecular){

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import sys
 import string
 import os
@@ -27,12 +26,12 @@ def read_line(file):
 
 if __name__ == "__main__":
 
-    print("\n---- Text to Genesis\n")
+    print "\n---- Text to Genesis\n"
 
     if len(sys.argv) < 2:
-        print("Usage:  text_to_genesis.py <discretization_file.txt> <nodeset_1.txt> <nodeset_2.txt> ... <nodeset_n.txt>\n")
-        print("The discretization file lists the nodes as (x, y, z, block_id, volume)")
-        print("The node set files list the node numbers in each node set (1-based indexing)\n")
+        print "Usage:  text_to_genesis.py <discretization_file.txt> <nodeset_1.txt> <nodeset_2.txt> ... <nodeset_n.txt>\n"
+        print "The discretization file lists the nodes as (x, y, z, block_id, volume)"
+        print "The node set files list the node numbers in each node set (1-based indexing)\n"
         sys.exit(1)
 
     textFileName = sys.argv[1]
@@ -40,13 +39,13 @@ if __name__ == "__main__":
     for i in range(len(sys.argv)-2):
         nodeSetFileNames.append(sys.argv[i+2])
 
-    print("Discretization file:")
-    print(" ", textFileName)
-    print()
-    print("Node set files:")
+    print "Discretization file:"
+    print " ", textFileName
+    print
+    print "Node set files:"
     for i in range(len(nodeSetFileNames)):
-        print(" ", nodeSetFileNames[i])
-    print()
+        print " ", nodeSetFileNames[i]
+    print
     
     textFile = open(textFileName)
 
@@ -67,14 +66,14 @@ if __name__ == "__main__":
         Z.append(float(vals[2]))
         block_id = int(vals[3])
         vol.append(float(vals[4]))
-        if block_id not in list(blocks.keys()):
+        if block_id not in blocks.keys():
             blocks[block_id] = []
         blocks[block_id].append(nodeId)
         buff = read_line(textFile)
     textFile.close()
-    
-    print("Read", len(X), "nodes and", len(blocks), "block from", textFileName)
-    
+        
+    print "Read", len(X), "nodes and", len(blocks), "block from", textFileName
+
     nodeSets = []
     for fileName in nodeSetFileNames:
         nodeSets.append([])
@@ -88,7 +87,7 @@ if __name__ == "__main__":
                 nodeSets[node_set_id-1].append(node_id)
             buff = read_line(nodeSetFile)
         nodeSetFile.close()
-        print("Read", len(nodeSets[node_set_id-1]), "node ids from", fileName)
+        print "Read", len(nodeSets[node_set_id-1]), "node ids from", fileName
 
     # Write the Exodus II file
     exodusFileName = textFileName[:-4] + ".g"
@@ -122,7 +121,7 @@ if __name__ == "__main__":
     exodusFile.put_coords(X, Y, Z)
 
     exodusBlockIds = []
-    for key in list(blocks.keys()):
+    for key in blocks.keys():
         exodusBlockIds.append(key)
 
     # Write the element block information
@@ -180,4 +179,4 @@ if __name__ == "__main__":
     # Close the output Exodus file
     exodusFile.close()
 
-    print("\nData written to Exodus II file", exodusFileName, "\n")
+    print "\nData written to Exodus II file", exodusFileName, "\n"

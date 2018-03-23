@@ -301,8 +301,8 @@ PeridigmNS::ElasticMaterial::computeAutomaticDifferentiationJacobian(const doubl
                             tempOneDimensionalMap,
                             Teuchos::RCP<const Epetra_BlockMap>(),
                             tempThreeDimensionalMap,
-                            tempBondMap,
-                            Teuchos::RCP<const Epetra_BlockMap>());
+                            Teuchos::RCP<const Epetra_BlockMap>(),
+                            tempBondMap);
 
     // The temporary data manager will have the same field specs and data as the real data manager.
     vector<int> fieldIds = dataManager.getFieldIds();

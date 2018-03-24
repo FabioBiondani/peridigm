@@ -63,7 +63,8 @@ template<typename ScalarT>
 void computeInternalForceJohnsonCookOrdinary
 (
 const double* xOverlap,
-const ScalarT* yOverlap,
+const ScalarT* yOverlapN,
+const ScalarT* yOverlapNP1,
 const double* mOwned,
 const double* volumeOverlap,
 const ScalarT* dilatationOwned,
@@ -79,8 +80,8 @@ const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
 const double* deltaTemperature,
+const bool useSpecularBondPosition,
 const double* specularBondPosition,
-const ScalarT* microPotentialN,
 ScalarT* microPotentialNP1,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
@@ -106,7 +107,8 @@ const double constM
     if(deltaTemperature) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
 
     const double *xOwned = xOverlap;
-    const ScalarT *yOwned = yOverlap;
+    const ScalarT *yOwnedN   = yOverlapN;
+    const ScalarT *yOwnedNP1 = yOverlapNP1;
     const double *deltaT = deltaTemperature;
     const double *m = mOwned;
     const double *v = volumeOverlap;
@@ -124,8 +126,6 @@ const double constM
     ScalarT *td = deviatoricForceDensity;
     
     const double *specu = specularBondPosition;
-    const ScalarT *miPotN = microPotentialN;
-    const ScalarT *miPotN_Overlap = microPotentialN;
     ScalarT *miPotNP1 = microPotentialNP1;
     ScalarT *miPotNP1_Overlap = microPotentialNP1;
     
@@ -143,7 +143,9 @@ const double constM
 
     const int *neighPtr = localNeighborList;
     double cellVolume, alpha, X_dx, X_dy, X_dz, zeta, omega;
-    ScalarT Y_dx, Y_dy, Y_dz, dY, t, ti, fx, fy, fz, e;
+    ScalarT   YN_dx,   YN_dy,   YN_dz, dYN;
+    ScalarT YNP1_dx, YNP1_dy, YNP1_dz, dYNP1;
+    ScalarT t, ti, fx, fy, fz, e;
     ScalarT ed;
 
     const int *neighPtrOverLap = localNeighborList;
@@ -153,7 +155,7 @@ const double constM
     const double *bondDamageOverLap = bondDamage;
 
 
-    for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, vmStress++, eqpsN++, eqpsNP1++, deltaT++, m++, theta++, scf++){
+    for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwnedN +=3, yOwnedNP1 +=3, fOwned+=3, vmStress++, eqpsN++, eqpsNP1++, deltaT++, m++, theta++, scf++){
         
         if(deltaTemperature){
             hmlgT = (*deltaT - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
@@ -165,26 +167,25 @@ const double constM
 
         int numNeigh = *neighPtr; neighPtr++; neighPtrOverLap++;
         const double *X = xOwned;
-        const ScalarT *Y = yOwned;
+        const ScalarT *YN   = yOwnedN;
+        const ScalarT *YNP1 = yOwnedNP1;
         alpha = 15.0*MU/(*m);
         alpha *= (*scf);
         double selfCellVolume = v[p];
 
         Wd=0.0;
-        for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++,specu++,miPotN++,miPotNP1++){
+        for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++){
             *edpNP1=*edpN;
-            
 
             int localId = *neighPtr;
-            int specuId = int(*specu);
             cellVolume = v[localId];
             const double *XP = &xOverlap[3*localId];
-            const ScalarT *YP = &yOverlap[3*localId];
+            const ScalarT *YNP1P = &yOverlapNP1[3*localId];
             X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
             zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
-            Y_dx = YP[0]-Y[0];  Y_dy = YP[1]-Y[1];  Y_dz = YP[2]-Y[2];
-            dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
-            e = dY - zeta;
+            YNP1_dx = YNP1P[0]-YNP1[0];  YNP1_dy = YNP1P[1]-YNP1[1];  YNP1_dz = YNP1P[2]-YNP1[2];
+            dYNP1 = sqrt(YNP1_dx*YNP1_dx+YNP1_dy*YNP1_dy+YNP1_dz*YNP1_dz);
+            e = dYNP1 - zeta;
             if(deltaTemperature) e -= thermalExpansionCoefficient*(*deltaT)*zeta;
             omega = scalarInfluenceFunction(zeta,horizon);
             ed = e - *theta/3*zeta - *edpNP1; // deviatoric Extension
@@ -196,8 +197,10 @@ const double constM
             // compute deviatoric energy density
             Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;
             
-            *miPotNP1 += p;
-            miPotNP1_Overlap[specuId] += p;
+//             *miPotNP1 += p;
+//             miPotNP1_Overlap[specuId] += p;
+            //             cout << "MATERIAL " << p << " " << specuId << " " << *miPotNP1 << " " << miPotNP1_Overlap[specuId] << endl;
+            //             cout << "MATERIAL   p " << p << "  n " << n << "  specu " << *specu << "  miPotN " << *miPotN << "*(miPotNP1_Overlap+int(*specu)) " << *(miPotNP1_Overlap+int(*specu)) << endl;
         }
 
         vmStressTrial = sqrt(6*MU*Wd);
@@ -226,15 +229,15 @@ const double constM
                 
                 tempScalar = *vmStress / vmStressTrial;
 //                 Wd=0.0;
-                for(int n=0;n<numNeigh;n++,neighPtrOverLap++,bondDamageOverLap++,edpN_OverLap++,edpNP1_OverLap++,td_OverLap++){
+                for(int n=0;n<numNeigh;n++,neighPtrOverLap++,bondDamageOverLap++,edpN_OverLap++,edpNP1_OverLap++,td_OverLap++,specu++,miPotNP1++){
 
                     int localId = *neighPtrOverLap;
                     cellVolume = v[localId];
                     const double *XP = &xOverlap[3*localId];
-                    const ScalarT *YP = &yOverlap[3*localId];
+                    const ScalarT *YNP1P = &yOverlapNP1[3*localId];
                     X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
-                    Y_dx = YP[0]-Y[0];  Y_dy = YP[1]-Y[1];  Y_dz = YP[2]-Y[2];
-                    dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
+                    YNP1_dx = YNP1P[0]-YNP1[0];  YNP1_dy = YNP1P[1]-YNP1[1];  YNP1_dz = YNP1P[2]-YNP1[2];
+                    dYNP1 = sqrt(YNP1_dx*YNP1_dx+YNP1_dy*YNP1_dy+YNP1_dz*YNP1_dz);
                     zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
                     omega = scalarInfluenceFunction(zeta,horizon);
 
@@ -242,7 +245,7 @@ const double constM
                     ti= (1.0-*bondDamage)*(3.0*K*(*theta)/(*m)* omega * zeta);
                     t = ti + *td_OverLap;
 
-                    fx = t * Y_dx / dY; fy = t * Y_dy / dY; fz = t * Y_dz / dY;
+                    fx = t * YNP1_dx / dYNP1; fy = t * YNP1_dy / dYNP1; fz = t * YNP1_dz / dYNP1;
 
                     *(fOwned+0) += fx*cellVolume;
                     *(fOwned+1) += fy*cellVolume;
@@ -252,7 +255,17 @@ const double constM
                     fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
 
                     *edpNP1_OverLap = *edpN_OverLap + *m/5.0 *(*td_OverLap)/omega / (*vmStress) * lambda ;
-                    
+
+
+                    if(useSpecularBondPosition){
+                        int specuId = int(*specu);
+                        const ScalarT *YNP = &yOverlapNP1[3*localId];
+                        YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
+                        dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
+
+                        *miPotNP1+=t*(dYNP1-dYN);
+                        miPotNP1_Overlap[specuId]+=t*(dYNP1-dYN);
+                    }
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
 //                     if(deltaTemperature) e -= thermalExpansionCoefficient*(*deltaT)*zeta;
@@ -264,26 +277,27 @@ const double constM
                 std::cout << "ERROR: Negative delta plastic epsilon after loop\n" <<  "  Delta plastic strain:  " << lambda << std::endl;
                 TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "")
             } // end if lambda
-        } else { // The step is elastic
+        } else 
+        { // The step is elastic
             *eqpsNP1= *eqpsN;
             *vmStress = vmStressTrial;
 
-            for(int n=0; n<numNeigh; n++,neighPtrOverLap++,bondDamageOverLap++,edpN_OverLap++,edpNP1_OverLap++,td_OverLap++) {
+            for(int n=0; n<numNeigh; n++,neighPtrOverLap++,bondDamageOverLap++,edpN_OverLap++,edpNP1_OverLap++,td_OverLap++,specu++,miPotNP1++) {
 
                 int localId = *neighPtrOverLap;
                 cellVolume = v[localId];
                 const double *XP = &xOverlap[3*localId];
-                const ScalarT *YP = &yOverlap[3*localId];
+                const ScalarT *YNP1P = &yOverlapNP1[3*localId];
                 X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
-                Y_dx = YP[0]-Y[0];  Y_dy = YP[1]-Y[1];  Y_dz = YP[2]-Y[2];
-                dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
+                YNP1_dx = YNP1P[0]-YNP1[0];  YNP1_dy = YNP1P[1]-YNP1[1];  YNP1_dz = YNP1P[2]-YNP1[2];
+                dYNP1 = sqrt(YNP1_dx*YNP1_dx+YNP1_dy*YNP1_dy+YNP1_dz*YNP1_dz);
                 zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
                 omega = scalarInfluenceFunction(zeta,horizon);
 
                 ti= (1.0-*bondDamage)*(3.0*K*(*theta)/(*m)* omega * zeta);
                 t = ti + *td_OverLap;
 
-                fx = t * Y_dx / dY;  fy = t * Y_dy / dY;  fz = t * Y_dz / dY;
+                fx = t * YNP1_dx / dYNP1;  fy = t * YNP1_dy / dYNP1;  fz = t * YNP1_dz / dYNP1;
 
                 *(fOwned+0) += fx*cellVolume;  
                 *(fOwned+1) += fy*cellVolume;
@@ -291,6 +305,16 @@ const double constM
                 fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
                 fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
                 fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+
+                if(useSpecularBondPosition){
+                    int specuId = int(*specu);
+                    const ScalarT *YNP = &yOverlapNP1[3*localId];
+                    YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
+                    dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
+
+                    *miPotNP1+=t*(dYNP1-dYN);
+                    miPotNP1_Overlap[specuId]+=t*(dYNP1-dYN);
+                }
 
             }
 //             cout << "elastic " << sqrt(6*MU*Wd) << " " << *vmStress << endl;
@@ -304,7 +328,8 @@ const double constM
 template void computeInternalForceJohnsonCookOrdinary<double>
 (
 const double* xOverlap,
-const double* yOverlap,
+const double* yOverlapN,
+const double* yOverlapNP1,
 const double* mOwned,
 const double* volumeOverlap,
 const double* dilatationOwned,
@@ -320,8 +345,8 @@ const double* EquivalentPlasticStrainN,
 double* EquivalentPlasticStrainNP1,
 double* deviatoricForceDensity,
 const double* deltaTemperature,
+const bool useSpecularBondPosition,
 const double* specularBondPosition,
-const double* microPotentialN,
 double* microPotentialNP1,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
@@ -341,7 +366,8 @@ const double constM
 template void computeInternalForceJohnsonCookOrdinary<Sacado::Fad::DFad<double> >
 (
 const double* xOverlap,
-const Sacado::Fad::DFad<double>* yOverlap,
+const Sacado::Fad::DFad<double>* yOverlapN,
+const Sacado::Fad::DFad<double>* yOverlapNP1,
 const double* mOwned,
 const double* volumeOverlap,
 const Sacado::Fad::DFad<double>* dilatationOwned,
@@ -357,8 +383,8 @@ const Sacado::Fad::DFad<double>* EquivalentPlasticStrainN,
 Sacado::Fad::DFad<double>* EquivalentPlasticStrainNP1,
 Sacado::Fad::DFad<double>* deviatoricForceDensity,
 const double* deltaTemperature,
+const bool useSpecularBondPosition,
 const double* specularBondPosition,
-const Sacado::Fad::DFad<double>* microPotentialN,
 Sacado::Fad::DFad<double>* microPotentialNP1,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,

@@ -487,7 +487,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   if(PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
     analysisHasSpecular=true;
     if(peridigmComm->MyPID()==0)  cout << "** Material or damage models features Specular_Bond_Position," << endl <<
-                                          "** swiching to an analysis with specular bonds positions:" << endl <<
+                                          "** switching to analysis with specular bonds positions:" << endl <<
                                           "** setting analysisHasSpecular to TRUE" << endl << endl;
   }
 

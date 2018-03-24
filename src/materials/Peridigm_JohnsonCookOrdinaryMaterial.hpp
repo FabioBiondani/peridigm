@@ -125,6 +125,7 @@ namespace PeridigmNS {
     double m_horizon;
     bool m_applySurfaceCorrectionFactor;
     bool m_applyThermalStrains;
+    bool m_useSpecularBondPosition;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
     
     double m_MeltingTemperature;
@@ -156,6 +157,7 @@ namespace PeridigmNS {
 
     int m_specularBondPositionFieldId;
     int m_microPotentialFieldId;
+    
   };
 }
 

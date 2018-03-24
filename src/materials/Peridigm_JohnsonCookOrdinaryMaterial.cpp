@@ -67,7 +67,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
     m_deltaTemperatureFieldId(-1),
     m_VonMisesStressFieldId(-1),
     m_deviatoricPlasticExtensionFieldId(-1),m_equivalentPlasticStrainFieldId(-1),m_deviatoricForceDensityFieldId(-1),
-    m_specularBondPositionFieldId(-1),m_microPotentialFieldId(-1)
+    m_specularBondPositionFieldId(-1),m_microPotentialFieldId(-1),
+    m_useSpecularBondPosition(false)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);
@@ -86,7 +87,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
       m_MeltingTemperature = params.get<double>("Melting Temperature");
       m_ReferenceTemperature = params.get<double>("Reference Temperature");
   } else {
-      m_A = 1e100;
+      m_A = 1e200;
       m_N = 0.0;
       m_B = 0.0;
       m_C = 0.0;
@@ -96,12 +97,16 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   }
   
 
+  if(params.isParameter("Use Specular Bond Position")){
+      m_useSpecularBondPosition  = params.get<bool>("Use Specular Bond Position");
+  }
+
   if(params.isParameter("Thermal Expansion Coefficient")){
     obj_alphaVol.set(params,"Thermal Expansion Coefficient");
     m_alpha= obj_alphaVol.compute(0.0);
     m_applyThermalStrains = true;
   }
-  
+
   if(params.isParameter("Apply Shear Correction Factor"))
     m_applySurfaceCorrectionFactor = params.get<bool>("Apply Shear Correction Factor");
 
@@ -124,8 +129,10 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   m_equivalentPlasticStrainFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_deviatoricForceDensityFieldId              = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Deviatoric_Force_Density");
 
-  m_specularBondPositionFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Specular_Bond_Position");
-  m_microPotentialFieldId       = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Micro-Potential");
+  if(m_useSpecularBondPosition){
+      m_specularBondPositionFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Specular_Bond_Position");
+      m_microPotentialFieldId       = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Micro-Potential");
+  }
 
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_damageFieldId);
@@ -139,8 +146,10 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   if(m_applyThermalStrains)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
   
-  m_fieldIds.push_back(m_specularBondPositionFieldId);
-  m_fieldIds.push_back(m_microPotentialFieldId);
+  if(m_useSpecularBondPosition){
+      m_fieldIds.push_back(m_specularBondPositionFieldId);
+      m_fieldIds.push_back(m_microPotentialFieldId);
+  }
   
   m_fieldIds.push_back(m_VonMisesStressFieldId);
   m_fieldIds.push_back(m_deviatoricPlasticExtensionFieldId);
@@ -192,10 +201,10 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_VonMisesStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
 
   // Extract pointers to the underlying data
-  double *x, *y, *yNP1, *cellVolume, *weightedVolume, *dilatation, *bondDamage, *scf, *force, *deltaTemperature;
+  double *x, *yN, *yNP1, *cellVolume, *weightedVolume, *dilatation, *bondDamage, *scf, *force, *deltaTemperature;
 
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
+  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&yN);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&yNP1);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&cellVolume);
   dataManager.getData(m_weightedVolumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&weightedVolume);
@@ -207,10 +216,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   if(m_applyThermalStrains)
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
   
-  double *muW_N, *muW_NP1, *sigmaVM;
-  
-  dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_N)->ExtractView(&muW_N);
-  dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&muW_NP1);
+  double *sigmaVM;  
   dataManager.getData(m_VonMisesStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&sigmaVM);
   
   double *edN, *eqpsN, *edNP1, *eqpsNP1, *deviatoricForceDensity;
@@ -220,15 +226,20 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&eqpsNP1);
   dataManager.getData(m_deviatoricForceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&deviatoricForceDensity);
 
-  double *specu, *miPotN, *miPotNP1;
-  dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
-  dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_N)->ExtractView(&miPotN);
-  dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
+  double *specu, *miPotNP1;
+  if(m_useSpecularBondPosition){
+      dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
+      dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
+  } else
+  {
+      specu=nullptr;miPotNP1=nullptr;
+  }
 
-  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+  MATERIAL_EVALUATION::computeDilatation(x,yNP1,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
   MATERIAL_EVALUATION::computeInternalForceJohnsonCookOrdinary(
       x,
-      y,
+      yN,
+      yNP1,
       weightedVolume,
       cellVolume,
       dilatation,
@@ -244,8 +255,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       eqpsNP1,
       deviatoricForceDensity,
       deltaTemperature,
+      m_useSpecularBondPosition,
       specu,
-      miPotN,
       miPotNP1,
       obj_bulkModulus,
       obj_shearModulus,

@@ -55,14 +55,15 @@ namespace MATERIAL_EVALUATION {
 template<typename ScalarT>
 void computeInternalForceJohnsonCookOrdinary
 (
-const double* xOverlapPtr,
-const ScalarT* yOverlapPtr,
+const double* xOverlap,
+const ScalarT* yOverlapN,
+const ScalarT* yOverlapNP1,
 const double* mOwned,
-const double* volumeOverlapPtr,
+const double* volumeOverlap,
 const ScalarT* dilatationOwned,
 const double* bondDamage,
 const double* scfOwned,
-ScalarT* fInternalOverlapPtr,
+ScalarT* fInternalOverlap,
 const int*  localNeighborList,
 int numOwnedPoints,
 
@@ -74,8 +75,8 @@ ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
 const double* deltaTemperature,
  
+const bool useSpecularBondPosition,
 const double* specularBondPosition,
-const ScalarT* microPotentialN,
 ScalarT* microPotentialNP1,
 
 PeridigmNS::Material::BulkMod obj_bulkModulus,

@@ -135,8 +135,8 @@ const double dt
         if (it==20){
             yieldFunction=0;
             std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   yieldFunction=" << yieldFunction << "   lambda=" << lambda ;
-            std::cout << "  vmStressTrial=" << vmStressTrial ;
-            std::cout << "\n";
+//             std::cout << "  vmStressTrial=" << vmStressTrial ;
+//             std::cout << "\n";
         }
     }
 }

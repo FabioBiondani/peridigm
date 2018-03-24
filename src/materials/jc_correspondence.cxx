@@ -82,9 +82,7 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM,
-const double* specularBondPosition,
-const double* elementId
+const double constM
 )
 {
     const ScalarT* rateOfDef = unrotatedRateOfDeformation;
@@ -193,7 +191,7 @@ const double* elementId
         *(stressNP1) += hydroStressNP1;
         *(stressNP1+4) += hydroStressNP1;
         *(stressNP1+8) += hydroStressNP1;
-        
+
 
         // Compute \sigma_ij * \sigma_ij
         tempScalar = 0.0;
@@ -285,9 +283,7 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM,
-const double* specularBondPosition,
-const double* elementId
+const double constM
 );
 
 /* Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -312,9 +308,7 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM,
-const double* specularBondPosition,
-const double* elementId
+const double constM
 );
 
 }

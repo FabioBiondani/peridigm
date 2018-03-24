@@ -130,6 +130,10 @@ namespace PeridigmNS {
     int m_cauchyStressFieldId;
     int m_unrotatedRateOfDeformationFieldId;
     int m_partialStressFieldId;
+    int m_specularBondPositionFieldId;
+    int m_microPotentialFieldId;
+
+    bool m_useSpecularBondPositions;
   };
 }
 

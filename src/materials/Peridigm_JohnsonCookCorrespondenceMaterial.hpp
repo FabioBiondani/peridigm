@@ -108,8 +108,6 @@ namespace PeridigmNS {
     int m_equivalentPlasticStrainFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
-    int m_specularBondPositionFieldId;
-    int m_elementIdFieldId;
   };
 }
 

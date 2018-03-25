@@ -193,7 +193,7 @@ namespace PeridigmNS {
             params = p;
             rtcFunction = create_rtc();
         }
-        double compute(double Temperature){
+        double compute(double Temperature) {
             bool success = rtcFunction->varValueFill(1,Temperature);
             if(!success){
                 string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";

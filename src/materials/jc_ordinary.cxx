@@ -263,8 +263,8 @@ const double constM
                         YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
                         dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
 
-                        *miPotNP1+=t*(dYNP1-dYN);
-                        miPotNP1_Overlap[specuId]+=t*(dYNP1-dYN);
+                        *miPotNP1 += 0.5 * t*(dYNP1-dYN);
+                        miPotNP1_Overlap[specuId] += 0.5 * t*(dYNP1-dYN);
                     }
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
@@ -312,8 +312,8 @@ const double constM
                     YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
                     dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
 
-                    *miPotNP1+=t*(dYNP1-dYN);
-                    miPotNP1_Overlap[specuId]+=t*(dYNP1-dYN);
+                    *miPotNP1+= 0.5 * t*(dYNP1-dYN);
+                    miPotNP1_Overlap[specuId]+= 0.5 * t*(dYNP1-dYN);
                 }
 
             }

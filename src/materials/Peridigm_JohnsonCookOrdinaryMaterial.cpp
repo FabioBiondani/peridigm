@@ -59,7 +59,7 @@ using namespace std;
 PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuchos::ParameterList& params)
   : Material(params),
     m_bulkModulus(0.0), m_shearModulus(0.0), m_alpha(0.0),  m_density(0.0), m_horizon(0.0),
-    m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false),
+    m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false),m_useSpecularBondPosition(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
@@ -67,8 +67,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
     m_deltaTemperatureFieldId(-1),
     m_VonMisesStressFieldId(-1),
     m_deviatoricPlasticExtensionFieldId(-1),m_equivalentPlasticStrainFieldId(-1),m_deviatoricForceDensityFieldId(-1),
-    m_specularBondPositionFieldId(-1),m_microPotentialFieldId(-1),
-    m_useSpecularBondPosition(false)
+    m_specularBondPositionFieldId(-1),m_microPotentialFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);

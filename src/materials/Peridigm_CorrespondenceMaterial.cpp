@@ -426,8 +426,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
       if (m_useSpecularBondPositions){
           int specuId = int(*specu);
-          *miPotNP1+=TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ;
-          miPotNP1overlap[specuId]+=TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ;
+          *miPotNP1+= 0.5 * (TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ);
+          miPotNP1overlap[specuId]+= 0.5 * (TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ);
       }
     }
   }

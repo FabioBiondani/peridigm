@@ -48,11 +48,14 @@
 #ifndef PERIDIGM_MICROPOTENTIALDAMAGEMODEL_HPP
 #define PERIDIGM_MICROPOTENTIALDAMAGEMODEL_HPP
 
+#include "Peridigm_Material.hpp"
+#include "Peridigm_InfluenceFunction.hpp"
 #include "Peridigm_DamageModel.hpp"
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
+#include <boost/math/constants/constants.hpp>
 
 namespace PeridigmNS {
 
@@ -68,7 +71,7 @@ namespace PeridigmNS {
     virtual ~MicropotentialDamageModel();
 
     //! Return name of the model.
-    virtual std::string Name() const { return("Micropotential"); }
+    virtual std::string Name() const { return("Critical Micro-Potential"); }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the model.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
@@ -91,23 +94,17 @@ namespace PeridigmNS {
 
   protected:
 
-	//! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
-	inline double distance(double a1, double a2, double a3,
-						   double b1, double b2, double b3) const
-	{
-	  return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
-	}
-
-    double m_criticalStretch;
-    double m_alpha;
-
+    const double m_pi = boost::math::constants::pi<double>();
+    double m_horizon;
+    double m_Jintegral;
+    Teuchos::RCP<Material::TempDepConst> obj_Jintegral;
+    
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
-    int m_modelCoordinatesFieldId;
-    int m_coordinatesFieldId;
     int m_damageFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
+    int m_microPotentialFieldId;
   };
 
 }

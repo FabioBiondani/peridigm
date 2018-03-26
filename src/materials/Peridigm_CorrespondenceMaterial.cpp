@@ -349,8 +349,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   if (m_useSpecularBondPositions){
       dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
       dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
-      miPotNP1overlap = miPotNP1;
   }
+  miPotNP1overlap = miPotNP1;
 
   // Loop over the material points and convert the Cauchy stress into pairwise peridynamic force densities
   const int *neighborListPtr = neighborhoodList;
@@ -426,8 +426,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
       if (m_useSpecularBondPositions){
           int specuId = int(*specu);
-          *miPotNP1+= 0.5 * (TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ);
-          miPotNP1overlap[specuId]+= 0.5 * (TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ);
+          *miPotNP1+= TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ;
+          miPotNP1overlap[specuId]+= TX*deltaDeformedBondX+TY*deltaDeformedBondY+TZ*deltaDeformedBondZ;
       }
     }
   }

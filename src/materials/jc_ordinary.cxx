@@ -263,8 +263,8 @@ const double constM
                         YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
                         dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
 
-                        *miPotNP1 += 0.5 * t*(dYNP1-dYN);
-                        miPotNP1_Overlap[specuId] += 0.5 * t*(dYNP1-dYN);
+                        *miPotNP1 += t*(dYNP1-dYN);
+                        miPotNP1_Overlap[specuId] += t*(dYNP1-dYN);
                     }
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
@@ -299,7 +299,7 @@ const double constM
 
                 fx = t * YNP1_dx / dYNP1;  fy = t * YNP1_dy / dYNP1;  fz = t * YNP1_dz / dYNP1;
 
-                *(fOwned+0) += fx*cellVolume;  
+                *(fOwned+0) += fx*cellVolume;
                 *(fOwned+1) += fy*cellVolume;
                 *(fOwned+2) += fz*cellVolume;
                 fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
@@ -312,8 +312,8 @@ const double constM
                     YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
                     dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
 
-                    *miPotNP1+= 0.5 * t*(dYNP1-dYN);
-                    miPotNP1_Overlap[specuId]+= 0.5 * t*(dYNP1-dYN);
+                    *miPotNP1+= t*(dYNP1-dYN);
+                    miPotNP1_Overlap[specuId]+= t*(dYNP1-dYN);
                 }
 
             }

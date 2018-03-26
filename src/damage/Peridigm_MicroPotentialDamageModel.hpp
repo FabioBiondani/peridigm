@@ -93,18 +93,26 @@ namespace PeridigmNS {
                   PeridigmNS::DataManager& dataManager) const ;
 
   protected:
+	//! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
+	inline double distance(double a1, double a2, double a3,
+						   double b1, double b2, double b3) const
+	{
+	  return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
+	}
 
     const double m_pi = boost::math::constants::pi<double>();
-    double m_horizon;
     double m_Jintegral;
-    Teuchos::RCP<Material::TempDepConst> obj_Jintegral;
+    Material::TempDepConst obj_Jintegral;
     
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
+    int m_modelCoordinatesFieldId;
+    int m_horizonFieldId;
     int m_damageFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
     int m_microPotentialFieldId;
+    int m_specularBondPositionFieldId;
   };
 
 }

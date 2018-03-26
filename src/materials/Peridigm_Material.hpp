@@ -181,7 +181,6 @@ namespace PeridigmNS {
         Teuchos::ParameterList params;
         virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc()=0;
         Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
-        double value;
       public:
         Moduli(){}
         Moduli(const Teuchos::ParameterList& p)
@@ -193,7 +192,7 @@ namespace PeridigmNS {
             params = p;
             rtcFunction = create_rtc();
         }
-        double compute(double Temperature) {
+        double compute(double Temperature) const {
             bool success = rtcFunction->varValueFill(1,Temperature);
             if(!success){
                 string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
@@ -206,9 +205,8 @@ namespace PeridigmNS {
                 msg += "**** " + rtcFunction->getErrors() + "\n";
                 TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
             }
-            value = rtcFunction->getValueOfVar("value");
-//             cout << "value= " << value << endl;
-            return value;
+//             cout << "value= " << rtcFunction->getValueOfVar("value") << endl;
+            return rtcFunction->getValueOfVar("value");
         }
     };
     class BulkMod: public Moduli{

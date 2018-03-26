@@ -210,6 +210,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   	analysisHasThermal = false;
   	numThermalDoFs = 0;
   }
+  
+  if(peridigmParams->isParameter("Specular_Bonds")) if(peridigmParams->get<bool>("Specular_Bonds") == true) analysisHasSpecular=true;
+
 
   // Initialize the influence function
   string influenceFunctionString = peridigmParams->sublist("Discretization").get<string>("Influence Function", "One");
@@ -453,6 +456,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     TEUCHOS_TEST_FOR_EXCEPT_MSG(matParams.isParameter("Horizon") , "\n**** Error, Horizon is an invalid material parameter.\n");
     if(constantHorizon)
       matParams.set("Horizon", blockHorizon);
+    matParams.set("Use Specular Bond Position",analysisHasSpecular);
 
     // Assign the finite difference probe length
     if(!matParams.isParameter("Finite Difference Probe Length"))
@@ -484,12 +488,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   }
 
   // Checking if calculations using specular bonds positions are needed
-  if(PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")){
-    analysisHasSpecular=true;
-    if(peridigmComm->MyPID()==0)  cout << "** Material or damage models features Specular_Bond_Position," << endl <<
-                                          "** switching to analysis with specular bonds positions:" << endl <<
-                                          "** setting analysisHasSpecular to TRUE" << endl << endl;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG((PeridigmNS::FieldManager::self().hasField("Specular_Bond_Position")) && (analysisHasSpecular==false), 
+                              ("** ERROR : Material or damage models needs specular bond positions\n**"));
 
   if(analysisHasSpecular){
     bondMothership = Teuchos::rcp(new Epetra_MultiVector(*bondMap, 3));
@@ -1595,6 +1595,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     blockIt->importData(*v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
     blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_N, Insert);
     blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
+    if(analysisHasSpecular)
+        blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_N, Insert);
   }
   if(analysisHasContact)
     contactManager->importData(volume, y, v);
@@ -1669,11 +1671,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
 
   if(analysisHasSpecular){
-    scratchBond -> PutScalar(0.0);
-    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-      blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
-    }
-    microPotential->Update(1.0,*scratchBond,1.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratchBond -> PutScalar(0.0);
+        blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
+        microPotential->Update(1.0,*scratchBond,1.0);
+      }
   }
 
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
@@ -1709,7 +1711,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 
   for(int step=1; step<=nsteps; step++){
-
     double timePrevious = timeCurrent;
     timeCurrent = timeInitial + (step*dt);
 
@@ -1787,6 +1788,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->importData(*y, coordinatesFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
+      if(analysisHasSpecular)
+          blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_N, Insert);
+
     }
 
     //
@@ -1841,11 +1845,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // evalModel puts deltaMicroPotential of STEP_NP1, Add delta to microPotential of STEP_N
     if (analysisHasSpecular){
-      scratchBond -> PutScalar(0.0);
       for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratchBond -> PutScalar(0.0);
         blockIt->exportData(*scratchBond, microPotentialFieldId, PeridigmField::STEP_NP1, Add);
+        microPotential->Update(1.0,*scratchBond,1.0);
       }
-      microPotential->Update(1.0,*scratchBond,1.0);
     }
 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");

@@ -142,27 +142,32 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
 //     *BondsLeftNP1 = numNeighbors;
 	for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-	  neighborID = neighborhoodList[neighborhoodListIndex++];
-      initialDistance = 
-        distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2],
-                 x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
-      double neighT = *(deltaTemperature+neighborID);
-      
-      bond_Jintegral = obj_Jintegral.compute((localT+neighT)/2.0);
+      if (bondDamageNP1[bondIndex]<1.0) {
 
-      double m_criticalMicroPotential = 4.0/(m_pi*pow(*(horizon+nodeId),4.0))*bond_Jintegral;
-//       double m_criticalMicroPotential = 12.0/(11.0*m_pi*pow(*(horizon+nodeId),4.0))*bond_Jintegral;
-//       double m_criticalMicroPotential = 5.0/(m_pi*pow(*(horizon+nodeId),5.0))*initialDistance*bond_Jintegral;
+        int specuID = int(specu[bondIndex]);
+	    neighborID = neighborhoodList[neighborhoodListIndex];
+        initialDistance = 
+          distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2],
+                   x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
+        double neighT = *(deltaTemperature+neighborID);
 
-      double bondMicroPotential = miPot[bondIndex] ;
+        bond_Jintegral = obj_Jintegral.compute((localT+neighT)/2.0);
 
-      if (bondMicroPotential != miPot[int(specu[bondIndex])] ) cout << "MALISSSIMOOOOOOOOOOOOO" << endl;
+        double m_criticalMicroPotential = 4.0/(m_pi*pow(*(horizon+nodeId),4.0))*bond_Jintegral;
+//         double m_criticalMicroPotential = 5.0/(m_pi*pow(*(horizon+nodeId),5.0))*bond_Jintegral*initialDistance;
+//         double m_criticalMicroPotential = 6.0/(m_pi*pow(*(horizon+nodeId),6.0))*bond_Jintegral*pow(initialDistance,2);
 
-      trialDamage = 0.0;
-      if(bondMicroPotential > m_criticalMicroPotential)
-        trialDamage = 1.0;
-      if(trialDamage > bondDamageNP1[bondIndex])
-        bondDamageNP1[bondIndex] = trialDamage;
+        double bondMicroPotential = miPot[bondIndex] ;
+
+        trialDamage = 0.0;
+        if(bondMicroPotential > m_criticalMicroPotential)
+          trialDamage = 1.0;
+        if(trialDamage > bondDamageNP1[bondIndex]){
+          bondDamageNP1[bondIndex] = trialDamage;
+          bondDamageNP1[specuID]   = trialDamage;
+        }
+      }
+      neighborhoodListIndex += 1;
       bondIndex += 1;
     }
   }

@@ -242,7 +242,7 @@ const double constM
                     omega = scalarInfluenceFunction(zeta,horizon);
 
                     *td_OverLap *= tempScalar;
-                    ti= (1.0-*bondDamage)*(3.0*K*(*theta)/(*m)* omega * zeta);
+                    ti= (1.0-*bondDamageOverLap)*(3.0*K*(*theta)/(*m)* omega * zeta);
                     t = ti + *td_OverLap;
 
                     fx = t * YNP1_dx / dYNP1; fy = t * YNP1_dy / dYNP1; fz = t * YNP1_dz / dYNP1;
@@ -259,7 +259,7 @@ const double constM
 
                     if(useSpecularBondPosition){
                         int specuId = int(*specu);
-                        const ScalarT *YNP = &yOverlapNP1[3*localId];
+                        const ScalarT *YNP = &yOverlapN[3*localId];
                         YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
                         dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
 
@@ -294,7 +294,7 @@ const double constM
                 zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
                 omega = scalarInfluenceFunction(zeta,horizon);
 
-                ti= (1.0-*bondDamage)*(3.0*K*(*theta)/(*m)* omega * zeta);
+                ti= (1.0-*bondDamageOverLap)*(3.0*K*(*theta)/(*m)* omega * zeta);
                 t = ti + *td_OverLap;
 
                 fx = t * YNP1_dx / dYNP1;  fy = t * YNP1_dy / dYNP1;  fz = t * YNP1_dz / dYNP1;
@@ -308,7 +308,7 @@ const double constM
 
                 if(useSpecularBondPosition){
                     int specuId = int(*specu);
-                    const ScalarT *YNP = &yOverlapNP1[3*localId];
+                    const ScalarT *YNP = &yOverlapN[3*localId];
                     YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
                     dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
 

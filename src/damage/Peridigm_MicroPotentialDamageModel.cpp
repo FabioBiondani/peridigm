@@ -142,13 +142,10 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
 //     *BondsLeftNP1 = numNeighbors;
 	for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-      if (bondDamageNP1[bondIndex]<1.0) {
 
         int specuID = int(specu[bondIndex]);
 	    neighborID = neighborhoodList[neighborhoodListIndex];
-        initialDistance = 
-          distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2],
-                   x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
+//         initialDistance = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
         double neighT = *(deltaTemperature+neighborID);
 
         bond_Jintegral = obj_Jintegral.compute((localT+neighT)/2.0);
@@ -166,9 +163,9 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
           bondDamageNP1[bondIndex] = trialDamage;
           bondDamageNP1[specuID]   = trialDamage;
         }
-      }
-      neighborhoodListIndex += 1;
-      bondIndex += 1;
+
+        neighborhoodListIndex += 1;
+        bondIndex += 1;
     }
   }
 

@@ -143,8 +143,9 @@ const double constM
 
     const int *neighPtr = localNeighborList;
     double cellVolume, alpha, X_dx, X_dy, X_dz, zeta, omega;
-    ScalarT   YN_dx,   YN_dy,   YN_dz, dYN;
+    ScalarT   YN_dx,   YN_dy,   YN_dz;
     ScalarT YNP1_dx, YNP1_dy, YNP1_dz, dYNP1;
+    ScalarT dY_dx, dY_dy, dY_dz;
     ScalarT t, ti, fx, fy, fz, e;
     ScalarT ed;
 
@@ -261,10 +262,10 @@ const double constM
                         int specuId = int(*specu);
                         const ScalarT *YNP = &yOverlapN[3*localId];
                         YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
-                        dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
+                        dY_dx = YNP1_dx - YN_dx; dY_dy = YNP1_dy - YN_dy;  dY_dz = YNP1_dz - YN_dz;
 
-                        *miPotNP1 += t*(dYNP1-dYN);
-                        miPotNP1_Overlap[specuId] += t*(dYNP1-dYN);
+                        *miPotNP1+=                 fx*dY_dx + fy*dY_dy + fz*dY_dz ;
+                        miPotNP1_Overlap[specuId]+= fx*dY_dx + fy*dY_dy + fz*dY_dz ;
                     }
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
@@ -310,10 +311,10 @@ const double constM
                     int specuId = int(*specu);
                     const ScalarT *YNP = &yOverlapN[3*localId];
                     YN_dx = YNP[0]-YN[0];  YN_dy = YNP[1]-YN[1];  YN_dz = YNP[2]-YN[2];
-                    dYN = sqrt(YN_dx*YN_dx+YN_dy*YN_dy+YN_dz*YN_dz);
+                    dY_dx = YNP1_dx - YN_dx; dY_dy = YNP1_dy - YN_dy;  dY_dz = YNP1_dz - YN_dz;
 
-                    *miPotNP1+= t*(dYNP1-dYN);
-                    miPotNP1_Overlap[specuId]+= t*(dYNP1-dYN);
+                    *miPotNP1+=                 fx*dY_dx + fy*dY_dy + fz*dY_dz ;
+                    miPotNP1_Overlap[specuId]+= fx*dY_dx + fy*dY_dy + fz*dY_dz ;
                 }
 
             }

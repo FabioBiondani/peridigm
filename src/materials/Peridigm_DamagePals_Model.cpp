@@ -59,7 +59,7 @@
 
 using namespace std;
 
-using MATERIAL_EVALUATION::DAMAGEPALS::NUM_LAGRANGE_MULTIPLIERS;
+using MATERIAL_EVALUATION::PALS::NUM_LAGRANGE_MULTIPLIERS;
 
 PeridigmNS::DamagePals_Model::DamagePals_Model(const Teuchos::ParameterList& params)
   : Material(params),
@@ -175,7 +175,7 @@ initialize(const double dt,
 	dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
 
 	// namespace PALS
-	using namespace MATERIAL_EVALUATION::DAMAGEPALS;
+	using namespace MATERIAL_EVALUATION::PALS;
 	{
 		vector<double *> omega_multipliers(num_lagrange_multipliers), sigma_multipliers(num_lagrange_multipliers);
 		for(int i=0;i<num_lagrange_multipliers;i++){
@@ -286,7 +286,7 @@ PeridigmNS::DamagePals_Model::computeForce(const double dt,
 	}
 
 	// namespace PALS
-	using namespace MATERIAL_EVALUATION::DAMAGEPALS;
+	using namespace MATERIAL_EVALUATION::PALS;
     {
 		vector<double *> omega_multipliers(num_lagrange_multipliers), sigma_multipliers(num_lagrange_multipliers);
 		for(int i=0;i<num_lagrange_multipliers;i++){
@@ -299,7 +299,7 @@ PeridigmNS::DamagePals_Model::computeForce(const double dt,
 			sigma_multipliers[i]=dev;
 		}
 
-        compute_lagrange_multipliers_with_damage
+        compute_lagrange_multipliers
         (
             x,
             cellVolume,
@@ -318,7 +318,7 @@ PeridigmNS::DamagePals_Model::computeForce(const double dt,
         );
     }
 
-    computeWeightedVolumeWithDamage
+    computeWeightedVolume
     (
         x,
         cellVolume,
@@ -368,7 +368,7 @@ PeridigmNS::DamagePals_Model::computeForce(const double dt,
         specu=nullptr;miPotN=nullptr;miPotNP1=nullptr;
     }
 
-	computeInternalForcePals
+	computeInternalForceDamagePals
 	(
 		x,
         yN,
@@ -406,7 +406,7 @@ PeridigmNS::DamagePals_Model::computeStoredElasticEnergyDensity(const double dt,
                                                                PeridigmNS::DataManager& dataManager) const
 {
 	// namespace PALS
-	using namespace MATERIAL_EVALUATION::DAMAGEPALS;
+	using namespace MATERIAL_EVALUATION::PALS;
 
 	double K=m_bulkModulus;
 	double MU=m_shearModulus;

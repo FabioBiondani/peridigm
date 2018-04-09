@@ -10,7 +10,7 @@
 
 namespace MATERIAL_EVALUATION {
 
-namespace DAMAGEPALS {
+namespace PALS {
 
 //Lapack linear equations
 //http://www.netlib.org/lapack/lug/node38.html
@@ -46,45 +46,6 @@ extern "C" {
 
 using std::setw;
 using std::vector;
-
-void solve_linear_problem(double *k, double *rhs){
-
-	/*
-	 * Factorize k
-	 */
-	int N=NUM_LAGRANGE_MULTIPLIERS;
-	int INFO, M=N, LDA=N;
-	int IPIV[NUM_LAGRANGE_MULTIPLIERS];
-	dgetrf_(&M,&N,k,&LDA,IPIV,&INFO);
-	if(0!=INFO){
-		std::string message="ERROR Pals model: compute_lagrange_multipliers \n\t";
-		message+="Matrix factorization error -- bad value or factorization will yield division by zero during solve.\n";
-		message+="                           -- zeroing Lagrange multipliers.";
-// 		throw std::runtime_error(message);
-		std::cout << message << std::endl;
-    	for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
-            rhs[i]=0.0;
-        }
-	}
-	else{
-	    /*
-	     * Solve
-	     */
-	    char TRANS='N';
-	    int NRHS=1, LDB=N;
-	    dgetrs_(&TRANS,&N,&NRHS,k,&LDA,IPIV,rhs,&LDB,&INFO);
-	    if(0!=INFO){
-		    std::string message="ERROR Pals model: compute_lagrange_multipliers \n\t";
-		    message+="Matrix solve error -- bad value.\n";
-            message+="                   -- zeroing Lagrange multipliers.";
-// 		    throw std::runtime_error(message);
-            std::cout << message << std::endl;
-           	for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
-                rhs[i]=0.0;
-            }
-        }
-	}
-}
 
 void
 compute_lagrange_multipliers
@@ -133,7 +94,7 @@ compute_lagrange_multipliers
 }
 
 void
-compute_lagrange_multipliers_with_damage
+compute_lagrange_multipliers
 (
 	const double *xOverlap,
 	const double *volumeOverlap,
@@ -161,7 +122,7 @@ compute_lagrange_multipliers_with_damage
 	for(int p=0;p<num_owned_points;p++,X+=3,oc_X++,sc_X++, damageN++, damageNP1++){
 
         if (*damageNP1 > *damageN){
-            if (*damageNP1<=0.5){
+            if (*damageNP1<=0.3){
                 // evaluate lagrange multipliers and normalizing constants for point X
                 //print_point_3d(std::cout,p,X);
                 compute_lagrange_multipliers_point(X,xOverlap,volumeOverlap,neigh_X,horizon,omega_X,oc_X,sigma_X,sc_X,OMEGA_0,SIGMA_0,bondDamage);
@@ -430,165 +391,7 @@ compute_lagrange_multipliers_point
 
 }
 
-
-double 
-compute_normalizing_constant_point
-(
- struct pals_influence<dilatation_influence>& OMEGA,
- const double *X,
- const double *xOverlap,
- const double *volumeOverlap,
- const int *neigh,
- double horizon
-) {
-   double m=0.0;
-   const double D=3.0;
-	int num_neigh=*neigh; neigh++;
-	const double x=*X, y=*(X+1), z=*(X+2);
-	for(int iq=0;iq<num_neigh;iq++){
-		int neigh_local_id=*neigh; neigh++;
-		const double *q=xOverlap+3*neigh_local_id;
-		double vol=volumeOverlap[neigh_local_id];
-		double bond[3]={*(q+0)-x,*(q+1)-y,*(q+2)-z};
-      double omega = OMEGA(bond,horizon);
-      double a = bond[0];
-      double b = bond[1];
-      double c = bond[2];
-      double xi2 = a*a+b*b+c*c;
-		m+=omega*xi2*vol;
-   }
-   return D/m;
-}
-
-double 
-compute_normalizing_constant_point
-(
- struct pals_influence<deviatoric_influence>& SIGMA,
- const double *X,
- const double *xOverlap,
- const double *volumeOverlap,
- const int *neigh,
- double horizon
-) {
-   double norm=0.0;
-   const double D=6.0;
-	int num_neigh=*neigh; neigh++;
-	const double x=*X, y=*(X+1), z=*(X+2);
-	for(int iq=0;iq<num_neigh;iq++){
-		int neigh_local_id=*neigh; neigh++;
-		const double *q=xOverlap+3*neigh_local_id;
-		double vol=volumeOverlap[neigh_local_id];
-		double bond[3]={*(q+0)-x,*(q+1)-y,*(q+2)-z};
-      double sigma =SIGMA(bond,horizon);
-      double a = bond[0];
-      double b = bond[1];
-      double c = bond[2];
-		double ab=a*b, ac=a*c, bc=b*c;
-      double xi2 = a*a+b*b+c*c;
-		double r=std::sqrt(xi2);
-		double epsilon=2*(ab+bc+ac)/r;
-		norm+=sigma*epsilon*epsilon*vol;
-   }
-   return D/norm;
-}
-
-
-/*
- * Computes 'normalized' weighted volume
- * Sanity check: all values should be == 3.0
- */
-void computeNormalizedWeightedVolume
-(
-	const double *xOverlap,
-	const double *volumeOverlap,
-	const double *omega_constant,
-	const double *bondDamage,
-	double *weighted_volume,
-	int numOwnedPoints,
-	const int* localNeighborList,
-	double horizon,
-	const FunctionPointer OMEGA_0
-)
-{
-	double bond[3];
-	const double *xOwned = xOverlap;
-	const double *oc=omega_constant;
-	double *m=weighted_volume;
-	const int *neighPtr = localNeighborList;
-	double cellVolume;
-	for(int q=0; q<numOwnedPoints;q++, xOwned+=3, oc++, m++){
-		int numNeigh = *neighPtr; neighPtr++;
-		const double *X = xOwned;
-		*m=0.0;
-
-		for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
-			int localId = *neighPtr;
-			cellVolume = volumeOverlap[localId];
-			const double *XP = &xOverlap[3*localId];
-			bond[0]=XP[0]-X[0];
-			bond[1]=XP[1]-X[1];
-			bond[2]=XP[2]-X[2];
-			double a = bond[0];
-			double b = bond[1];
-			double c = bond[2];
-			double xi2 = a*a+b*b+c*c;
-         double omega=(*oc)*OMEGA_0(std::sqrt(xi2),horizon);
-			*m += omega*(1.0-*bondDamage)*xi2*cellVolume;
-		}
-	}
-}
-/*
- * Computes a weighted volume but with the pals deviatoric influence function
- */
 void computeWeightedVolume
-(
-	const double *xOverlap,
-	const double *volumeOverlap,
-	const vector<const double *>& sigma_multipliers,
-	const double *sigma_constant,
-	double *weighted_volume,
-	int numOwnedPoints,
-	const int* localNeighborList,
-	double horizon,
-	const FunctionPointer SIGMA_0
-)
-{
-	double bond[3];
-	const double *xOwned = xOverlap;
-	double tau_X[NUM_LAGRANGE_MULTIPLIERS];
-	const double *sc=sigma_constant;
-	double *m=weighted_volume;
-	const int *neighPtr = localNeighborList;
-	double cellVolume;
-	for(int q=0; q<numOwnedPoints;q++, xOwned+=3, sc++, m++){
-		int numNeigh = *neighPtr; neighPtr++;
-		const double *X = xOwned;
-		*m=0.0;
-
-		// Collect computed Lagrange multipliers for this point
-		for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
-			tau_X[i]=sigma_multipliers[i][q];
-		}
-
-		for(int n=0;n<numNeigh;n++,neighPtr++){
-			int localId = *neighPtr;
-			cellVolume = volumeOverlap[localId];
-			const double *XP = &xOverlap[3*localId];
-			bond[0]=XP[0]-X[0];
-			bond[1]=XP[1]-X[1];
-			bond[2]=XP[2]-X[2];
-			double a = bond[0];
-			double b = bond[1];
-			double c = bond[2];
-			double xi2 = a*a+b*b+c*c;
-			pals_influence<deviatoric_influence> SIGMA(SIGMA_0,*sc,tau_X);
-         double sigma = SIGMA(bond,horizon);
-			*m += sigma*xi2*cellVolume;
-		}
-	}
-}
-
-void computeWeightedVolumeWithDamage
 (
 	const double *xOverlap,
 	const double *volumeOverlap,
@@ -721,7 +524,7 @@ void computeDilatationAndPalsPressure
 	}
 }
 
-void computeInternalForcePals
+void computeInternalForceDamagePals
 (
 	const double *xOverlap,
 	const double *yOverlapN,
@@ -854,102 +657,6 @@ void computeInternalForcePals
 	}
 
 }
-
-
-// void print_point_3d(std::ostream& out, int local_id, const double *x){
-// 
-//   out << std::setprecision(5);
-//   out <<  std::scientific << "\t" << setw(5) << local_id  << ": "
-//   << setw(13) << x[0] << ", "
-//   << setw(13) << x[1] << ", "
-//   << setw(13) << x[2] << ", " << "\n";
-// 
-// }
-// 
-// void print_vector3d(std::ostream& out, const std::string &label, const double *rhs){
-// 
-// 	out << label << "\n";
-// 	out <<  std::scientific << "\t" << std::setw(13) << rhs[0] << ", ";
-// 	out <<  std::scientific << "\t" << std::setw(13) << rhs[1] << ", ";
-// 	out <<  std::scientific << "\t" << std::setw(13) << rhs[2] << "\n";
-// 
-// }
-// 
-// void print_N_vector(std::ostream& out, const std::string &label, int N, const double *rhs){
-// 
-// 	out << label << "\n";
-// 	for(int n=0;n<N;n++)
-// 		out << std::scientific << std::setw(13) << rhs[n] << " ";
-// 	out << "\n";
-// }
-// 
-// void print_symmetrix_3x3(std::ostream& out, const std::string &label, const double *k){
-// 
-// 	/*
-// 	 * Print symmetric matrix
-// 		double k11=k[0];
-// 		double k22=k[1];
-// 		double k33=k[2];
-// 		double k12=k[3];
-// 		double k23=k[4];
-// 		double k13=k[5];
-// 	 */
-// 	out << label << "\n";
-// 	out <<  std::scientific << "\t" << setw(13) << k[0] << " " << setw(13) << k[3] << " " << setw(13) << k[5] << "\n";
-// 	out <<  std::scientific << "\t" << setw(13) << k[3] << " " << setw(13) << k[1] << " " << setw(13) << k[4] << "\n";
-// 	out <<  std::scientific << "\t" << setw(13) << k[5] << " " << setw(13) << k[4] << " " << setw(13) << k[2] << "\n";
-// 
-// }
-// 
-// void print_symmetrix_6x6(std::ostream& out, const std::string &label, const double *k){
-// 
-// 	out << label << "\n";
-// 	for(int r=0,p=0;r<NUM_LAGRANGE_MULTIPLIERS;r++){
-// 		for(int c=0;c<NUM_LAGRANGE_MULTIPLIERS;c++,p++){
-// 			out << std::scientific;
-// 			out << setw(13) << k[p] << " ";
-// 		}
-// 		out << "\n";
-// 	}
-// }
-// 
-// void
-// solve_symmetric_3x3(const double *k, const double *rhs, double *solution)
-// {
-// 
-// 	double *w=solution;
-// 
-// 	/*
-// 	 * Symmetric matrix
-// 	 */
-// 	double k11=k[0];
-// 	double k22=k[1];
-// 	double k33=k[2];
-// 	double k12=k[3];
-// 	double k23=k[4];
-// 	double k13=k[5];
-// 
-// 	/*
-// 	 * Determinant
-// 	 */
-// 	double det = -k13 * k13 * k22 + 2 * k12 * k13 * k23 - k11 * k23 * k23 - k12 * k12 * k33 + k11 * k22 * k33;
-// 
-// 	/*
-// 	 * Each row of inverse
-// 	 */
-// 	vector<double> row1(3), row2(3), row3(3);
-// 	row1[0] = -k23 * k23 + k22 * k33; row1[1] =  k13 * k23 - k12 * k33; row1[2] = -k13 * k22 + k12 * k23;
-// 	row2[0] =  k13 * k23 - k12 * k33; row2[1] = -k13 * k13 + k11 * k33; row2[2] =  k12 * k13 - k11 * k23;
-// 	row3[0] = -k13 * k22 + k12 * k23; row3[1] =  k12 * k13 - k11 * k23; row3[2] = -k12 * k12 + k11 * k22;
-// 
-// 	/*
-// 	 * Solution
-// 	 */
-// 	w[0]=(row1[0]*rhs[0]+row1[1]*rhs[1]+row1[2]*rhs[2])/det;
-// 	w[1]=(row2[0]*rhs[0]+row2[1]*rhs[1]+row2[2]*rhs[2])/det;
-// 	w[2]=(row3[0]*rhs[0]+row3[1]*rhs[1]+row3[2]*rhs[2])/det;
-// 
-// }
 
 }
 

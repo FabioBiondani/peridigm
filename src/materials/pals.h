@@ -114,6 +114,9 @@ compute_normalizing_constant_point
  double horizon
 );
 
+void
+solve_linear_problem(double *k,
+                     double *rhs);
 
 void
 compute_lagrange_multipliers

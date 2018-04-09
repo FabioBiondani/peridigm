@@ -1,5 +1,6 @@
 #include <math.h>
 #include <vector>
+#include "pals.h"
 
 #include "Peridigm_InfluenceFunction.hpp"
 
@@ -7,112 +8,7 @@
 
 namespace MATERIAL_EVALUATION {
 
-namespace DAMAGEPALS {
-
-const int NUM_LAGRANGE_MULTIPLIERS=6;
-
-typedef PeridigmNS::InfluenceFunction::functionPointer FunctionPointer;
-
-/**
- *
- * Following 'lambda' functions are a much cleaner implementation of the influence functions,
- * but this approach requires c++11.
-
-// #include <functional>
-std::function<double (double*)> get_gaussian(double horizon) {
-   return [horizon](double *xi) {
-      double dx=*(xi+0);
-      double dy=*(xi+1);
-      double dz=*(xi+2);
-      double h2=horizon*horizon;
-      double xi2=dx*dx+dy*dy+dz*dz;
-      return exp(-xi2/h2);
-   };
-}
-std::function<double (double*)> get_constant(double c) {
-   return [c](double *xi) {  return c; };
-}
-   std::function<double (double*)> g=get_gaussian(1.0);
-   std::function<double (double*)> c=get_constant(2.0);
-   double zero[]={0.0,0.0,0.0};
-   cout << std::scientific << std::setw(15) << g(zero) << endl;
-   cout << std::scientific << std::setw(15) << c(zero) << endl;
-
-*/
-
-struct dilatation_influence {
-   static double eval(const double *bond, const double *weights){
-      const double *w=weights;
-      double a=bond[0], b=bond[1], c=bond[2];
-      return w[0]*a*a+w[1]*b*b+w[2]*c*c+2.0*(w[3]*a*b+w[4]*a*c+w[5]*b*c);
-   }
-};
-
-struct deviatoric_influence {
-	static double eval(const double *bond, const double *weights){
-		const double *w=weights;
-		double a=bond[0], b=bond[1], c=bond[2];
-		double a2=a*a, b2=b*b, c2=c*c, ab=a*b, ac=a*c, bc=b*c;
-		double x2=a2+b2+c2;
-		double r=std::sqrt(x2);
-		double avg=r/3.0;
-		double ek[]={a2/r-avg,b2/r-avg,c2/r-avg,2*ab/r,2*ac/r,2*bc/r};
-		return w[0]*ek[0]*ek[0]+
-			   w[1]*ek[1]*ek[1]+
-			   w[2]*ek[2]*ek[2]+
-			   w[3]*ek[3]*ek[3]+
-			   w[4]*ek[4]*ek[4]+
-			   w[5]*ek[5]*ek[5];
-   }
-};
-
-template<typename T>
-struct pals_influence {
-
-   pals_influence(FunctionPointer p, double _c, const double *w):
-      I0(p), normalize(_c), weights(w) {}
-
-   double operator()(const double *bond, double horizon){
-      double a=bond[0], b=bond[1], c=bond[2];
-      double x=std::sqrt(a*a+b*b+c*c);
-      /*
-       * NOTE: 'normalize is distributed across entire influence
-       * function -- both the 'initial' influence function and
-       * the Lagrange multipliers piece.
-       */
-      return normalize*(I0(x,horizon)+T::eval(bond,weights));
-   }
-
-   // Initial influence function
-   const FunctionPointer I0;
-   // Normalizing scalar for I0
-   const double normalize;
-   // Lagrange multipliers
-   const double *weights;
-};
-
-
-double 
-compute_normalizing_constant_point
-(
- struct pals_influence<dilatation_influence>& OMEGA,
- const double *X,
- const double *xOverlap,
- const double *volumeOverlap,
- const int *neigh,
- double horizon
-);
-
-double 
-compute_normalizing_constant_point
-(
- struct pals_influence<deviatoric_influence>& SIGMA,
- const double *X,
- const double *xOverlap,
- const double *volumeOverlap,
- const int *neigh,
- double horizon
-);
+namespace PALS {
 
 
 void
@@ -133,7 +29,7 @@ compute_lagrange_multipliers
 );
 
 void
-compute_lagrange_multipliers_with_damage
+compute_lagrange_multipliers
 (
 	const double *xOverlap,
 	const double *volumeOverlap,
@@ -168,23 +64,7 @@ compute_lagrange_multipliers_point
     const double* bondDamage
 );
 
-/*
- * Computes a weighted volume but with the pals deviatoric influence function
- */
 void computeWeightedVolume
-(
-	const double *xOverlap,
-	const double *volumeOverlap,
-	const std::vector<const double *>& _sigma_multipliers,
-	const double *sigma_constant,
-	double *weighted_volume,
-	int myNumPoints,
-	const int* localNeighborList,
-	double horizon,
-	const FunctionPointer SIGMA_0=PeridigmNS::InfluenceFunction::self().getInfluenceFunction()
-);
-
-void computeWeightedVolumeWithDamage
 (
 	const double *xOverlap,
 	const double *volumeOverlap,
@@ -197,23 +77,6 @@ void computeWeightedVolumeWithDamage
     const double* damageN,
     const double* damageNP1,
     const double* bondDamage,
-	const FunctionPointer SIGMA_0=PeridigmNS::InfluenceFunction::self().getInfluenceFunction()
-);
-
-/*
- * Computes 'normalized' weighted volume
- * Sanity check: all values should be == 3.0
- */
-void computeNormalizedWeightedVolume
-(
-	const double *xOverlap,
-	const double *volumeOverlap,
-	const double *omega_constant,
-	const double *bondDamage,
-	double *weighted_volume,
-	int myNumPoints,
-	const int* localNeighborList,
-	double horizon,
 	const FunctionPointer SIGMA_0=PeridigmNS::InfluenceFunction::self().getInfluenceFunction()
 );
 
@@ -239,7 +102,7 @@ void computeDilatationAndPalsPressure
     const double* bondDamage
 );
 
-void computeInternalForcePals
+void computeInternalForceDamagePals
 (
 	const double *xOverlap,
 	const double *yOverlapN,

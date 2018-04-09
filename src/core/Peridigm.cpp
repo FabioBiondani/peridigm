@@ -474,6 +474,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     string damageModelName = blockIt->getDamageModelName();
     if(damageModelName != "None"){
       Teuchos::ParameterList damageParams = damageModelParams.sublist(damageModelName, true);
+      damageParams.set("Material Model",materialModelName);
       Teuchos::RCP<PeridigmNS::DamageModel> damageModel = damageModelFactory.create(damageParams);
       blockIt->setDamageModel(damageModel);
       if(damageModel->Name() =="Interface Aware"){
@@ -1718,9 +1719,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       string damageModelName = blockIt->getDamageModelName();
       if(damageModelName != "None"){
          Teuchos::ParameterList damageParams = damageModelParams.sublist(damageModelName, true);
-         Teuchos::RCP<PeridigmNS::DamageModel> damageModel = damageModelFactory.create(damageParams);
-         blockIt->setDamageModel(damageModel);
-         if(damageModel->Name() == "Time Dependent Critical Stretch"){
+         if(damageParams.get<string>("Damage Model") == "Time Dependent Critical Stretch"){
+           Teuchos::RCP<PeridigmNS::DamageModel> damageModel = damageModelFactory.create(damageParams);
+           blockIt->setDamageModel(damageModel);
            CSDamageModel = Teuchos::rcp_dynamic_cast< PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel >(damageModel);
            CSDamageModel->evaluateParserDmg(currentValue, previousValue, timeCurrent, timePrevious);
          }

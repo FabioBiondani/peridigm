@@ -133,8 +133,8 @@ const double dt
         yieldFunction_lambda = (-3*shearModulus-yieldStress_lambda)/constA;
         //std::cout << "it=" << it <<"   yieldFunction=" << yieldFunction << "   lambda=" << lambda << "\n";
         if (it==20){
-            yieldFunction=0;
             std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   yieldFunction=" << yieldFunction << "   lambda=" << lambda ;
+            yieldFunction=0.0;lambda=0.0;
 //             std::cout << "  vmStressTrial=" << vmStressTrial ;
 //             std::cout << "\n";
         }

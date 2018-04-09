@@ -424,11 +424,11 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       *(partialStressPtr+7) += TZ*undeformedBondY*neighborVol;
       *(partialStressPtr+8) += TZ*undeformedBondZ*neighborVol;
       
-      deltaDeformedBondX = (*(neighborCoordinatesPtrNP1)   - *(coordinatesPtrNP1))   - (*(neighborCoordinatesPtrN)   - *(coordinatesPtrN));
-      deltaDeformedBondY = (*(neighborCoordinatesPtrNP1+1) - *(coordinatesPtrNP1+1)) - (*(neighborCoordinatesPtrN+1) - *(coordinatesPtrN+1));
-      deltaDeformedBondZ = (*(neighborCoordinatesPtrNP1+2) - *(coordinatesPtrNP1+2)) - (*(neighborCoordinatesPtrN+2) - *(coordinatesPtrN+2));
-
       if (m_useSpecularBondPositions){
+          deltaDeformedBondX = (*(neighborCoordinatesPtrNP1)   - *(coordinatesPtrNP1))   - (*(neighborCoordinatesPtrN)   - *(coordinatesPtrN));
+          deltaDeformedBondY = (*(neighborCoordinatesPtrNP1+1) - *(coordinatesPtrNP1+1)) - (*(neighborCoordinatesPtrN+1) - *(coordinatesPtrN+1));
+          deltaDeformedBondZ = (*(neighborCoordinatesPtrNP1+2) - *(coordinatesPtrNP1+2)) - (*(neighborCoordinatesPtrN+2) - *(coordinatesPtrN+2));
+
           int specuId = int(*specu);
           *miPotNP1+=                TX*deltaDeformedBondX + TY*deltaDeformedBondY + TZ*deltaDeformedBondZ;
           miPotNP1overlap[specuId]+= TX*deltaDeformedBondX + TY*deltaDeformedBondY + TZ*deltaDeformedBondZ;

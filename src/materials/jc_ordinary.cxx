@@ -193,8 +193,6 @@ const double constM
 
             *td = (1.0-*bondDamage)*(omega * alpha * ed);
 
-            if (*edpN/zeta>0.2) std::cout << *edpN << "  " << *edpNP1 << std::endl;
-
             // compute deviatoric energy density
             Wd += (1.0-*bondDamage)* alpha/2 * ed * omega * ed * cellVolume;
             

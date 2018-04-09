@@ -61,8 +61,11 @@
 #include "Peridigm_ElasticBondBasedMaterial.hpp"
 #include "Peridigm_VectorPoissonMaterial.hpp"
 #include "Peridigm_Pals_Model.hpp"
+#include "Peridigm_DamagePals_Model.hpp"
 #include "Peridigm_JohnsonCookCorrespondenceMaterial.hpp"
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
+// #include "Peridigm_JohnsonCookPalsMaterial.hpp"
+
 // #include "Peridigm_ThermalBB_JCCorrMaterial.hpp"
 #ifdef PERIDIGM_PV
 #include "Peridigm_ElasticPVMaterial.hpp"
@@ -109,6 +112,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new VectorPoissonMaterial(materialParams) );
   else if (materialModelName == "Pals")
     materialModel = Teuchos::rcp( new Pals_Model(materialParams) );
+  else if (materialModelName == "Damage Pals")
+    materialModel = Teuchos::rcp( new DamagePals_Model(materialParams) );
   else if (materialModelName == "Elastic Partial Volume"){
 #ifdef PERIDIGM_PV
     materialModel = Teuchos::rcp( new ElasticPVMaterial(materialParams) );
@@ -141,6 +146,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new JohnsonCookCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Johnson-Cook Ordinary")
     materialModel = Teuchos::rcp( new JohnsonCookOrdinaryMaterial(materialParams) );
+//   else if (materialModelName == "Johnson-Cook Pals")
+//     materialModel = Teuchos::rcp( new JohnsonCookPalsMaterial(materialParams) );
 //   else if (materialModelName == "Thermal Johnson-Cook Correspondence")
 //     materialModel = Teuchos::rcp( new ThermalBB_JCCorrMaterial(materialParams) );
   else {

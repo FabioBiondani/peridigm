@@ -70,7 +70,7 @@ int FinitePlane::bondIntersectInfinitePlane(const double *p0, const double *p1, 
     // it may or may not lie on the plane
     // if it does lie on the plane, then the numerator will be zero
     // in either case, this function will return "no intersection"
-    t = 0.0;
+    t = 1e10;
   }
   else{
     // the line intersects the plane

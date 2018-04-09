@@ -149,11 +149,11 @@ const double constM
     ScalarT t, ti, fx, fy, fz, e;
     ScalarT ed;
 
-    const int *neighPtrOverLap = localNeighborList;
-    const ScalarT *edpN_OverLap = deviatoricPlasticExtensionN;
-    ScalarT *edpNP1_OverLap = deviatoricPlasticExtensionNP1;
-    ScalarT *td_OverLap = deviatoricForceDensity;
-    const double *bondDamageOverLap = bondDamage;
+    const int *neighPtr_ = localNeighborList;
+    const ScalarT *edpN_ = deviatoricPlasticExtensionN;
+    ScalarT *edpNP1_ = deviatoricPlasticExtensionNP1;
+    ScalarT *td_ = deviatoricForceDensity;
+    const double *bondDamage_ = bondDamage;
 
 
     for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwnedN +=3, yOwnedNP1 +=3, fOwned+=3, vmStress++, eqpsN++, eqpsNP1++, deltaT++, m++, theta++, scf++){
@@ -166,7 +166,7 @@ const double constM
         }
         else hmlgT=0.0;
 
-        int numNeigh = *neighPtr; neighPtr++; neighPtrOverLap++;
+        int numNeigh = *neighPtr; neighPtr++; neighPtr_++;
         const double *X = xOwned;
         const ScalarT *YN   = yOwnedN;
         const ScalarT *YNP1 = yOwnedNP1;
@@ -228,9 +228,9 @@ const double constM
                 
                 tempScalar = *vmStress / vmStressTrial;
 //                 Wd=0.0;
-                for(int n=0;n<numNeigh;n++,neighPtrOverLap++,bondDamageOverLap++,edpN_OverLap++,edpNP1_OverLap++,td_OverLap++,specu++,miPotNP1++){
+                for(int n=0;n<numNeigh;n++,neighPtr_++,bondDamage_++,edpN_++,edpNP1_++,td_++,specu++,miPotNP1++){
 
-                    int localId = *neighPtrOverLap;
+                    int localId = *neighPtr_;
                     cellVolume = v[localId];
                     const double *XP = &xOverlap[3*localId];
                     const ScalarT *YNP1P = &yOverlapNP1[3*localId];
@@ -240,9 +240,9 @@ const double constM
                     zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
                     omega = scalarInfluenceFunction(zeta,horizon);
 
-                    *td_OverLap *= tempScalar;
-                    ti= (1.0-*bondDamageOverLap)*(3.0*K*(*theta)/(*m)* omega * zeta);
-                    t = ti + *td_OverLap;
+                    *td_ *= tempScalar;
+                    ti= (1.0-*bondDamage_)*(3.0*K*(*theta)/(*m)* omega * zeta);
+                    t = ti + *td_;
 
                     fx = t * YNP1_dx / dYNP1; fy = t * YNP1_dy / dYNP1; fz = t * YNP1_dz / dYNP1;
 
@@ -253,7 +253,7 @@ const double constM
                     fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
                     fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
 
-                    *edpNP1_OverLap = *edpN_OverLap + *m/5.0 *(*td_OverLap)/omega / (*vmStress) * lambda ;
+                    *edpNP1_ = *edpN_ + *m/5.0 *(*td_)/omega / (*vmStress) * lambda ;
 
 
                     if(useSpecularBondPosition){
@@ -268,8 +268,8 @@ const double constM
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
 //                     if(deltaTemperature) e -= thermalExpansionCoefficient*(*deltaT)*zeta;
-//                     ed = e - *theta/3*zeta - *edpNP1_OverLap; // deviatoric Extension
-//                     Wd += (1.0-*bondDamageOverLap)* alpha/2 * ed * omega * ed * cellVolume;
+//                     ed = e - *theta/3*zeta - *edpNP1_; // deviatoric Extension
+//                     Wd += (1.0-*bondDamage_)* alpha/2 * ed * omega * ed * cellVolume;
                 }
 //                 cout << "yielding " << sqrt(6*MU*Wd) << " " << *vmStress << endl;
             } else{
@@ -281,9 +281,9 @@ const double constM
             *eqpsNP1= *eqpsN;
             *vmStress = vmStressTrial;
 
-            for(int n=0; n<numNeigh; n++,neighPtrOverLap++,bondDamageOverLap++,edpN_OverLap++,edpNP1_OverLap++,td_OverLap++,specu++,miPotNP1++) {
+            for(int n=0; n<numNeigh; n++,neighPtr_++,bondDamage_++,edpN_++,edpNP1_++,td_++,specu++,miPotNP1++) {
 
-                int localId = *neighPtrOverLap;
+                int localId = *neighPtr_;
                 cellVolume = v[localId];
                 const double *XP = &xOverlap[3*localId];
                 const ScalarT *YNP1P = &yOverlapNP1[3*localId];
@@ -293,8 +293,8 @@ const double constM
                 zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
                 omega = scalarInfluenceFunction(zeta,horizon);
 
-                ti= (1.0-*bondDamageOverLap)*(3.0*K*(*theta)/(*m)* omega * zeta);
-                t = ti + *td_OverLap;
+                ti= (1.0-*bondDamage_)*(3.0*K*(*theta)/(*m)* omega * zeta);
+                t = ti + *td_;
 
                 fx = t * YNP1_dx / dYNP1;  fy = t * YNP1_dy / dYNP1;  fz = t * YNP1_dz / dYNP1;
 

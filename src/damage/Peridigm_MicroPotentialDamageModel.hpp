@@ -104,7 +104,7 @@ namespace PeridigmNS {
     double m_Jintegral;
     Material::TempDepConst obj_Jintegral;
     std::string m_materialModel;
-    bool isCorrespondenceMaterial;
+    bool isCorrespondenceOrPalsMaterial;
     
     // field ids for all relevant data
     std::vector<int> m_fieldIds;

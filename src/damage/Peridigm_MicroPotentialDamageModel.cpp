@@ -52,13 +52,14 @@
 using namespace std;
 
 PeridigmNS::MicropotentialDamageModel::MicropotentialDamageModel(const Teuchos::ParameterList& params)
-  : DamageModel(params), m_Jintegral(0.0),m_materialModel(""),isCorrespondenceMaterial(false), m_modelCoordinatesFieldId(-1), m_horizonFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1),m_microPotentialFieldId(-1), m_specularBondPositionFieldId(-1),m_volumeRatioFieldId(-1),m_volumeFieldId(-1)
+  : DamageModel(params), m_Jintegral(0.0),m_materialModel(""),isCorrespondenceOrPalsMaterial(false), m_modelCoordinatesFieldId(-1), m_horizonFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1),m_microPotentialFieldId(-1), m_specularBondPositionFieldId(-1),m_volumeRatioFieldId(-1),m_volumeFieldId(-1)
 {
   obj_Jintegral.set(params,"J_integral");
   m_Jintegral= obj_Jintegral.compute(0.0);
 
   m_materialModel = params.get<string>("Material Model");
-  if(m_materialModel.find("Correspondence")<m_materialModel.length()) {isCorrespondenceMaterial = true;}
+  if(m_materialModel.find("Correspondence")<m_materialModel.length()) {isCorrespondenceOrPalsMaterial = true;}
+  if(m_materialModel.find("Pals")<m_materialModel.length()) {isCorrespondenceOrPalsMaterial = true;}
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_modelCoordinatesFieldId = fieldManager.getFieldId("Model_Coordinates");
@@ -126,7 +127,7 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
   bondIndex = 0;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID /*, ++BondsLeft*/){
   	int nodeID = ownedIDs[iID];
-    if(isCorrespondenceMaterial)
+    if(isCorrespondenceOrPalsMaterial)
         volRatio[nodeID] = 1.0;
     else{
         volRatio[nodeID] = 0.0;
@@ -182,12 +183,13 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
         double neighT = *(deltaTemperature+neighborID);
         bond_Jintegral = obj_Jintegral.compute((localT+neighT)/2.0);
         
+        double local_horizon = *(horizon+nodeId);
         double m_criticalMicroPotential;
-        if (isCorrespondenceMaterial)
-            m_criticalMicroPotential = 4.0/(m_pi*pow(*(horizon+nodeId),4.0))*bond_Jintegral;
+        if (isCorrespondenceOrPalsMaterial)
+            m_criticalMicroPotential = 4.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon)*bond_Jintegral;
         else{
             double meanVolRatio = (*(volRatio+iID)+*(volRatio+neighborID))/2.0;
-            m_criticalMicroPotential = 4.0/(m_pi*pow(*(horizon+nodeId),4.0))*bond_Jintegral/meanVolRatio;
+            m_criticalMicroPotential = 4.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon)*bond_Jintegral/meanVolRatio;
         }
 
         double bondMicroPotential = miPot[bondIndex] ;

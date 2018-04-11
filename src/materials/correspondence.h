@@ -179,6 +179,22 @@ double hourglassCoefficient
 );
 
 template<typename ScalarT>
+void computeRefinedHourglassForce
+(
+const double* volume,
+const double* horizon,
+const double* modelCoordinates,
+const ScalarT* coordinates,
+const ScalarT* deformationGradient,
+ScalarT* hourglassForceDensity,
+const ScalarT* bondDamage,
+const int* neighborhoodList,
+int numPoints,
+double bulkModulus,
+double hourglassCoefficient
+);
+
+template<typename ScalarT>
 void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
 
 }

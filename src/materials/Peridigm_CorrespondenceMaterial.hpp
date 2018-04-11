@@ -135,6 +135,7 @@ namespace PeridigmNS {
     int m_microPotentialFieldId;
 
     bool m_useSpecularBondPositions;
+    bool m_refinedHourglassForce;
   };
 }
 

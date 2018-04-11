@@ -114,7 +114,7 @@ compute_normalizing_constant_point
  double horizon
 );
 
-void
+int
 solve_linear_problem(double *k,
                      double *rhs);
 

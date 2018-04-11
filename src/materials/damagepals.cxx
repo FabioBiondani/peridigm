@@ -122,7 +122,7 @@ compute_lagrange_multipliers
 	for(int p=0;p<num_owned_points;p++,X+=3,oc_X++,sc_X++, damageN++, damageNP1++){
 
         if (*damageNP1 > *damageN){
-            if (*damageNP1<=0.3){
+            if (*damageNP1<=DAMAGE_TOLERANCE){
                 // evaluate lagrange multipliers and normalizing constants for point X
                 //print_point_3d(std::cout,p,X);
                 compute_lagrange_multipliers_point(X,xOverlap,volumeOverlap,neigh_X,horizon,omega_X,oc_X,sigma_X,sc_X,OMEGA_0,SIGMA_0,bondDamage);
@@ -343,21 +343,28 @@ compute_lagrange_multipliers_point
 		}
 	}
 
+    int solveError;
 	//print_symmetrix_6x6(std::cout,"K_DIL",k);
 	//print_N_vector(std::cout,"RHS_DIL",NUM_LAGRANGE_MULTIPLIERS,rhs_dil);
-	solve_linear_problem(k,rhs_dil);
+	solveError = solve_linear_problem(k,rhs_dil);
 	//print_N_vector(std::cout,"RHS_DIL",NUM_LAGRANGE_MULTIPLIERS,rhs_dil);
 
 //	print_symmetrix_6x6(std::cout,"K_DEV",k_dev);
 //	print_N_vector(std::cout,"RHS_DEV",NUM_LAGRANGE_MULTIPLIERS,rhs_dev);
-    solve_linear_problem(k_dev,rhs_dev);
+    solveError+= solve_linear_problem(k_dev,rhs_dev);
 //	print_N_vector(std::cout,"RHS_DEV",NUM_LAGRANGE_MULTIPLIERS,rhs_dev);
 
 	// Copy solution into output vectors
-	for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
-		omega_multipliers[i]=rhs_dil[i];
-		sigma_multipliers[i]=rhs_dev[i];
-	}
+    if (solveError ==0)
+        for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
+            omega_multipliers[i]=rhs_dil[i];
+            sigma_multipliers[i]=rhs_dev[i];
+        }
+    else
+        for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
+            omega_multipliers[i]=0.0;
+            sigma_multipliers[i]=0.0;
+        }
 
 	/*
 	 * This code computes scaling factors for the composite influence
@@ -417,7 +424,11 @@ void computeWeightedVolume
 	for(int q=0; q<numOwnedPoints;q++, xOwned+=3, sc++, m++, damageN++, damageNP1++){
 		int numNeigh = *neighPtr; neighPtr++;
 		const double *X = xOwned;
-        if((*damageNP1 == *damageN)&&(*damageN>=0.5)) continue;
+        if((*damageNP1 == *damageN)&&(*damageN>=DAMAGE_TOLERANCE)){
+            neighPtr+=numNeigh;
+            bondDamage+=numNeigh;
+            continue;
+        }
         else{
             *m=0.0;
 
@@ -548,7 +559,8 @@ void computeInternalForceDamagePals
     const bool useSpecularBondPosition,
     const double* specularBondPosition,
     double* microPotentialN,
-    double* microPotentialNP1
+    double* microPotentialNP1,
+    double* weightedVolume
 )
 {
 	/*
@@ -565,6 +577,7 @@ void computeInternalForceDamagePals
 	double tau_X[NUM_LAGRANGE_MULTIPLIERS];
 	const double *sc=sigma_constant;
 	double *fOwned = fInternalOverlap;
+    double *m=weightedVolume;
 
 	double bond[3];
 	double a, b, c;
@@ -589,7 +602,7 @@ void computeInternalForceDamagePals
 
     
 	const int *neighPtr = localNeighborList;
-	for(int q=0; q<numOwnedPoints;q++, xOwned+=3, yOwnedN+=3, yOwnedNP1+=3, fOwned+=3, oc++, sc++, theta++, p++){
+	for(int q=0; q<numOwnedPoints;q++, xOwned+=3, yOwnedN+=3, yOwnedNP1+=3, fOwned+=3, oc++, sc++, theta++, p++,m++){
 
 		int numNeigh = *neighPtr; neighPtr++;
 		const double *X = xOwned;
@@ -639,7 +652,8 @@ void computeInternalForceDamagePals
 
             if(useSpecularBondPosition){
 //                 omegaOrdinary = scalarInfluenceFunction(xi,horizon);
-//                 t=omegaOrdinary*(1.0-*bondDamage)*((*p)*xi+TWO_MU*eps);
+//                 double alpha = 15*SHEAR_MODULUS/(*m);
+//                 t=(1.0-*bondDamage)*omegaOrdinary*((*p)*xi+alpha*eps);
                 fx = t * YNP1_dx / dYNP1;
                 fy = t * YNP1_dy / dYNP1;
                 fz = t * YNP1_dz / dYNP1;

@@ -10,6 +10,7 @@ namespace MATERIAL_EVALUATION {
 
 namespace PALS {
 
+const double DAMAGE_TOLERANCE=1.0;
 
 void
 compute_lagrange_multipliers
@@ -126,7 +127,8 @@ void computeInternalForceDamagePals
     const bool useSpecularBondPosition,
     const double* specularBondPosition,
     double* microPotentialN,
-    double* microPotentialNP1
+    double* microPotentialNP1,
+    double* weightedVolume
 );
 
 }

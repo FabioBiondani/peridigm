@@ -392,7 +392,8 @@ PeridigmNS::DamagePals_Model::computeForce(const double dt,
         m_useSpecularBondPosition,
         specu,
         miPotN,
-        miPotNP1
+        miPotNP1,
+        weightedVolume
 	);
 
 

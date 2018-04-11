@@ -142,19 +142,23 @@ solve_symmetric_3x3(const double *k, const double *rhs, double *solution)
 
 }
 
-void solve_linear_problem(double *k, double *rhs){
+int solve_linear_problem(double *k, double *rhs){
 
 	/*
 	 * Factorize k
 	 */
+    int solveError = 0;
+
 	int N=NUM_LAGRANGE_MULTIPLIERS;
 	int INFO, M=N, LDA=N;
 	int IPIV[NUM_LAGRANGE_MULTIPLIERS];
 	dgetrf_(&M,&N,k,&LDA,IPIV,&INFO);
 	if(0!=INFO){
+        solveError++;
 		std::string message="ERROR Pals model: compute_lagrange_multipliers \n\t";
 		message+="Matrix factorization error -- bad value or factorization will yield division by zero during solve.";
-		throw std::runtime_error(message);
+        std::cout << message << std::endl;
+// 		throw std::runtime_error(message);
 	}
 	/*
 	 * Solve
@@ -163,10 +167,14 @@ void solve_linear_problem(double *k, double *rhs){
 	int NRHS=1, LDB=N;
 	dgetrs_(&TRANS,&N,&NRHS,k,&LDA,IPIV,rhs,&LDB,&INFO);
 	if(0!=INFO){
+        solveError++;
 		std::string message="ERROR Pals model: compute_lagrange_multipliers \n\t";
 		message+="Matrix solve error -- bad value.";
-		throw std::runtime_error(message);
+        std::cout << message << std::endl;
+// 		throw std::runtime_error(message);
 	}
+
+	return solveError;
 }
 
 void
@@ -404,21 +412,28 @@ compute_lagrange_multipliers_point
 		}
 	}
 
+    int solveError;
 	//print_symmetrix_6x6(std::cout,"K_DIL",k);
 	//print_N_vector(std::cout,"RHS_DIL",NUM_LAGRANGE_MULTIPLIERS,rhs_dil);
-	solve_linear_problem(k,rhs_dil);
+	solveError = solve_linear_problem(k,rhs_dil);
 	//print_N_vector(std::cout,"RHS_DIL",NUM_LAGRANGE_MULTIPLIERS,rhs_dil);
 
 //	print_symmetrix_6x6(std::cout,"K_DEV",k_dev);
 //	print_N_vector(std::cout,"RHS_DEV",NUM_LAGRANGE_MULTIPLIERS,rhs_dev);
-    solve_linear_problem(k_dev,rhs_dev);
+    solveError+= solve_linear_problem(k_dev,rhs_dev);
 //	print_N_vector(std::cout,"RHS_DEV",NUM_LAGRANGE_MULTIPLIERS,rhs_dev);
 
 	// Copy solution into output vectors
-	for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
-		omega_multipliers[i]=rhs_dil[i];
-		sigma_multipliers[i]=rhs_dev[i];
-	}
+    if (solveError ==0)
+        for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
+            omega_multipliers[i]=rhs_dil[i];
+            sigma_multipliers[i]=rhs_dev[i];
+        }
+    else
+        for(int i=0;i<NUM_LAGRANGE_MULTIPLIERS;i++){
+            omega_multipliers[i]=0.0;
+            sigma_multipliers[i]=0.0;
+        }
 
 	/*
 	 * This code computes scaling factors for the composite influence

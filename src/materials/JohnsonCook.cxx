@@ -94,7 +94,8 @@ const double dt
     
     
     int it=0;
-    while (std::abs(yieldFunction) > 1e-7) {
+    int max_it = 20;
+    while (std::abs(yieldFunction) > 1e-7){
         if (it>0)
         {
             // x_it   =  -inv(M) * f + x_old
@@ -106,16 +107,21 @@ const double dt
         teqps = lambda/dt; // time derived eqps
         teqps_lambda= 1./dt;
 
-        pow_eqps_nM1 = 0.;
-        if (*eqpsNP1>0.){pow_eqps_nM1 = +(pow(*eqpsNP1,constN-1));}
-        
         pow_eqps_n = 0.;
         if (*eqpsNP1>0.){pow_eqps_n = +(pow(*eqpsNP1,constN));}
+        else if (*eqpsNP1<0.){pow_eqps_n = +(pow(-*eqpsNP1,constN));}
+        
+        pow_eqps_nM1 = 0.;
+        if (*eqpsNP1>0.){pow_eqps_nM1 = +(pow(*eqpsNP1,constN-1.0));}
+        else if(*eqpsNP1<0.){pow_eqps_nM1 = +(pow(-*eqpsNP1,constN-1.0));}
         
         pow_1teqps_C = 0.;
-        if (1+teqps>0.){pow_1teqps_C = +(pow(1+teqps,constC));}
+        if (1.0+teqps>0.){pow_1teqps_C = +(pow(1.0+teqps,constC));}
+        else if (1.0+teqps<0.){pow_1teqps_C = +(pow(-1.0-teqps,constC));}
+        
         pow_1teqps_CM1 = 0.;
-        if (1+teqps>0.){pow_1teqps_CM1 = +(pow(1+teqps,constC-1));}
+        if (1.0+teqps>0.){pow_1teqps_CM1 = +(pow(1.0+teqps,constC-1.0));}
+        else if (1.0+teqps<0.){pow_1teqps_CM1 = +(pow(-1.0-teqps,constC-1.0));}
         
         
         *yieldStress =
@@ -132,12 +138,17 @@ const double dt
         yieldFunction = (vmStressTrial - 3.*shearModulus*lambda - (*yieldStress))/constA; // adimensional
         yieldFunction_lambda = (-3*shearModulus-yieldStress_lambda)/constA;
         //std::cout << "it=" << it <<"   yieldFunction=" << yieldFunction << "   lambda=" << lambda << "\n";
-        if (it==20){
-            std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   yieldFunction=" << yieldFunction << "   lambda=" << lambda ;
-            yieldFunction=0.0;lambda=0.0;
+        if (it==max_it){
+            std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   yieldFunction=" << yieldFunction << "   lambda=" << lambda << "   trialstress=" << vmStressTrial << std::endl;
+            yieldFunction=0.0;
+            *eqpsNP1= *eqpsN; // equivalent plastic strain
 //             std::cout << "  vmStressTrial=" << vmStressTrial ;
 //             std::cout << "\n";
         }
+    }
+    if (lambda<0.0) {
+        std::cout << "WARNING: PLASTIC STRAIN LOOP CONVERGED TO A NEGATIVE PLASTIC STRAIN" << std::endl << "         setting lambda to zero." << std::endl ;
+        *eqpsNP1= *eqpsN; // equivalent plastic strain
     }
 }
 

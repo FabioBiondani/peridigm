@@ -2285,6 +2285,9 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   Teuchos::RCP<Epetra_Vector> residual = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction;
 
+  if(analysisHasSpecular)
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** ERROR: Specular Positions and NOX QuasiStatic analysis not compatible yet.\n");
+
   // The reaction vector is created here and will be longer if multiphysics is enabled
   if(analysisHasMultiphysics)
     reaction = Teuchos::rcp(new Epetra_Vector(combinedForce->Map()));
@@ -2785,6 +2788,9 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   Teuchos::RCP<Epetra_Vector> residual = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> lhs = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction;
+
+  if(analysisHasSpecular)
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** ERROR: Specular Positions and QuasiStatic analysis not compatible yet.\n");
 
   if(analysisHasMultiphysics)
 	 reaction = Teuchos::rcp(new Epetra_Vector(combinedForce->Map()));
@@ -3587,6 +3593,10 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
   Teuchos::RCP<Epetra_Vector> an = Teuchos::rcp(new Epetra_Vector(*threeDimensionalMap));
   Teuchos::RCP<Epetra_Vector> fluidPressureUn;
   Teuchos::RCP<Epetra_Vector> fluidPressureVn;
+
+
+  if(analysisHasSpecular)
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** ERROR: Specular Positions and Implicit analysis not compatible yet.\n");
 
   //Don't bother allocating memory for the multiphysics variables unless we need to.
   if(analysisHasMultiphysics){

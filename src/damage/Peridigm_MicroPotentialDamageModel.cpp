@@ -95,14 +95,14 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *damage, *bondDamage/*, *BondsLeft*/;
+  double *damage, *bondDamage;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
 
   // Initialize damage to zero
   int neighborhoodListIndex = 0;
   int bondIndex = 0;
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID /*, ++BondsLeft*/){
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID ){
   	int nodeID = ownedIDs[iID];
     damage[nodeID] = 0.0;
 	int numNeighbors = neighborhoodList[neighborhoodListIndex++];
@@ -125,7 +125,7 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
   double initialDistance;
   neighborhoodListIndex = 0;
   bondIndex = 0;
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID /*, ++BondsLeft*/){
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID ){
   	int nodeID = ownedIDs[iID];
     if(isCorrespondenceOrPalsMaterial)
         volRatio[nodeID] = 1.0;
@@ -135,13 +135,13 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
         for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
             neighborID = neighborhoodList[neighborhoodListIndex++];
             initialDistance = distance(x[nodeID*3], x[nodeID*3+1], x[nodeID*3+2], x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
-            volRatio[nodeID] += initialDistance*volume[neighborID];
+//             volRatio[nodeID] += initialDistance*volume[neighborID];
 //             volRatio[nodeID] += initialDistance*initialDistance*volume[neighborID];
-//             volRatio[nodeID] += initialDistance*initialDistance*initialDistance*volume[neighborID];
+            volRatio[nodeID] += initialDistance*initialDistance*initialDistance*volume[neighborID];
         }
-        volRatio[nodeID] /= m_pi*pow(horizon[nodeID],4.0);
+//         volRatio[nodeID] /= m_pi*pow(horizon[nodeID],4.0);
 //         volRatio[nodeID] /= 4.0/5.0*m_pi*pow(horizon[nodeID],5.0);
-//         volRatio[nodeID] /= 2.0/3.0*m_pi*pow(horizon[nodeID],6.0);
+        volRatio[nodeID] /= 2.0/3.0*m_pi*pow(horizon[nodeID],6.0);
     }
   }
   
@@ -156,9 +156,10 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 {
   double *x;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-  double *horizon, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *miPot, *specu, *volRatio;
+  double *horizon, *damageN, *damageNP1, *bondDamageN, *bondDamageNP1, *deltaTemperature, *miPot, *specu, *volRatio;
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
-  dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
+  dataManager.getData(m_damageFieldId, PeridigmField::STEP_N)->ExtractView(&damageN);
+  dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageNP1);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
@@ -169,7 +170,7 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
   double trialDamage(0.0), totalDamage;
   int neighborhoodListIndex(0), bondIndex(0);
   int nodeId, numNeighbors, neighborID, iID, iNID;
-//   double nodeInitialX[3], initialDistance;
+  double nodeInitialX[3], initialDistance;
   double bond_Jintegral;
 
   // Set the bond damage to the previous value
@@ -180,24 +181,30 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 
   for(iID=0 ; iID<numOwnedPoints ; ++iID){
 	nodeId = ownedIDs[iID];
-// 	nodeInitialX[0] = x[nodeId*3];
-// 	nodeInitialX[1] = x[nodeId*3+1];
-// 	nodeInitialX[2] = x[nodeId*3+2];
+	nodeInitialX[0] = x[nodeId*3];
+	nodeInitialX[1] = x[nodeId*3+1];
+	nodeInitialX[2] = x[nodeId*3+2];
     double localT = *(deltaTemperature+nodeId);
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
 	for(iNID=0 ; iNID<numNeighbors ; ++iNID){
 
+        if(bondDamageN[bondIndex]==1.0){
+            neighborhoodListIndex += 1;
+            bondIndex += 1;
+            continue;
+        }
+
         int specuID = int(specu[bondIndex]);
 	    neighborID = neighborhoodList[neighborhoodListIndex];
-//         initialDistance = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1],x[neighborID*3+2]);
+        initialDistance = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1],x[neighborID*3+2]);
         double neighT = *(deltaTemperature+neighborID);
         bond_Jintegral = obj_Jintegral.compute((localT+neighT)/2.0);
         
         double local_horizon = *(horizon+nodeId);
-        double specificJ = 4.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon);
+//         double specificJ = 4.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon);
 //         double specificJ = 5.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance;
-//         double specificJ = 6.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance*initialDistance;
-//         double specificJ = 7.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance*initialDistance*initialDistance;
+        double specificJ = 6.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance*initialDistance;
+        
         double m_criticalMicroPotential;
         if (isCorrespondenceOrPalsMaterial)
             m_criticalMicroPotential = specificJ*bond_Jintegral;
@@ -237,6 +244,6 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 	  totalDamage /= numNeighbors;
 	else
 	  totalDamage = 0.0;
- 	damage[nodeId] = totalDamage;
+ 	damageNP1[nodeId] = totalDamage;
   }
 }

@@ -406,8 +406,13 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
         *(partialStressPtr+3) = 0.0 ; *(partialStressPtr+4) = 0.0 ;  *(partialStressPtr+5) = 0.0;
         *(partialStressPtr+6) = 0.0 ; *(partialStressPtr+7) = 0.0 ;  *(partialStressPtr+8) = 0.0;
         *damage=1.0;
-        neighborListPtr+=numNeighbors;
-        bondIndex+=numNeighbors;
+        for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondIndex++, specu++, miPotNP1++){
+          if ((m_useSpecularBondPositions)&&(*singu==1.0)){
+              int specuId = int(*specu);
+              *miPotNP1+=1e60;
+              miPotNP1overlap[specuId]+=1e60;
+          }
+        }
         continue;
     }
 

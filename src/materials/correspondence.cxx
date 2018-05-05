@@ -236,13 +236,18 @@ const double* modelCoordinates,
 const ScalarT* coordinates,
 ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
-const ScalarT* bondDamage,
+const double* specu,
+ScalarT* bondDamage,
+ScalarT* singu,
 const int* neighborhoodList,
 int numPoints
 )
 {
   int returnCode = 0;
 
+  bool singularityDetachment = (singu!=nullptr);
+//   bool useSpecularBondPositions = (specu==nullptr);
+  
   const double* delta = horizon;
   const double* modelCoord = modelCoordinates;
   const double* neighborModelCoord;
@@ -264,10 +269,30 @@ int numPoints
 
   int inversionReturnCode(0);
 
+  ScalarT* bondDamageOverlap = bondDamage;
+
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3,
-        shapeTensorInv+=9, defGrad+=9){
+        shapeTensorInv+=9, defGrad+=9, singu++){
+
+    numNeighbors = *neighborListPtr; neighborListPtr++;
+    if((singularityDetachment)&&(*singu!=0.0)){
+      *(shapeTensorInv)   = 0.0;  *(shapeTensorInv+1) = 0.0;  *(shapeTensorInv+2) = 0.0;
+      *(shapeTensorInv+3) = 0.0;  *(shapeTensorInv+4) = 0.0;  *(shapeTensorInv+5) = 0.0;
+      *(shapeTensorInv+6) = 0.0;  *(shapeTensorInv+7) = 0.0;  *(shapeTensorInv+8) = 0.0;
+      *(defGrad)   = 0.0;  *(defGrad+1) = 0.0;  *(defGrad+2) = 0.0;
+      *(defGrad+3) = 0.0;  *(defGrad+4) = 0.0;  *(defGrad+5) = 0.0;
+      *(defGrad+6) = 0.0;  *(defGrad+7) = 0.0;  *(defGrad+8) = 0.0;
+      for(int n=0; n<numNeighbors; n++, neighborListPtr++, specu++, bondDamage++){
+          *bondDamage=1.0;
+//           if (useSpecularBondPositions){
+//             int specuId = int(*specu);
+//             *(bondDamageOverlap+specuId)=1.0;
+//           }
+      }
+      continue;
+    }
 
     // Zero out data
     *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
@@ -277,7 +302,6 @@ int numPoints
     *(defGradFirstTerm+3) = 0.0 ; *(defGradFirstTerm+4) = 0.0 ; *(defGradFirstTerm+5) = 0.0 ;
     *(defGradFirstTerm+6) = 0.0 ; *(defGradFirstTerm+7) = 0.0 ; *(defGradFirstTerm+8) = 0.0 ;
 
-    numNeighbors = *neighborListPtr; neighborListPtr++;
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
 
       neighborIndex = *neighborListPtr;
@@ -323,8 +347,28 @@ int numPoints
     }
     
     inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
-    if(inversionReturnCode > 0)
+    if(inversionReturnCode > 0){//     if(shapeTensorDeterminant <= 1e-12){
       returnCode = inversionReturnCode;
+      if (singularityDetachment){
+        *singu=1.0;
+        *(shapeTensorInv)   = 0.0;  *(shapeTensorInv+1) = 0.0;  *(shapeTensorInv+2) = 0.0;
+        *(shapeTensorInv+3) = 0.0;  *(shapeTensorInv+4) = 0.0;  *(shapeTensorInv+5) = 0.0;
+        *(shapeTensorInv+6) = 0.0;  *(shapeTensorInv+7) = 0.0;  *(shapeTensorInv+8) = 0.0;
+        *(defGrad)   = 0.0;  *(defGrad+1) = 0.0;  *(defGrad+2) = 0.0;
+        *(defGrad+3) = 0.0;  *(defGrad+4) = 0.0;  *(defGrad+5) = 0.0;
+        *(defGrad+6) = 0.0;  *(defGrad+7) = 0.0;  *(defGrad+8) = 0.0;
+        neighborListPtr-=numNeighbors;
+        bondDamage-=numNeighbors;
+        for(int n=0; n<numNeighbors; n++, neighborListPtr++, specu++, bondDamage++){            
+          *bondDamage=1.0;
+//           if (useSpecularBondPositions){
+//             int specuId = int(*specu);
+//             *(bondDamageOverlap+specuId)=1.0;
+//           }
+        }
+        continue;
+      } else specu+=numNeighbors;
+    } else specu+=numNeighbors;
 
     // Matrix multiply the first term and the shape tensor inverse to compute
     // the deformation gradient
@@ -349,13 +393,18 @@ const ScalarT* rotationTensorN,
 ScalarT* leftStretchTensorNP1,
 ScalarT* rotationTensorNP1,
 ScalarT* unrotatedRateOfDeformation,
-const ScalarT* bondDamage,
+const double* specu,
+ScalarT* bondDamage,
+ScalarT* singu,
 const int* neighborhoodList,
 int numPoints,
 double dt
 )
 {
   int returnCode = 0;
+
+  bool singularityDetachment = (singu!=nullptr);
+//   bool useSpecularBondPositions = (specu==nullptr);
 
   const double* delta = horizon;
   const double* modelCoord = modelCoordinates;
@@ -400,15 +449,30 @@ double dt
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, vel+=3,
         shapeTensorInv+=9, rotTensorN+=9, rotTensorNP1+=9, leftStretchNP1+=9, leftStretchN+=9,
-        unrotRateOfDef+=9, defGrad+=9){
+        unrotRateOfDef+=9, defGrad+=9, singu++){
 
     // Initialize data
     *(FdotFirstTerm)   = 0.0 ; *(FdotFirstTerm+1) = 0.0 ;  *(FdotFirstTerm+2) = 0.0;
     *(FdotFirstTerm+3) = 0.0 ; *(FdotFirstTerm+4) = 0.0 ;  *(FdotFirstTerm+5) = 0.0;
     *(FdotFirstTerm+6) = 0.0 ; *(FdotFirstTerm+7) = 0.0 ;  *(FdotFirstTerm+8) = 0.0;
-    
-    //Compute Fdot
+
     numNeighbors = *neighborListPtr; neighborListPtr++;
+    if ((singularityDetachment)&&(*singu!=0.0)){
+        neighborListPtr+=numNeighbors;
+        bondDamage+=numNeighbors;
+        *(rotTensorNP1)   = 0.0 ; *(rotTensorNP1+1) = 0.0 ;  *(rotTensorNP1+2) = 0.0;
+        *(rotTensorNP1+3) = 0.0 ; *(rotTensorNP1+4) = 0.0 ;  *(rotTensorNP1+5) = 0.0;
+        *(rotTensorNP1+6) = 0.0 ; *(rotTensorNP1+7) = 0.0 ;  *(rotTensorNP1+8) = 0.0;
+        *(leftStretchNP1)   = 0.0 ; *(leftStretchNP1+1) = 0.0 ;  *(leftStretchNP1+2) = 0.0;
+        *(leftStretchNP1+3) = 0.0 ; *(leftStretchNP1+4) = 0.0 ;  *(leftStretchNP1+5) = 0.0;
+        *(leftStretchNP1+6) = 0.0 ; *(leftStretchNP1+7) = 0.0 ;  *(leftStretchNP1+8) = 0.0;
+        *(unrotRateOfDef)   = 0.0 ; *(unrotRateOfDef+1) = 0.0 ;  *(unrotRateOfDef+2) = 0.0;
+        *(unrotRateOfDef+3) = 0.0 ; *(unrotRateOfDef+4) = 0.0 ;  *(unrotRateOfDef+5) = 0.0;
+        *(unrotRateOfDef+6) = 0.0 ; *(unrotRateOfDef+7) = 0.0 ;  *(unrotRateOfDef+8) = 0.0;
+        continue;
+    }
+
+    //Compute Fdot
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
 
       neighborIndex = *neighborListPtr;
@@ -449,8 +513,31 @@ double dt
 
     // Compute the inverse of the deformation gradient, Finverse
     inversionReturnCode = Invert3by3Matrix(defGrad, determinant, Finverse);
-    if(inversionReturnCode > 0)
-      returnCode = inversionReturnCode;
+    if((inversionReturnCode > 0)||(determinant<=0)){
+        returnCode = inversionReturnCode;
+        if (singularityDetachment){
+          *singu = 1.0;
+          *(rotTensorNP1)   = 0.0 ; *(rotTensorNP1+1) = 0.0 ;  *(rotTensorNP1+2) = 0.0;
+          *(rotTensorNP1+3) = 0.0 ; *(rotTensorNP1+4) = 0.0 ;  *(rotTensorNP1+5) = 0.0;
+          *(rotTensorNP1+6) = 0.0 ; *(rotTensorNP1+7) = 0.0 ;  *(rotTensorNP1+8) = 0.0;
+          *(leftStretchNP1)   = 0.0 ; *(leftStretchNP1+1) = 0.0 ;  *(leftStretchNP1+2) = 0.0;
+          *(leftStretchNP1+3) = 0.0 ; *(leftStretchNP1+4) = 0.0 ;  *(leftStretchNP1+5) = 0.0;
+          *(leftStretchNP1+6) = 0.0 ; *(leftStretchNP1+7) = 0.0 ;  *(leftStretchNP1+8) = 0.0;
+          *(unrotRateOfDef)   = 0.0 ; *(unrotRateOfDef+1) = 0.0 ;  *(unrotRateOfDef+2) = 0.0;
+          *(unrotRateOfDef+3) = 0.0 ; *(unrotRateOfDef+4) = 0.0 ;  *(unrotRateOfDef+5) = 0.0;
+          *(unrotRateOfDef+6) = 0.0 ; *(unrotRateOfDef+7) = 0.0 ;  *(unrotRateOfDef+8) = 0.0;
+          neighborListPtr-=numNeighbors;
+          bondDamage-=numNeighbors;
+          for(int n=0; n<numNeighbors; n++, neighborListPtr++, specu++, bondDamage++){            
+            *bondDamage=1.0;
+//             if (useSpecularBondPositions){
+//                 int specuId = int(*specu);
+//                 *(bondDamageOverlap+specuId)=1.0;
+//             }
+          }
+          continue;
+        }else specu+=numNeighbors;
+    }else specu+=numNeighbors;
 
     // Compute the Eulerian velocity gradient L = Fdot * Finv
     MatrixMultiply(false, false, 1.0, Fdot, Finverse, eulerianVelGrad);
@@ -517,9 +604,23 @@ double dt
     *(temp+8) = traceV - *(leftStretchN+8);
 
     // Compute the inverse of the temp matrix
-    Invert3by3Matrix(temp, determinant, tempInv);
-    if(inversionReturnCode > 0)
-      returnCode = inversionReturnCode;
+    inversionReturnCode=Invert3by3Matrix(temp, determinant, tempInv);
+    if(inversionReturnCode > 0){
+        returnCode = inversionReturnCode;
+        if (singularityDetachment){
+          *singu=1.0;
+          *(rotTensorNP1)   = 0.0 ; *(rotTensorNP1+1) = 0.0 ;  *(rotTensorNP1+2) = 0.0;
+          *(rotTensorNP1+3) = 0.0 ; *(rotTensorNP1+4) = 0.0 ;  *(rotTensorNP1+5) = 0.0;
+          *(rotTensorNP1+6) = 0.0 ; *(rotTensorNP1+7) = 0.0 ;  *(rotTensorNP1+8) = 0.0;
+          *(leftStretchNP1)   = 0.0 ; *(leftStretchNP1+1) = 0.0 ;  *(leftStretchNP1+2) = 0.0;
+          *(leftStretchNP1+3) = 0.0 ; *(leftStretchNP1+4) = 0.0 ;  *(leftStretchNP1+5) = 0.0;
+          *(leftStretchNP1+6) = 0.0 ; *(leftStretchNP1+7) = 0.0 ;  *(leftStretchNP1+8) = 0.0;
+          *(unrotRateOfDef)   = 0.0 ; *(unrotRateOfDef+1) = 0.0 ;  *(unrotRateOfDef+2) = 0.0;
+          *(unrotRateOfDef+3) = 0.0 ; *(unrotRateOfDef+4) = 0.0 ;  *(unrotRateOfDef+5) = 0.0;
+          *(unrotRateOfDef+6) = 0.0 ; *(unrotRateOfDef+7) = 0.0 ;  *(unrotRateOfDef+8) = 0.0;
+          continue;
+        }
+    }
 
     //Find omega vector, i.e. \omega = w +  (trace(V) I - V)^(-1) * z (T&F Eq. 12)
     omegaX =  wX + *(tempInv)   * zX + *(tempInv+1) * zY + *(tempInv+2) * zZ;
@@ -951,7 +1052,9 @@ const double* modelCoordinates,
 const double* coordinates,
 double* shapeTensorInverse,
 double* deformationGradient,
-const double* bondDamage,
+const double* specu,
+double* bondDamage,
+double* singu,
 const int* neighborhoodList,
 int numPoints
 );
@@ -969,7 +1072,9 @@ const double* rotationTensorN,
 double* leftStretchTensorNP1,
 double* rotationTensorNP1,
 double* unrotatedRateOfDeformation,
-const double* bondDamage,
+const double* specu,
+double* bondDamage,
+double* singu,
 const int* neighborhoodList,
 int numPoints,
 double dt

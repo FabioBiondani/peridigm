@@ -79,6 +79,9 @@ namespace PeridigmNS {
 
   private:
 
+    bool m_singularityDetachment;
+    bool m_useSpecularBondPositions;
+    
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
     int m_volumeFId;
@@ -88,6 +91,8 @@ namespace PeridigmNS {
     int m_shapeTensorInverseFId;
     int m_deformationGradientFId;
     int m_bondDamageFId;
+    int m_singularityFId;
+    int m_specularBondsFId;
   };
 
 }

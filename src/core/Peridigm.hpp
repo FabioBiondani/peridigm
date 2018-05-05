@@ -418,6 +418,9 @@ namespace PeridigmNS {
     //! Specular Bond Position flag
     bool analysisHasSpecular; //MODIFIED NOTE
 
+    //! Correspondence Material flag
+    bool analysisHasCorrespondence; //MODIFIED NOTE
+
     //! Flag for computing element-sphere intersections
     bool computeIntersections;
 
@@ -552,7 +555,10 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> combinedScratch;
     
     Teuchos::RCP<Epetra_Vector> scratchBond;
-    
+
+    //! Global vector for correspondence singularity
+    Teuchos::RCP<Epetra_Vector> CorrespondenceSingularity;
+
     //! Vector containing velocities at dof with kinematic bc; used only by NOX solver.
     Teuchos::RCP<Epetra_Vector> noxVelocityAtDOFWithKinematicBC;
 
@@ -663,6 +669,9 @@ namespace PeridigmNS {
     // specular bonds quantities
     int specularBondPositionFieldId;
     int microPotentialFieldId;
+
+    //
+    int singularityFieldId;
 
     // Map for restart files
     map<string, string> restartFiles;

@@ -123,6 +123,7 @@ namespace PeridigmNS {
     int m_forceDensityFieldId;
     int m_bondDamageFieldId;
     int m_damageFieldId;
+    int m_singularityFieldId;
     int m_deformationGradientFieldId;
     int m_shapeTensorInverseFieldId;
     int m_leftStretchTensorFieldId;
@@ -134,6 +135,7 @@ namespace PeridigmNS {
     int m_specularBondPositionFieldId;
     int m_microPotentialFieldId;
 
+    bool m_singularityDetachment;
     bool m_useSpecularBondPositions;
     bool m_refinedHourglassForce;
   };

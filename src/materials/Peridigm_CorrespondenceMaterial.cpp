@@ -61,7 +61,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_horizonFieldId(-1), m_volumeFieldId(-1),
     m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_velocitiesFieldId(-1), 
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1),
-    m_bondDamageFieldId(-1), m_damageFieldId(-1),
+    m_bondDamageFieldId(-1),m_damageFieldId(-1),m_singularityFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
     m_leftStretchTensorFieldId(-1),
@@ -72,7 +72,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_partialStressFieldId(-1),
     m_specularBondPositionFieldId(-1),
     m_microPotentialFieldId(-1),
-    m_useSpecularBondPositions(false),m_refinedHourglassForce(false)
+    m_singularityDetachment(true),
+    m_useSpecularBondPositions(false),
+    m_refinedHourglassForce(false)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);
@@ -87,16 +89,19 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   obj_alphaVol.set(params,"Thermal Expansion Coefficient");
   m_alphaVol= obj_alphaVol.compute(0.0);
 
+  if (params.isParameter("Singularity Detachment")){
+      m_singularityDetachment  = params.get<bool>("Singularity Detachment");
+  }
   if (params.isParameter("Use Specular Bond Position")){
       m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
   }
   if (params.isParameter("Refined Hourglass Suppression")){
       m_refinedHourglassForce  = params.get<bool>("Refined Hourglass Suppression");
   }
-
   
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
 //   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
+  if (params.isParameter("Apply Shear Correction Factor")) cout<< "**** Warning:  Shear Correction Factor is not supported for the Correspondence material model.\n";
 //   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticCorrespondence material model.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
@@ -108,7 +113,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_forceDensityFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
   m_hourglassForceDensityFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Hourglass_Force_Density");
   m_bondDamageFieldId                 = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
-  m_damageFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
+  m_damageFieldId                     = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
   m_leftStretchTensorFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Left_Stretch_Tensor");
   m_rotationTensorFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
@@ -117,6 +122,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
+  if (m_singularityDetachment){
+    m_singularityFieldId                = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Correspondence_Singularity");
+  }
   if (m_useSpecularBondPositions){
       m_specularBondPositionFieldId       = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Specular_Bond_Position");
       m_microPotentialFieldId             = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Micro-Potential");
@@ -139,6 +147,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_cauchyStressFieldId);
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_partialStressFieldId);
+  if (m_singularityDetachment){
+      m_fieldIds.push_back(m_singularityFieldId);
+  }
   if (m_useSpecularBondPositions){
       m_fieldIds.push_back(m_specularBondPositionFieldId);
       m_fieldIds.push_back(m_microPotentialFieldId);
@@ -197,9 +208,21 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
-  double *bondDamage;
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+  double *damage, *bondDamage, *singu;
+  dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  if(m_singularityDetachment){
+      dataManager.getData(m_singularityFieldId, PeridigmField::STEP_NP1)->ExtractView(&singu);
+      // initialize singu
+      for(int iID=0 ; iID<numOwnedPoints ; ++iID, ++singu){
+          *singu=0.0;
+      }
+  }else singu=nullptr;
 
+  double *specu;
+  if (m_useSpecularBondPositions){
+      dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
+  }else specu=nullptr;
 
   int shapeTensorReturnCode = 
     CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
@@ -208,7 +231,9 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
                                                                                coordinates,
                                                                                shapeTensorInverse,
                                                                                deformationGradient,
+                                                                               specu,
                                                                                bondDamage,
+                                                                               singu,
                                                                                neighborhoodList,
                                                                                numOwnedPoints);
 
@@ -216,9 +241,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
     "**** Error:  CorrespondenceMaterial::initialize() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-//   TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
-  if (shapeTensorReturnCode != 0) cout << shapeTensorErrorMessage;
-
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
 
 }
 
@@ -243,9 +266,19 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
-  double *damage, *bondDamage;
+  double *damage, *bondDamage, *singu;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  if(m_singularityDetachment){
+      dataManager.getData(m_singularityFieldId, PeridigmField::STEP_NP1)->ExtractView(&singu);
+  }else singu = nullptr;
+
+  double *specu, *miPotNP1, *miPotNP1overlap;
+  if (m_useSpecularBondPositions){
+      dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
+      dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
+  }else {specu=nullptr;miPotNP1=nullptr;}
+  miPotNP1overlap = miPotNP1;
 
   // Compute the inverse of the shape tensor and the approximate deformation gradient
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
@@ -258,15 +291,17 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                coordinatesNP1,
                                                                                shapeTensorInverse,
                                                                                deformationGradient,
+                                                                               specu,
                                                                                bondDamage,
+                                                                               singu,
                                                                                neighborhoodList,
                                                                                numOwnedPoints);
   string shapeTensorErrorMessage =
     "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-//   TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
-  if (shapeTensorReturnCode != 0) cout << shapeTensorErrorMessage;
+  if ((!m_singularityDetachment)&&(shapeTensorReturnCode != 0))
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
 
   double *leftStretchTensorN, *leftStretchTensorNP1, *rotationTensorN, *rotationTensorNP1, *unrotatedRateOfDeformation;
   dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_N)->ExtractView(&leftStretchTensorN);
@@ -288,7 +323,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                                     leftStretchTensorNP1,
                                                                                                     rotationTensorNP1,
                                                                                                     unrotatedRateOfDeformation,
+                                                                                                    specu,
                                                                                                     bondDamage,
+                                                                                                    singu,
                                                                                                     neighborhoodList, 
                                                                                                     numOwnedPoints, 
                                                                                                     dt);
@@ -296,8 +333,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   rotationTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-//   TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode != 0, rotationTensorErrorMessage);
-  if (rotationTensorReturnCode != 0) cout << rotationTensorErrorMessage;
+  if ((!m_singularityDetachment)&&(rotationTensorReturnCode != 0))
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode != 0, rotationTensorErrorMessage);
   
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
@@ -336,7 +373,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   double* shapeTensorInv = shapeTensorInverse;
   double* defGrad = deformationGradient;
 
-  double *modelCoordinatesPtr, *coordinatesPtrN, *coordinatesPtrNP1, *neighborModelCoordinatesPtr, *neighborCoordinatesPtrN, *neighborCoordinatesPtrNP1, *forceDensityPtr, *neighborForceDensityPtr, *partialStressPtr;
+  double *modelCoordinatesPtr, *coordinatesPtrN, *coordinatesPtrNP1,
+  *neighborModelCoordinatesPtr, *neighborCoordinatesPtrN, *neighborCoordinatesPtrNP1,
+  *forceDensityPtr, *neighborForceDensityPtr, *partialStressPtr;
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   double TX, TY, TZ, omega, vol, neighborVol, jacobianDeterminant, deltaDeformedBondX, deltaDeformedBondY, deltaDeformedBondZ;
   int numNeighbors, neighborIndex;
@@ -352,26 +391,34 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   double* piolaStress = &piolaStressVector[0];
   double* temp = &tempVector[0];
 
-  double *specu, *miPotNP1, *miPotNP1overlap;
-  if (m_useSpecularBondPositions){
-      dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
-      dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
-  }
-  miPotNP1overlap = miPotNP1;
-
   // Loop over the material points and convert the Cauchy stress into pairwise peridynamic force densities
   const int *neighborListPtr = neighborhoodList;
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID, damage++,
-          ++delta, defGrad+=9, stress+=9, shapeTensorInv+=9){
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID, 
+          ++delta, defGrad+=9, stress+=9, shapeTensorInv+=9, ++damage, ++singu){
+
+    modelCoordinatesPtr = modelCoordinates + 3*iID;
+    coordinatesPtrN     = coordinatesN        + 3*iID;
+    coordinatesPtrNP1   = coordinatesNP1      + 3*iID;
+    numNeighbors = *neighborListPtr; neighborListPtr++;
+    if ((m_singularityDetachment)&&(*singu==1.0)){
+        partialStressPtr = partialStress + 9*iID;
+        *(partialStressPtr)   = 0.0 ; *(partialStressPtr+1) = 0.0 ;  *(partialStressPtr+2) = 0.0;
+        *(partialStressPtr+3) = 0.0 ; *(partialStressPtr+4) = 0.0 ;  *(partialStressPtr+5) = 0.0;
+        *(partialStressPtr+6) = 0.0 ; *(partialStressPtr+7) = 0.0 ;  *(partialStressPtr+8) = 0.0;
+        *damage=1.0;
+        neighborListPtr+=numNeighbors;
+        bondIndex+=numNeighbors;
+        continue;
+    }
 
     // first Piola-Kirchhoff stress = J * cauchyStress * defGrad^-T
 
     // Invert the deformation gradient and store the determinant
     int matrixInversionReturnCode =
       CORRESPONDENCE::Invert3by3Matrix(defGrad, jacobianDeterminant, defGradInv);
-//     TEUCHOS_TEST_FOR_EXCEPT_MSG(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
-    if (matrixInversionReturnCode != 0) cout << matrixInversionErrorMessage;
-    
+    if ((!m_singularityDetachment)&&(matrixInversionReturnCode != 0))
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
+
     //P = J * \sigma * F^(-T)
     CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, stress, defGradInv, piolaStress);
 
@@ -382,7 +429,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     modelCoordinatesPtr = modelCoordinates + 3*iID;
     coordinatesPtrN     = coordinatesN        + 3*iID;
     coordinatesPtrNP1   = coordinatesNP1      + 3*iID;
-    numNeighbors = *neighborListPtr; neighborListPtr++;
 
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondIndex++, specu++, miPotNP1++){
 
@@ -390,7 +436,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       neighborModelCoordinatesPtr = modelCoordinates + 3*neighborIndex;
       neighborCoordinatesPtrN     = coordinatesN     + 3*neighborIndex;
       neighborCoordinatesPtrNP1   = coordinatesNP1   + 3*neighborIndex;
-      
+
       undeformedBondX = *(neighborModelCoordinatesPtr)   - *(modelCoordinatesPtr);
       undeformedBondY = *(neighborModelCoordinatesPtr+1) - *(modelCoordinatesPtr+1);
       undeformedBondZ = *(neighborModelCoordinatesPtr+2) - *(modelCoordinatesPtr+2);
@@ -398,7 +444,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   undeformedBondY*undeformedBondY +
                                   undeformedBondZ*undeformedBondZ);
 
-      omega = m_OMEGA(undeformedBondLength, *delta)*(1-bondDamage[bondIndex]);
+      omega = m_OMEGA(undeformedBondLength, *delta)*(1.0-bondDamage[bondIndex]);
       TX = omega * ( *(temp)   * undeformedBondX + *(temp+1) * undeformedBondY + *(temp+2) * undeformedBondZ );
       TY = omega * ( *(temp+3) * undeformedBondX + *(temp+4) * undeformedBondY + *(temp+5) * undeformedBondZ );
       TZ = omega * ( *(temp+6) * undeformedBondX + *(temp+7) * undeformedBondY + *(temp+8) * undeformedBondZ );

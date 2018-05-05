@@ -111,6 +111,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     analysisHasThermal(false),		// MODIFIED NOTE
     hasThermalShock(false),
     analysisHasSpecular(false),		// MODIFIED NOTE
+    analysisHasCorrespondence(false),		// MODIFIED NOTE
     computeIntersections(false),
     constructInterfaces(false),
     deltaTemperatureFieldId(-1),
@@ -423,6 +424,16 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     string materialName = blockIt->getMaterialName();
     Teuchos::ParameterList matParams = materialParams.sublist(materialName);
     string materialModelName = matParams.get<string>("Material Model");
+
+    // Check if material name contains "correspondence"
+    string correspondence = "Correspondence";
+    int where_correspondence = materialModelName.find(correspondence);
+    if ((where_correspondence>=0) && (where_correspondence<int(materialModelName.length()))){
+        analysisHasCorrespondence = true;
+        CorrespondenceSingularity = Teuchos::rcp(new Epetra_Vector(*oneDimensionalMap));
+    }
+    if(analysisHasCorrespondence)
+        singularityFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Correspondence_Singularity");
 
     // Generate a relevant error message and then check whether is should be heard
     // Material names tagged with "MP" somewhere in their name are considered by
@@ -1685,6 +1696,15 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   PeridigmNS::Timer::self().startTimer("Apply Body Forces");
   boundaryAndInitialConditionManager->applyForceContributions(timeCurrent, 0.0); // external forces are dirichlet BCs so the previous time is defaulted to 0.0
   PeridigmNS::Timer::self().stopTimer("Apply Body Forces");
+
+  // zeroing force for singular points in correspondence materials
+  if (analysisHasCorrespondence){
+      CorrespondenceSingularity -> PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->exportData(*CorrespondenceSingularity, singularityFieldId, PeridigmField::STEP_NP1, Add);
+      }
+      force -> Multiply(1.0,*CorrespondenceSingularity,*force,0.0);
+  }
 
   // fill the acceleration vector
   (*a) = (*force);

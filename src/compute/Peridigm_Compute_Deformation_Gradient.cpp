@@ -56,11 +56,22 @@ PeridigmNS::Compute_Deformation_Gradient::Compute_Deformation_Gradient(Teuchos::
                                                                        Teuchos::RCP<const Epetra_Comm> epetraComm_,
                                                                        Teuchos::RCP<const Teuchos::ParameterList> computeClassGlobalData_)
   : Compute(params, epetraComm_, computeClassGlobalData_),
+    m_singularityDetachment(true),
+    m_useSpecularBondPositions(false),
     m_volumeFId(-1), m_modelCoordinatesFId(-1), m_coordinatesFId(-1),
     m_shapeTensorInverseFId(-1),
     m_deformationGradientFId(-1),
-    m_bondDamageFId(-1)
+    m_bondDamageFId(-1),
+    m_singularityFId(-1),
+    m_specularBondsFId(-1)
 {
+  if (params->isParameter("Singularity Detachment")){
+      m_singularityDetachment  = params->get<bool>("Singularity Detachment");
+  }
+  if (params->isParameter("Use Specular Bond Position")){
+      m_useSpecularBondPositions  = params->get<bool>("Use Specular Bond Position");
+  }
+
   FieldManager& fieldManager = FieldManager::self();
   m_volumeFId                = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_horizonFId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
@@ -69,6 +80,10 @@ PeridigmNS::Compute_Deformation_Gradient::Compute_Deformation_Gradient(Teuchos::
   m_shapeTensorInverseFId  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
   m_deformationGradientFId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
   m_bondDamageFId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
+  if(m_singularityDetachment)
+    m_singularityFId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Correspondence_Singularity");
+  if(m_useSpecularBondPositions)
+    m_specularBondsFId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::CONSTANT, "Specular_Bond_Position");
 
   m_fieldIds.push_back(m_volumeFId);
   m_fieldIds.push_back(m_horizonFId);
@@ -77,6 +92,10 @@ PeridigmNS::Compute_Deformation_Gradient::Compute_Deformation_Gradient(Teuchos::
   m_fieldIds.push_back(m_shapeTensorInverseFId);
   m_fieldIds.push_back(m_deformationGradientFId);
   m_fieldIds.push_back(m_bondDamageFId);
+  if(m_singularityDetachment)
+      m_fieldIds.push_back(m_singularityFId);
+  if(m_useSpecularBondPositions)
+      m_fieldIds.push_back(m_specularBondsFId);
 }
 
 //! Destructor.
@@ -95,7 +114,7 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     int* const neighborhoodList = neighborhoodData->NeighborhoodList();
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     
-    double *volume, *horizon, *modelCoordinates, *coordinates, *shapeTensorInverse, *deformationGradient, *bondDamage;
+    double *volume, *horizon, *modelCoordinates, *coordinates, *shapeTensorInverse, *deformationGradient, *bondDamage, *singu, *specu;
     dataManager->getData(m_volumeFId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     dataManager->getData(m_horizonFId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
     dataManager->getData(m_modelCoordinatesFId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
@@ -103,6 +122,12 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     dataManager->getData(m_shapeTensorInverseFId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
     dataManager->getData(m_deformationGradientFId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
     dataManager->getData(m_bondDamageFId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+    if(m_singularityDetachment)
+        dataManager->getData(m_singularityFId, PeridigmField::STEP_NP1)->ExtractView(&singu);
+    else singu=nullptr;
+    if(m_useSpecularBondPositions)
+        dataManager->getData(m_specularBondsFId, PeridigmField::STEP_NONE)->ExtractView(&specu);
+    else specu=nullptr;
 
     retval = retval || CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                                   horizon,
@@ -110,7 +135,9 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
                                                                                                   coordinates,
                                                                                                   shapeTensorInverse,
                                                                                                   deformationGradient,
+                                                                                                  specu,
                                                                                                   bondDamage,
+                                                                                                  singu,
                                                                                                   neighborhoodList,
                                                                                                   numOwnedPoints);
   }

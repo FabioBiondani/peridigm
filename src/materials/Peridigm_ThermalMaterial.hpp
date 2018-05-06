@@ -9,10 +9,14 @@
 namespace PeridigmNS{
 	
 	class ThermalMaterial {
-	public: 
+	public:
+        Teuchos::ParameterList matparams;
 		
 // 		! Constructor
 		ThermalMaterial() {};
+		ThermalMaterial(const Teuchos::ParameterList & params) {
+            matparams = params;
+        };
 		
 // 		! Destructor
 		virtual ~ThermalMaterial(){};

@@ -62,7 +62,7 @@
 using namespace std;
 
 PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::ParameterList& params)
-  : Material(params),
+  : Material(params),ThermalMaterial(params),
 	m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_alpha(0.0), m_horizon(0.0),m_convectionConstant(0.0),m_fluidTemperature(0.0),
 	m_applyAutomaticDifferentiationJacobian(true),
 	m_applySurfaceCorrectionFactor(false),
@@ -80,8 +80,8 @@ PeridigmNS::ThermalElasticMaterial::ThermalElasticMaterial(const Teuchos::Parame
 	m_horizon = params.get<double>("Horizon");
 	m_alpha = params.get<double>("Thermal Expansion Coefficient");
     
-    obj_specificHeat.set(matparams,"Specific Heat");
-    obj_termCond.set(matparams,"Thermal Conductivity");
+    obj_specificHeat.set(params,"Specific Heat");
+    obj_termCond.set(params,"Thermal Conductivity");
     
 	if(params.isParameter("Apply Automatic Differentiation Jacobian"))
 		m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");

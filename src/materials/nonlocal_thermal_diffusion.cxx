@@ -122,7 +122,7 @@ void computeHeatFlow
 // 			omega = scalarInfluenceFunction(zeta,horizon);
 			dT = *deltaTP - *deltaT;
 			q1 = (1-*bondDamage)*microConductivity*dT/dY;//*omega;
-			*heatFlowOwned += q1*cellVolume*horizon;
+			*heatFlowOwned += q1*cellVolume;
 //          std::cout << (*heatFlowOwned) << "\n";
 // 			heatFlowOverlap[localId] -= q1*selfCellVolume*horizon;
 		}

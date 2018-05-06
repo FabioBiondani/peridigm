@@ -296,13 +296,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     if(blockParams.sublist(it->first).isParameter("Damage Model"))
       hasDamage = true;
   }
-  if(analysisHasThermal){		// MODIFIED NOTE
-  	if (hasDamage == false)
-  	{
-  		thermalError = "\n**** Error, Thermal Elastic material must have a damage model defined.\n";
-  		TEUCHOS_TEST_FOR_EXCEPT_MSG(true, thermalError);
-  	}
-  }
   // Note that allocateTangent is true only iff it's an implicit solve
   if(allocateTangent && hasDamage){
     if(!bcParams->isParameter("Create Node Set For Rank Deficient Nodes"))
@@ -447,7 +440,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     // The following: If we tried to enable thermal, but aren't using the right material model in each material block, raise an exception.
     TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasThermal && (materialModelName.find("Thermal") == std::string::npos)), "\n**** Error, material model is not thermal compatible.\n");
     // The following: If we have not tried to enable thermal, yet are attempting to use a thermal material model, raise an exception.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasThermal && (materialModelName.find("Thermal") != std::string::npos)), "\n**** Error, thermal must be enabled at the top level of the input deck.\n");
+    // TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasThermal && (materialModelName.find("Thermal") != std::string::npos)), "\n**** Error, thermal must be enabled at the top level of the input deck.\n");
+    if((!analysisHasThermal) && (materialModelName.find("Thermal") != std::string::npos)) cout << "\n**** Warning, should thermal be enabled at the top level of the input deck??\n";
 
     // Is the material name that of one designed for multiphysics when multiphysics is enabled?
 
@@ -1767,18 +1761,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // TODO The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
     
-    double* horizonPtr;
-    horizon->ExtractView(&horizonPtr);
     if(analysisHasThermal && fmod(step,deltaStep) == 0){
       if (hasThermalShock){
         for (size_t i=0; i<localThermalShockNodeList.size(); i++){
           int j = localThermalShockNodeList[i];
-          deltaTemperaturePtr[j] += Tdt/((*density)[j]*(*specificHeat)[j])* ( (*convectionConstant)[j]*(-deltaTemperaturePtr[j] + (*fluidTemperature)[j])/(horizonPtr[j]) + internalHeatSourcePtr[j] );
+          deltaTemperaturePtr[j] += Tdt/((*density)[j]*(*specificHeat)[j])* ( (*convectionConstant)[j]*(-deltaTemperaturePtr[j] + (*fluidTemperature)[j]) + internalHeatSourcePtr[j] );
         }
       }
       for (int j=0; j<heatFlow->MyLength(); j++)
       {
-        deltaTemperaturePtr[j] += Tdt/((*density)[j]*(*specificHeat)[j])*( heatFlowPtr[j]/(horizonPtr[j]) + (*density)[j]*internalHeatSourcePtr[j] );
+        deltaTemperaturePtr[j] += Tdt/((*density)[j]*(*specificHeat)[j])*( heatFlowPtr[j] + (*density)[j]*internalHeatSourcePtr[j] );
       }
     }
 

@@ -90,7 +90,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
       m_N = 0.0;
       m_B = 0.0;
       m_C = 0.0;
-      m_M = 1e-100;
+      m_M = 1e100;
       m_MeltingTemperature = 1e100;
       m_ReferenceTemperature = 0.0;
   }
@@ -229,8 +229,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   if(m_useSpecularBondPosition){
       dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
       dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
-  } else
-  {
+  } else {
       specu=nullptr;miPotNP1=nullptr;
   }
 

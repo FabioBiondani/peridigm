@@ -101,10 +101,7 @@ void computeBondBasedHeatFlow
         deltaTdouble = convT2double(*deltaT);
         K_T = obj_thermalConductivity.compute(deltaTdouble);
         
-//         double A = 0.000001
-//         microConductivity = 2 * K_T /( A * horizon*horizon);
         microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);
-
         
 // 		loop over the horizon region
 		for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
@@ -125,7 +122,6 @@ void computeBondBasedHeatFlow
 			q1 = (1-*bondDamage)*microConductivity*dT/zeta;//*omega;
 			*heatFlowOwned += q1*cellVolume;
 		}
-		cout << K_T << " " << PI_G << " " << microConductivity << " " << cellVolume << " " << endl;
 	}
 }
 

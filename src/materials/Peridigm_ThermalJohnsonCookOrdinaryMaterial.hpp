@@ -65,6 +65,9 @@ namespace PeridigmNS {
     //! Return name of material type
     virtual std::string Name() const { return( ThermalBondBasedMaterial::Name() + " / " + JohnsonCookOrdinaryMaterial::Name() ); }
 
+    //! Returns a vector of field IDs corresponding to the variables associated with the material.
+    virtual std::vector<int> FieldIds() const { return m_fieldIds; }
+
     //! Initialized data containers and computes weighted volume.
     virtual void
     initialize(const double dt,
@@ -74,7 +77,7 @@ namespace PeridigmNS {
                PeridigmNS::DataManager& dataManager);
 
   protected:
-    
+		std::vector<int> m_fieldIds;    
   };
 }
 

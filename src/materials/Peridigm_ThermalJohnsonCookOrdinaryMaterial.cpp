@@ -60,7 +60,21 @@ using namespace std;
 
 PeridigmNS::ThermalJohnsonCookOrdinaryMaterial::ThermalJohnsonCookOrdinaryMaterial(const Teuchos::ParameterList& params)
   : JohnsonCookOrdinaryMaterial(params), ThermalBondBasedMaterial(params)
-{}
+{
+    m_fieldIds = JohnsonCookOrdinaryMaterial::m_fieldIds;
+    for(int m=0;m<int(ThermalBondBasedMaterial::m_fieldIds.size());m++){
+        int thermalFieldId = ThermalBondBasedMaterial::m_fieldIds[m];
+        bool found = false;
+        for(int n=0;n<int(JohnsonCookOrdinaryMaterial::m_fieldIds.size());n++){
+            int mechaFieldId = JohnsonCookOrdinaryMaterial::m_fieldIds[n];
+            if (thermalFieldId==mechaFieldId){
+                found = true;
+                break;
+            }
+        }
+        if (!found) m_fieldIds.push_back(thermalFieldId);
+    }
+}
 
 PeridigmNS::ThermalJohnsonCookOrdinaryMaterial::~ThermalJohnsonCookOrdinaryMaterial()
 {}
@@ -70,7 +84,8 @@ PeridigmNS::ThermalJohnsonCookOrdinaryMaterial::initialize(const double dt,
                                         const int numOwnedPoints,
                                         const int* ownedIDs,
                                         const int* neighborhoodList,
-                                        PeridigmNS::DataManager& dataManager) {
+                                        PeridigmNS::DataManager& dataManager)
+{
     JohnsonCookOrdinaryMaterial::initialize(dt,
                                             numOwnedPoints,
                                             ownedIDs,
@@ -80,5 +95,5 @@ PeridigmNS::ThermalJohnsonCookOrdinaryMaterial::initialize(const double dt,
                                          numOwnedPoints,
                                          ownedIDs,
                                          neighborhoodList,
-                                         dataManager);
+                                         dataManager);    
 }

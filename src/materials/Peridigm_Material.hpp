@@ -180,7 +180,7 @@ namespace PeridigmNS {
       protected:
         Teuchos::ParameterList params;
         double Multiplier;
-        virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc()=0;
+        virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc() = 0;
         Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
       public:
         Moduli(){}
@@ -194,6 +194,7 @@ namespace PeridigmNS {
             params = p;
             Multiplier = 1.0;
         }
+        
         void set(const Teuchos::ParameterList& p, double multiplier)
         {
             params = p;
@@ -206,6 +207,16 @@ namespace PeridigmNS {
             Multiplier = 1.0;
             rtcFunction = create_rtc();
         }
+        void setFunction(Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunctionInput)
+        {
+            rtcFunction = rtcFunctionInput;
+        }
+        
+        Teuchos::RCP<PG_RuntimeCompiler::Function> get()
+        {
+            return rtcFunction;
+        }
+        
         double compute(double Temperature) const {
             bool success = rtcFunction->varValueFill(1,Temperature);
             if(!success){
@@ -222,6 +233,8 @@ namespace PeridigmNS {
 //             cout << "value= " << rtcFunction->getValueOfVar("value") << endl;
             return rtcFunction->getValueOfVar("value");
         }
+        
+        
     };
     
     class BulkMod: public Moduli{

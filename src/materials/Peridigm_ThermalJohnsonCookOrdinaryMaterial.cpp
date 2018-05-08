@@ -49,8 +49,6 @@
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_ThermalJohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_Field.hpp"
-#include "jc_ordinary.h"
-#include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>

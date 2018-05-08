@@ -49,7 +49,7 @@
 	#define PERIDIGM_THERMALELASTICMATERIAL_HPP
 
 	#include "Peridigm_Material.hpp"
-	#include "Peridigm_ThermalMaterial.hpp"
+	#include "Peridigm_BaseThermalMaterial.hpp"
 	#include "Peridigm_InfluenceFunction.hpp"
 	#include <map>
 

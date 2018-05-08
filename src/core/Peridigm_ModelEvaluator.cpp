@@ -46,7 +46,7 @@
 //@HEADER
 
 #include "Peridigm_ModelEvaluator.hpp"
-#include "Peridigm_ThermalMaterial.hpp"
+#include "Peridigm_BaseThermalMaterial.hpp"
 
 using namespace std;
 

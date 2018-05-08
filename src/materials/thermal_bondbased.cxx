@@ -68,7 +68,8 @@ void computeBondBasedHeatFlow
 	int numOwnedPoints,
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
 	double horizon,
-	ScalarT* deltaTemperatureOverlap
+	ScalarT* deltaTemperatureOverlap,
+	ScalarT* TCF
 )
 {
 	/*
@@ -90,8 +91,12 @@ void computeBondBasedHeatFlow
     ScalarT dT, q1;
     double deltaTdouble=0;
     
+    bool boolTCF=false; // Thermal Correction Factor
+    if (TCF!=NULL)
+        boolTCF=true;
+    
 // 	loop over all the nodes
-	for(int p=0;p<numOwnedPoints;p++, deltaTemperatureOwned++, xOwned +=3,/* yOwned +=3,*/ heatFlowOwned++){
+	for(int p=0;p<numOwnedPoints;p++, deltaTemperatureOwned++, xOwned +=3,/* yOwned +=3,*/ heatFlowOwned++, TCF++){
 		int numNeigh = *neighPtr; neighPtr++;
 		const double *X = xOwned;
 // 		const ScalarT *Y = yOwned;
@@ -119,8 +124,9 @@ void computeBondBasedHeatFlow
 // 			Y_dz = YP[2]-Y[2];
 // 			dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
 			dT = *deltaTP - *deltaT;
-			q1 = (1-*bondDamage)*microConductivity*dT/zeta;//*omega;
-			*heatFlowOwned += q1*cellVolume;
+			q1 = (1-*bondDamage)*microConductivity*dT/zeta ;
+            if (boolTCF) q1 *= *TCF;
+			*heatFlowOwned += q1 *cellVolume;
 		}
 	}
 }
@@ -137,7 +143,8 @@ template void computeBondBasedHeatFlow<double>
 	int numOwnedPoints,
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
     double horizon,
-	double* deltaTemperatureOverlap
+	double* deltaTemperatureOverlap,
+	double* TCF
 );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -152,7 +159,8 @@ template void computeBondBasedHeatFlow<Sacado::Fad::DFad<double> >
 	int numOwnedPoints,
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
 	double horizon,
-	Sacado::Fad::DFad<double>* deltaTemperatureOverlap
+	Sacado::Fad::DFad<double>* deltaTemperatureOverlap,
+	Sacado::Fad::DFad<double>* TCF
 );
 
 }

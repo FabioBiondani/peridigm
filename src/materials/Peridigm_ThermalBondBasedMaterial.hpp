@@ -67,6 +67,9 @@
         //! Return name of material type
         virtual std::string Name() const { return("Thermal Bond-Based"); }
 
+        //! Returns a vector of field IDs corresponding to the variables associated with the material.
+        virtual std::vector<int> FieldIds() const { return m_fieldIds; }
+
 // 			! Initialized data containers and computes weighted volume.
 		virtual void
 		initialize(const double dt,
@@ -98,13 +101,16 @@
 		std::vector<int> m_fieldIds;
 		int m_volumeFieldId;
 		int m_damageFieldId;
-		int m_weightedVolumeFieldId;
 		int m_dilatationFieldId;
 		int m_modelCoordinatesFieldId;
 		int m_coordinatesFieldId;
 		int m_bondDamageFieldId;
 		int m_heatFlowFieldId;
 		int m_deltaTemperatureFieldId;
+        int m_thermalCorrectionFactorFieldId;
+        int m_horizonFieldId;
+        
+        bool boolTCF;
 	};
 }
 

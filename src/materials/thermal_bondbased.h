@@ -64,7 +64,8 @@ void computeBondBasedHeatFlow
 	int numOwnedPoints,
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
     double horizon,
-	ScalarT* deltaTemperature
+	ScalarT* deltaTemperature,
+	ScalarT* TCF
 );
 
 }

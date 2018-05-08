@@ -318,7 +318,15 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyInitialConditions(){
 
 void PeridigmNS::BoundaryAndInitialConditionManager::applyBoundaryConditions(const double & timeCurrent, const double & timePrevious){
   for(unsigned i=0;i<boundaryConditions.size();++i){
-    boundaryConditions[i]->apply(nodeSets,timeCurrent,timePrevious);
+    if(boundaryConditions[i]->getType() != PRESCRIBED_TEMPERATURE)
+        boundaryConditions[i]->apply(nodeSets,timeCurrent,timePrevious);
+  }
+}
+
+void PeridigmNS::BoundaryAndInitialConditionManager::applyTemperatureBCs(const double & timeCurrent, const double & timePrevious){
+  for(unsigned i=0;i<boundaryConditions.size();++i){
+    if(boundaryConditions[i]->getType() == PRESCRIBED_TEMPERATURE)
+        boundaryConditions[i]->apply(nodeSets,timeCurrent,timePrevious);
   }
 }
 

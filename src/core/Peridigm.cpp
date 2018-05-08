@@ -1774,6 +1774,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
+    PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
+    boundaryAndInitialConditionManager->applyTemperatureBCs(timeCurrent, timePrevious);
+    PeridigmNS::Timer::self().stopTimer("Apply Kinematic B.C.");
+
     // Copy data from mothership vectors to overlap vectors in data manager
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){

@@ -95,6 +95,9 @@ namespace PeridigmNS {
     void applyBoundaryConditions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
 
     //! Apply all boundary conditions
+    void applyTemperatureBCs(const double & timeCurrent=0.0, const double & timePrevious=0.0);
+
+    //! Apply all boundary conditions
     void applyForceContributions(const double & timeCurrent=0.0, const double & timePrevious=0.0);
 
     //! Apply all boundary conditions

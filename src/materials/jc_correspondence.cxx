@@ -135,7 +135,7 @@ const double constM
         
         // temperatures
         hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
-        if(hmlgT==1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS ZERO" << endl;
+        if(hmlgT>=1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << endl;
 
         //Tempdouble = *Temperature;
         bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);

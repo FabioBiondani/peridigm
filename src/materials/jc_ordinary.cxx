@@ -165,7 +165,7 @@ const double constM
             thermalExpansionCoefficient = obj_alphaVol.compute(*deltaT);
         }
         else hmlgT=0.0;
-        if(hmlgT==1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS ZERO" << endl;
+        if(hmlgT>=1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << endl;
 
         int numNeigh = *neighPtr; neighPtr++; neighPtr_++;
         const double *X = xOwned;

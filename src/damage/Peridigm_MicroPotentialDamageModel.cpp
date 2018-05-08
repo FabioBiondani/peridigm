@@ -127,9 +127,9 @@ PeridigmNS::MicropotentialDamageModel::initialize(const double dt,
   bondIndex = 0;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID ){
   	int nodeID = ownedIDs[iID];
-    if(isCorrespondenceOrPalsMaterial)
+    if(isCorrespondenceOrPalsMaterial){
         volRatio[nodeID] = 1.0;
-    else{
+    }else{
         volRatio[nodeID] = 0.0;
         int numNeighbors = neighborhoodList[neighborhoodListIndex++];
         for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
@@ -205,12 +205,10 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 //         double specificJ = 5.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance;
         double specificJ = 6.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance*initialDistance;
         
-        double m_criticalMicroPotential;
-        if (isCorrespondenceOrPalsMaterial)
-            m_criticalMicroPotential = specificJ*bond_Jintegral;
-        else{
+        double m_criticalMicroPotential = specificJ*bond_Jintegral;
+        if (!isCorrespondenceOrPalsMaterial){
             double meanVolRatio = (*(volRatio+iID)+*(volRatio+neighborID))/2.0;
-            m_criticalMicroPotential = specificJ*bond_Jintegral/meanVolRatio;
+            m_criticalMicroPotential /= meanVolRatio;
         }
 
         double bondMicroPotential = miPot[bondIndex] ;

@@ -179,17 +179,31 @@ namespace PeridigmNS {
     class Moduli{
       protected:
         Teuchos::ParameterList params;
+        double Multiplier;
         virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc()=0;
         Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
       public:
         Moduli(){}
+        Moduli(const Teuchos::ParameterList& p, double multiplier)
+        {
+            params = p;
+            Multiplier = multiplier;
+        }
         Moduli(const Teuchos::ParameterList& p)
         {
             params = p;
+            Multiplier = 1.0;
+        }
+        void set(const Teuchos::ParameterList& p, double multiplier)
+        {
+            params = p;
+            Multiplier = multiplier;
+            rtcFunction = create_rtc();
         }
         void set(const Teuchos::ParameterList& p)
         {
             params = p;
+            Multiplier = 1.0;
             rtcFunction = create_rtc();
         }
         double compute(double Temperature) const {
@@ -209,34 +223,55 @@ namespace PeridigmNS {
             return rtcFunction->getValueOfVar("value");
         }
     };
+    
     class BulkMod: public Moduli{
       public:
         Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
+        BulkMod(const Teuchos::ParameterList& p, double multiplier) : Moduli(p, multiplier){
+            rtcFunction = create_rtc();
+        };
         BulkMod(const Teuchos::ParameterList& p) : Moduli(p){
             rtcFunction = create_rtc();
         };
         BulkMod() : Moduli(){};
     };
+    
     class ShearMod: public Moduli{
       public:
         Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
+        ShearMod(const Teuchos::ParameterList& p, double multiplier) : Moduli(p, multiplier){
+            rtcFunction = create_rtc();
+        };
         ShearMod(const Teuchos::ParameterList& p) : Moduli(p){
             rtcFunction = create_rtc();
         };
         ShearMod() : Moduli(){};
     };
+    
     class TempDepConst: public Moduli{
         string ConstName;
       public:
         Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc();
-        TempDepConst(const Teuchos::ParameterList& p,string cn) : Moduli(p){
+        TempDepConst(const Teuchos::ParameterList& p, double multiplier, string cn) : Moduli(p,multiplier){
             ConstName=cn;
             rtcFunction = create_rtc();
         };
-        void set(const Teuchos::ParameterList& p,string cn)
+        TempDepConst(const Teuchos::ParameterList& p, string cn) : Moduli(p){
+            ConstName=cn;
+            rtcFunction = create_rtc();
+        };
+        void set(const Teuchos::ParameterList& p, double multiplier, string cn)
         {
             ConstName=cn;
             params = p;
+            Multiplier = multiplier;
+            rtcFunction = create_rtc();
+        }
+        void set(const Teuchos::ParameterList& p, string cn)
+        {
+            ConstName=cn;
+            params = p;
+            Multiplier = 1.0;
             rtcFunction = create_rtc();
         }
 

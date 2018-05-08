@@ -422,13 +422,13 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
   if(bulkModulusDefined)
-    rtcFunctionString = "value=" + bulkModulusStr;
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + bulkModulusStr + ")";
   else if(youngsModulusDefined && shearModulusDefined)
-    rtcFunctionString = "value=(" + youngsModulusStr + "*" + shearModulusStr + ") / (3.0*(3.0*" + shearModulusStr + "-" + youngsModulusStr + "))";
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(" + youngsModulusStr + "*" + shearModulusStr + ") / (3.0*(3.0*" + shearModulusStr + "-" + youngsModulusStr + "))" + ")";
   else if(youngsModulusDefined && poissonsRatioDefined)
-    rtcFunctionString = "value=" + youngsModulusStr + "/ (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))";
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + youngsModulusStr + "/ (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))" + ")";
   else if(shearModulusDefined && poissonsRatioDefined)
-    rtcFunctionString = "value=(2.0*" + shearModulusStr + "*(1.0 + " + poissonsRatioStr + ")) / (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))";
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(2.0*" + shearModulusStr + "*(1.0 + " + poissonsRatioStr + ")) / (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))" + ")";
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
   
@@ -516,13 +516,13 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
   if(shearModulusDefined)
-    rtcFunctionString = "value=" + shearModulusStr;
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + shearModulusStr + ")";
   else if(bulkModulusDefined && youngsModulusDefined)
-    rtcFunctionString = "value=(3.0*" + bulkModulusStr + "*" + youngsModulusStr + ") / (9.0*" + bulkModulusStr + "-" + youngsModulusStr + ")";
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(3.0*" + bulkModulusStr + "*" + youngsModulusStr + ") / (9.0*" + bulkModulusStr + "-" + youngsModulusStr + ")" + ")";
   else if(bulkModulusDefined & poissonsRatioDefined)
-    rtcFunctionString = "value=(3.0*" + bulkModulusStr + "*(1.0 - 2.0*" + poissonsRatioStr + ")) / (2.0*(1.0 + " + poissonsRatioStr + "))";
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(3.0*" + bulkModulusStr + "*(1.0 - 2.0*" + poissonsRatioStr + ")) / (2.0*(1.0 + " + poissonsRatioStr + "))" + ")";
   else if(youngsModulusDefined && poissonsRatioDefined)
-    rtcFunctionString = "value=" + youngsModulusStr + "/ (2.0*(1.0 + " + poissonsRatioStr + "))";
+    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + youngsModulusStr + "/ (2.0*(1.0 + " + poissonsRatioStr + "))" + ")";
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
   
@@ -569,10 +569,10 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
     else ConstStr = params.get<string>(ConstName);
   }else{
       ConstStr="0.0";
-//       cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;
-}
+      cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;
+  }
   
-  rtcFunctionString = "value=" + ConstStr;
+  rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + ConstStr + ")";
   
   bool success = rtcFunction->addBody(rtcFunctionString);
   if(!success){

@@ -421,17 +421,20 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::BulkMod::create
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
+  char buffer [50];
+  sprintf (buffer, "%g", Multiplier);
+  string str(buffer);
   if(bulkModulusDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + bulkModulusStr + ")";
+    rtcFunctionString = "value=" + str + "*(" + bulkModulusStr + ")";
   else if(youngsModulusDefined && shearModulusDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(" + youngsModulusStr + "*" + shearModulusStr + ") / (3.0*(3.0*" + shearModulusStr + "-" + youngsModulusStr + "))" + ")";
+    rtcFunctionString = "value=" + str + "*(" + "(" + youngsModulusStr + "*" + shearModulusStr + ") / (3.0*(3.0*" + shearModulusStr + "-" + youngsModulusStr + "))" + ")";
   else if(youngsModulusDefined && poissonsRatioDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + youngsModulusStr + "/ (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))" + ")";
+    rtcFunctionString = "value=" + str + "*(" + youngsModulusStr + "/ (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))" + ")";
   else if(shearModulusDefined && poissonsRatioDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(2.0*" + shearModulusStr + "*(1.0 + " + poissonsRatioStr + ")) / (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))" + ")";
+    rtcFunctionString = "value=" + str + "*(" + "(2.0*" + shearModulusStr + "*(1.0 + " + poissonsRatioStr + ")) / (3.0*(1.0 - 2.0*" + poissonsRatioStr + "))" + ")";
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
-  
+
   bool success = rtcFunction->addBody(rtcFunctionString);
   if(!success){
     string msg = "\n**** Error:  rtcFunction->addBody(function) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
@@ -515,14 +518,17 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
+  char buffer [50];
+  sprintf (buffer, "%g", Multiplier);
+  string str(buffer);
   if(shearModulusDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + shearModulusStr + ")";
+    rtcFunctionString = "value=" + str + "*(" + shearModulusStr + ")";
   else if(bulkModulusDefined && youngsModulusDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(3.0*" + bulkModulusStr + "*" + youngsModulusStr + ") / (9.0*" + bulkModulusStr + "-" + youngsModulusStr + ")" + ")";
+    rtcFunctionString = "value=" + str + "*(" + "(3.0*" + bulkModulusStr + "*" + youngsModulusStr + ") / (9.0*" + bulkModulusStr + "-" + youngsModulusStr + ")" + ")";
   else if(bulkModulusDefined & poissonsRatioDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + "(3.0*" + bulkModulusStr + "*(1.0 - 2.0*" + poissonsRatioStr + ")) / (2.0*(1.0 + " + poissonsRatioStr + "))" + ")";
+    rtcFunctionString = "value=" + str + "*(" + "(3.0*" + bulkModulusStr + "*(1.0 - 2.0*" + poissonsRatioStr + ")) / (2.0*(1.0 + " + poissonsRatioStr + "))" + ")";
   else if(youngsModulusDefined && poissonsRatioDefined)
-    rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + youngsModulusStr + "/ (2.0*(1.0 + " + poissonsRatioStr + "))" + ")";
+    rtcFunctionString = "value=" + str + "*(" + youngsModulusStr + "/ (2.0*(1.0 + " + poissonsRatioStr + "))" + ")";
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
   
@@ -572,7 +578,10 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
       cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;
   }
   
-  rtcFunctionString = "value=" + to_string(Multiplier) + "*(" + ConstStr + ")";
+  char buffer [50];
+  sprintf (buffer, "%g", Multiplier);
+  string str(buffer);
+  rtcFunctionString = "value=" + str + "*(" + ConstStr + ")";
   
   bool success = rtcFunction->addBody(rtcFunctionString);
   if(!success){

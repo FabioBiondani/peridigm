@@ -56,8 +56,8 @@ template<typename ScalarT>
 void computeInternalForceJohnsonCookOrdinary
 (
 const double* xOverlap,
-const ScalarT* yOverlapN,
-const ScalarT* yOverlapNP1,
+const ScalarT* yOverlap,
+const ScalarT* ydotOverlap,
 const double* mOwned,
 const double* volumeOverlap,
 const ScalarT* dilatationOwned,

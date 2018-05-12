@@ -123,7 +123,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   if (m_singularityDetachment){
-    m_singularityFieldId                = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Correspondence_Singularity");
+    m_singularityFieldId                = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::CONSTANT, "Correspondence_Singularity");
   }
   if (m_useSpecularBondPositions){
       m_specularBondPositionFieldId       = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Specular_Bond_Position");
@@ -212,7 +212,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   if(m_singularityDetachment){
-      dataManager.getData(m_singularityFieldId, PeridigmField::STEP_NP1)->ExtractView(&singu);
+      dataManager.getData(m_singularityFieldId, PeridigmField::STEP_NONE)->ExtractView(&singu);
       // initialize singu
       for(int iID=0 ; iID<numOwnedPoints ; ++iID, ++singu){
           *singu=0.0;
@@ -256,12 +256,11 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
 
-  double *horizon, *volume, *modelCoordinates, *coordinatesN, *coordinatesNP1, *velocities, *shapeTensorInverse, *deformationGradient;
+  double *horizon, *volume, *modelCoordinates, *velocities, *coordinates, *shapeTensorInverse, *deformationGradient;
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinatesN);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
+  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinates);
   dataManager.getData(m_velocitiesFieldId, PeridigmField::STEP_NP1)->ExtractView(&velocities);
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
@@ -270,7 +269,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   if(m_singularityDetachment){
-      dataManager.getData(m_singularityFieldId, PeridigmField::STEP_NP1)->ExtractView(&singu);
+      dataManager.getData(m_singularityFieldId, PeridigmField::STEP_NONE)->ExtractView(&singu);
   }else singu = nullptr;
 
   double *specu, *miPotNP1, *miPotNP1overlap;
@@ -288,7 +287,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                horizon,
                                                                                modelCoordinates,
-                                                                               coordinatesNP1,
+                                                                               coordinates,
                                                                                shapeTensorInverse,
                                                                                deformationGradient,
                                                                                specu,
@@ -373,11 +372,12 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   double* shapeTensorInv = shapeTensorInverse;
   double* defGrad = deformationGradient;
 
-  double *modelCoordinatesPtr, *coordinatesPtrN, *coordinatesPtrNP1,
-  *neighborModelCoordinatesPtr, *neighborCoordinatesPtrN, *neighborCoordinatesPtrNP1,
+  double *modelCoordinatesPtr, *coordinatesPtr, *velocitiesPtr,
+  *neighborModelCoordinatesPtr, *neighborCoordinatesPtr, *neighborVelocitiesPtr,
   *forceDensityPtr, *neighborForceDensityPtr, *partialStressPtr;
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
-  double TX, TY, TZ, omega, vol, neighborVol, jacobianDeterminant, deltaDeformedBondX, deltaDeformedBondY, deltaDeformedBondZ;
+  double velocityBondX, velocityBondY, velocityBondZ;
+  double TX, TY, TZ, omega, vol, neighborVol, jacobianDeterminant;
   int numNeighbors, neighborIndex;
   int bondIndex(0);
   
@@ -396,9 +396,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   for(int iID=0 ; iID<numOwnedPoints ; ++iID, 
           ++delta, defGrad+=9, stress+=9, shapeTensorInv+=9, ++damage, ++singu){
 
-    modelCoordinatesPtr = modelCoordinates + 3*iID;
-    coordinatesPtrN     = coordinatesN        + 3*iID;
-    coordinatesPtrNP1   = coordinatesNP1      + 3*iID;
     numNeighbors = *neighborListPtr; neighborListPtr++;
     if ((m_singularityDetachment)&&(*singu==1.0)){
         partialStressPtr = partialStress + 9*iID;
@@ -432,15 +429,15 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
     // Loop over the neighbors and compute contribution to force densities
     modelCoordinatesPtr = modelCoordinates + 3*iID;
-    coordinatesPtrN     = coordinatesN        + 3*iID;
-    coordinatesPtrNP1   = coordinatesNP1      + 3*iID;
+    coordinatesPtr      = coordinates      + 3*iID;
+    velocitiesPtr       = velocities       + 3*iID;
 
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondIndex++, specu++, miPotNP1++){
 
       neighborIndex = *neighborListPtr;
       neighborModelCoordinatesPtr = modelCoordinates + 3*neighborIndex;
-      neighborCoordinatesPtrN     = coordinatesN     + 3*neighborIndex;
-      neighborCoordinatesPtrNP1   = coordinatesNP1   + 3*neighborIndex;
+      neighborCoordinatesPtr      = coordinates      + 3*neighborIndex;
+      neighborVelocitiesPtr       = velocities       + 3*neighborIndex;
 
       undeformedBondX = *(neighborModelCoordinatesPtr)   - *(modelCoordinatesPtr);
       undeformedBondY = *(neighborModelCoordinatesPtr+1) - *(modelCoordinatesPtr+1);
@@ -479,13 +476,13 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       *(partialStressPtr+8) += TZ*undeformedBondZ*neighborVol;
       
       if (m_useSpecularBondPositions){
-          deltaDeformedBondX = (*(neighborCoordinatesPtrNP1)   - *(coordinatesPtrNP1))   - (*(neighborCoordinatesPtrN)   - *(coordinatesPtrN));
-          deltaDeformedBondY = (*(neighborCoordinatesPtrNP1+1) - *(coordinatesPtrNP1+1)) - (*(neighborCoordinatesPtrN+1) - *(coordinatesPtrN+1));
-          deltaDeformedBondZ = (*(neighborCoordinatesPtrNP1+2) - *(coordinatesPtrNP1+2)) - (*(neighborCoordinatesPtrN+2) - *(coordinatesPtrN+2));
+          velocityBondX = *(neighborVelocitiesPtr)   - *(velocitiesPtr);
+          velocityBondY = *(neighborVelocitiesPtr+1) - *(velocitiesPtr+1);
+          velocityBondZ = *(neighborVelocitiesPtr+2) - *(velocitiesPtr+2);
 
           int specuId = int(*specu);
-          *miPotNP1+=                TX*deltaDeformedBondX + TY*deltaDeformedBondY + TZ*deltaDeformedBondZ;
-          miPotNP1overlap[specuId]+= TX*deltaDeformedBondX + TY*deltaDeformedBondY + TZ*deltaDeformedBondZ;
+          *miPotNP1+=                (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
+          miPotNP1overlap[specuId]+= (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
       }
     }
   }
@@ -504,7 +501,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       CORRESPONDENCE::computeHourglassForce(volume,
                                             horizon,
                                             modelCoordinates,
-                                            coordinatesNP1,
+                                              coordinates,
                                             deformationGradient,
                                             hourglassForceDensity,
                                             bondDamage,
@@ -516,7 +513,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       CORRESPONDENCE::computeRefinedHourglassForce(volume,
                                                    horizon,
                                                    modelCoordinates,
-                                                   coordinatesNP1,
+                                                   coordinates,
                                                    deformationGradient,
                                                    hourglassForceDensity,
                                                    bondDamage,

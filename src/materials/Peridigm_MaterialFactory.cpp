@@ -66,6 +66,8 @@
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_JohnsonCookPalsMaterial.hpp"
 #include "Peridigm_ThermalJohnsonCookOrdinaryMaterial.hpp"
+#include "Peridigm_VoigtViscoElasticCorrespondenceMaterial.hpp"
+#include "Peridigm_StandardLinearSolidOrdinaryMaterial.hpp"
 
 // #include "Peridigm_ThermalBB_JCCorrMaterial.hpp"
 #ifdef PERIDIGM_PV
@@ -151,6 +153,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new JohnsonCookPalsMaterial(materialParams) );
   else if (materialModelName == "Thermal Bond Based / Johnson-Cook Ordinary")
     materialModel = Teuchos::rcp( new ThermalJohnsonCookOrdinaryMaterial(materialParams) );
+  else if (materialModelName == "Standard Linear Solid Ordinary")
+    materialModel = Teuchos::rcp( new StandardLinearSolidOrdinaryMaterial(materialParams) );
   else {
     std::string invalidMaterial("\n**** Unrecognized material model: ");
     invalidMaterial += materialModelName;

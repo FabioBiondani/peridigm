@@ -50,6 +50,7 @@
 
 #include <cstdlib>
 
+#include "Peridigm_Material.hpp"
 #include "Peridigm_InfluenceFunction.hpp"
 #include <Sacado.hpp>
 #include <iostream>
@@ -209,6 +210,23 @@ void computeDilatation
         const FunctionPointer OMEGA=PeridigmNS::InfluenceFunction::self().getInfluenceFunction(),
         double thermalExpansionCoefficient = 0,
         const double* deltaTemperature = 0
+ );
+
+template<typename ScalarT>
+void computeDilatation
+(
+		const double* xOverlap,
+		const ScalarT* yOverlap,
+		const double *mOwned,
+		const double* volumeOverlap,
+		const double* bondDamage,
+		ScalarT* dilatationOwned,
+		const int* localNeighborList,
+		int numOwnedPoints,
+        double horizon,
+        const FunctionPointer OMEGA,
+        PeridigmNS::Material::TempDepConst thermalExpansionCoefficient,
+        const double* deltaTemperature
  );
 
 namespace WITH_BOND_VOLUME {

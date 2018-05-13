@@ -235,7 +235,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       specu=nullptr;miPotNP1=nullptr;
   }
 
-  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,m_alpha,deltaTemperature);
+  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,obj_alphaVol,deltaTemperature);
   MATERIAL_EVALUATION::computeInternalForceJohnsonCookOrdinary(
       x,
       y,

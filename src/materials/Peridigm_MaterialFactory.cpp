@@ -66,7 +66,6 @@
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_JohnsonCookPalsMaterial.hpp"
 #include "Peridigm_ThermalJohnsonCookOrdinaryMaterial.hpp"
-#include "Peridigm_VoigtViscoElasticCorrespondenceMaterial.hpp"
 #include "Peridigm_StandardLinearSolidOrdinaryMaterial.hpp"
 
 // #include "Peridigm_ThermalBB_JCCorrMaterial.hpp"

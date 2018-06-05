@@ -109,12 +109,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     analysisHasContact(false),
     analysisHasMultiphysics(false),
     analysisHasThermal(false),		// MODIFIED NOTE
+    hasAdiabaticHeating(false),		// MODIFIED NOTE
     hasThermalShock(false),
     analysisHasSpecular(false),		// MODIFIED NOTE
     computeIntersections(false),
     constructInterfaces(false),
     deltaTemperatureFieldId(-1),
-    numThermalDoFs(0), // MODIFIED NOTE
     blockIdFieldId(-1),
     horizonFieldId(-1),
     volumeFieldId(-1),
@@ -168,7 +168,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   		numMultiphysDoFs = peridigmParams->get<int>("Multiphysics");
   		std::cout<< "\n**** Multiphysics is enabled, pending material model screening.\n" << std::endl;
   		analysisHasThermal = false;
-  		numThermalDoFs = 0;
   	}
   	else
   	{
@@ -177,38 +176,37 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   		multiphysError = "\n**** Error, number of requested Multiphysics DoFs cannot be accomodated.\n";
   		TEUCHOS_TEST_FOR_EXCEPT_MSG(true, multiphysError);
   		analysisHasThermal = false;
-  		numThermalDoFs = 0;
   	}
   }
-  else if(peridigmParams->isParameter("Thermal")) //MODIFIED NOTE
+  else 
   {
-  	std::cout<< "\n**** Thermal is selected.\n" << std::endl;
-  	if(peridigmParams->get<bool>("Thermal") == true)
-  	{
-  		analysisHasMultiphysics = false;
-  		numMultiphysDoFs = 0;
-  		analysisHasThermal = true;
-  		numThermalDoFs = peridigmParams->get<bool>("Thermal");
-  		std::cout<< "\n**** Thermal is enabled, pending material model screening.\n" << std::endl;
-  		if(peridigmParams->isParameter("Thermal Shock"))
-  			hasThermalShock = peridigmParams->get<bool>("Thermal Shock");
-  	}
-  	else
-  	{
-  		analysisHasMultiphysics = false;
-  		numMultiphysDoFs = 0;
-  		analysisHasThermal = false;
-  		numThermalDoFs = 0;
-  		thermalError = "\n**** Error, number of requested Thermal DoFs cannot be accomodated.\n";
-  		TEUCHOS_TEST_FOR_EXCEPT_MSG(true, thermalError);
-  	}
-  }
-  else
-  {
-  	analysisHasMultiphysics = false;
-  	numMultiphysDoFs = 0;
-  	analysisHasThermal = false;
-  	numThermalDoFs = 0;
+    if(peridigmParams->isParameter("Thermal")) //MODIFIED NOTE
+    {
+        std::cout<< "\n**** Thermal is selected.\n" << std::endl;
+        if(peridigmParams->get<bool>("Thermal") == true)
+        {
+            analysisHasMultiphysics = false;
+            numMultiphysDoFs = 0;
+            analysisHasThermal = true;
+            std::cout<< "\n**** Thermal is enabled, pending material model screening.\n" << std::endl;
+            if(peridigmParams->isParameter("Thermal Shock"))
+                hasThermalShock = peridigmParams->get<bool>("Thermal Shock");
+        }
+        else
+        {
+            analysisHasMultiphysics = false;
+            numMultiphysDoFs = 0;
+            analysisHasThermal = false;
+        }
+    }
+    else
+    {
+        analysisHasMultiphysics = false;
+        numMultiphysDoFs = 0;
+        analysisHasThermal = false;
+    }
+    if(peridigmParams->isParameter("Adiabatic Heating")) //MODIFIED NOTE
+        hasAdiabaticHeating = peridigmParams->get<bool>("Adiabatic Heating");
   }
   
   if(peridigmParams->isParameter("Specular_Bonds")) if(peridigmParams->get<bool>("Specular_Bonds") == true) analysisHasSpecular=true;
@@ -324,6 +322,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   	heatFlowFieldId                = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Heat_Flow");
   	internalHeatSourceFieldId      = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Internal_Heat_Source");
   }
+
+  if(hasAdiabaticHeating)
+      cumulativeHeatFieldId      = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Cumulative_Adiabatic_Heat");
 
   modelCoordinatesFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
   coordinatesFieldId                 = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
@@ -526,6 +527,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   	auxiliaryFieldIds.push_back(heatFlowFieldId);
   	auxiliaryFieldIds.push_back(internalHeatSourceFieldId);
   }
+  if(hasAdiabaticHeating)
+    auxiliaryFieldIds.push_back(cumulativeHeatFieldId);
   if(analysisHasSpecular){		// MODIFIED NOTE
   	auxiliaryFieldIds.push_back(specularBondPositionFieldId);
   	auxiliaryFieldIds.push_back(microPotentialFieldId);
@@ -598,13 +601,16 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 			blockIt->importData(*scratchOneD, fluidPressureYFieldId, PeridigmField::STEP_N, Insert);
 			blockIt->importData(*scratchOneD, fluidPressureYFieldId, PeridigmField::STEP_NP1, Insert);
 	}
+    if(analysisHasThermal||hasAdiabaticHeating){
+      blockIt->importData(*scratchOneD, deltaTemperatureFieldId,   PeridigmField::STEP_NP1, Insert);
+    }// MODIFIED NOTE
     if(analysisHasThermal){		// MODIFIED NOTE
       // scratchOneD->PutScalar(0.0);
-      blockIt->importData(*scratchOneD, deltaTemperatureFieldId,   PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*scratchOneD, heatFlowFieldId,           PeridigmField::STEP_NP1, Insert);
       blockIt->importData(*scratchOneD, internalHeatSourceFieldId, PeridigmField::STEP_NP1, Insert);
     }
-
+    if(hasAdiabaticHeating)
+      blockIt->importData(*scratchOneD, cumulativeHeatFieldId, PeridigmField::STEP_NP1, Insert);
     if(analysisHasSpecular){
       blockIt->importData(*microPotential, microPotentialFieldId,  PeridigmField::STEP_N, Insert);
       blockIt->importData(*microPotential, microPotentialFieldId,  PeridigmField::STEP_NP1, Insert);  
@@ -745,7 +751,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       (*density)[mothershipLocalID] = blockDensity;
     }
 
-    if (analysisHasThermal){
+    if (analysisHasThermal||hasAdiabaticHeating){
       Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
       Material::TempDepConst obj_specificHeat(matparams,"Specific Heat");
       double blockSpecificHeat = obj_specificHeat.compute(0.0);
@@ -992,7 +998,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
 
   if(analysisHasThermal){
 		if (hasThermalShock){
-			oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 12));
+			oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 11));
 			specificHeat = Teuchos::rcp((*oneDimensionalMothership)(5), false);   // specific heat
 			convectionConstant = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // convection constant
 			fluidTemperature = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // fluid temperature
@@ -1000,23 +1006,39 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
 			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(9), false);   // internal heat generation
 			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(10), false);       // flux through a node
 		}
-		else{
+		else if(hasAdiabaticHeating){
 			oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 10));
+			specificHeat = Teuchos::rcp((*oneDimensionalMothership)(5), false);   // specific heat
+			heatFlow = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // heat flow
+			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // internal heat generation
+			cumulativeHeat = Teuchos::rcp((*oneDimensionalMothership)(8), false);   // adiabatic heat generation
+			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(9), false);       // flux through a node            
+        }
+		else{
+			oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 9));
 			specificHeat = Teuchos::rcp((*oneDimensionalMothership)(5), false);   // specific heat
 			heatFlow = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // heat flow
 			internalHeatSource = Teuchos::rcp((*oneDimensionalMothership)(7), false);   // internal heat generation
 			scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(8), false);       // flux through a node
 		}
 	}
-	else {
-		oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 5));
-	}
-		blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);         // block ID
-		horizon = Teuchos::rcp((*oneDimensionalMothership)(1), false);          // horizon for each point
-		volume = Teuchos::rcp((*oneDimensionalMothership)(2), false);           // cell volume
-		density = Teuchos::rcp((*oneDimensionalMothership)(3), false);          // density
-		deltaTemperature = Teuchos::rcp((*oneDimensionalMothership)(4), false); // change in temperature
-// 	}
+  else {
+      if(hasAdiabaticHeating){
+          oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 8));
+          cumulativeHeat = Teuchos::rcp((*oneDimensionalMothership)(5), false);   // adiabatic heat generation
+          specificHeat = Teuchos::rcp((*oneDimensionalMothership)(6), false);   // specific heat
+          scratchOneD = Teuchos::rcp((*oneDimensionalMothership)(7), false);       // flux through a node            
+      }
+      else
+          oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, 5));
+  }
+
+  blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);         // block ID
+  horizon = Teuchos::rcp((*oneDimensionalMothership)(1), false);          // horizon for each point
+  volume = Teuchos::rcp((*oneDimensionalMothership)(2), false);           // cell volume
+  density = Teuchos::rcp((*oneDimensionalMothership)(3), false);          // density
+  deltaTemperature = Teuchos::rcp((*oneDimensionalMothership)(4), false); // change in temperature
+  //
 
   // \todo Do not allocate space for the contact force nor deltaU if not needed.
   threeDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*threeDimensionalMap, 10));
@@ -1488,7 +1510,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 	double Tdt = 1.; // initialized to make the compiler happy.
 	int nTsteps = 1; // initialized to make the compiler happy.
 	int deltaStep = 1;
-	if (analysisHasThermal){
+	if (analysisHasThermal||hasAdiabaticHeating){
 		double criticalThermalTimeStep = 1.0e50;
 		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
 			double blockCriticalThermalTimeStep = ComputeCriticalThermalTimeStep(*peridigmComm, *blockIt);
@@ -1515,6 +1537,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 			proportionalityFactor = verletParams->get<double>("Tdt/dt");
 			Tdt = dt*proportionalityFactor;
 		}
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(Tdt<dt, "****Error:  Thermal time step can't be smaller than mechanical time step.\n");
+
+            
 
 // 		workset->thermalTimeStep = Tdt;
 		nTsteps = static_cast<int>( ceil((timeFinal-timeInitial)/Tdt) );
@@ -1555,6 +1580,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 				cout << "  Proportionality factor not provided " << endl;
 			cout << "  Thermal time step           " << Tdt << "\n" << endl;
 			cout << "  Total number of thermal time steps " << nTsteps << "\n" << endl;
+			cout << "  Ratio between time steps           " << deltaStep << "\n" << endl;
 		}
 	}
 
@@ -1571,6 +1597,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   if(analysisHasThermal){
     heatFlow->ExtractView( &heatFlowPtr );
     internalHeatSource->ExtractView( &internalHeatSourcePtr );
+  }
+  double *cumulativeHeatPtr;
+  if(hasAdiabaticHeating){
+    cumulativeHeat->ExtractView( &cumulativeHeatPtr );
   }
   
   int length = a->MyLength();
@@ -1616,7 +1646,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
   
   // Update specificHeat definition wih the initial temperature
-  if (analysisHasThermal){
+  if (analysisHasThermal||hasAdiabaticHeating){
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       Teuchos::RCP<const Epetra_BlockMap> OwnedScalarPointMap = blockIt->getOwnedScalarPointMap();
       Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
@@ -1672,6 +1702,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         microPotential->Update(1.0,*scratchBond,1.0);
       }
   }
+  if(hasAdiabaticHeating){
+    cumulativeHeat->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      scratchOneD->PutScalar(0.0);
+      blockIt->exportData(*scratchOneD, cumulativeHeatFieldId, PeridigmField::STEP_NP1, Add);
+      cumulativeHeat->Update(1.0, *scratchOneD, 1.0);
+    }
+  }
 
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
@@ -1691,6 +1729,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   synchDataManagers();
   outputManager->write(blocks, timeCurrent, nsteps);
   PeridigmNS::Timer::self().stopTimer("Output");
+
+  // swap state N and state NP1
+  for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
+      blockIt->updateState();
 
   int displayTrigger = nsteps/100;
   if(displayTrigger == 0)
@@ -1774,9 +1816,18 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
-    PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
-    boundaryAndInitialConditionManager->applyTemperatureBCs(timeCurrent, timePrevious);
-    PeridigmNS::Timer::self().stopTimer("Apply Kinematic B.C.");
+    if (hasAdiabaticHeating && fmod(step,deltaStep) == 0)
+        for (int j=0; j<cumulativeHeat->MyLength(); j++){
+//             if (j==0) cout << "Cumulative  " << cumulativeHeatPtr[j] << endl;
+            deltaTemperaturePtr[j] += cumulativeHeatPtr[j]/((*density)[j]*(*specificHeat)[j]);
+        }
+
+
+    if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,deltaStep) == 0){
+        PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
+        boundaryAndInitialConditionManager->applyTemperatureBCs(timeCurrent, timePrevious);
+        PeridigmNS::Timer::self().stopTimer("Apply Kinematic B.C.");
+    }
 
     // Copy data from mothership vectors to overlap vectors in data manager
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
@@ -1787,7 +1838,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
       if(analysisHasSpecular)
           blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_N, Insert);
-
+      if ((hasAdiabaticHeating)&&(fmod(step,deltaStep)==0))
+      {
+        cumulativeHeat -> PutScalar(0.0);
+        blockIt->importData(*cumulativeHeat, cumulativeHeatFieldId, PeridigmField::STEP_N, Insert);
+      }
     }
 
     //
@@ -1826,6 +1881,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 // 			Copy heat flow from the data manager to the mothership vector
 			heatFlow->PutScalar(0.0); // MODIFIED NOTE
     }
+    if (hasAdiabaticHeating) cumulativeHeat->PutScalar(0.0);
 
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1836,11 +1892,15 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 					scratchOneD->PutScalar(0.0);
 					blockIt->exportData(*scratchOneD, heatFlowFieldId, PeridigmField::STEP_NP1, Add);
 					heatFlow->Update(1.0, *scratchOneD, 1.0);
-			}
+      }
+      if(hasAdiabaticHeating){
+            scratchOneD->PutScalar(0.0);
+            blockIt->exportData(*scratchOneD, cumulativeHeatFieldId, PeridigmField::STEP_NP1, Add);
+            cumulativeHeat->Update(1.0, *scratchOneD, 1.0);
+      }
     }
 
-
-    // evalModel puts deltaMicroPotential of STEP_NP1, Add delta to microPotential of STEP_N
+    // evalModel computes deltaMicroPotential and insert it in STEP_NP1, Add delta to microPotential of STEP_N
     if (analysisHasSpecular){
       for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         scratchBond -> PutScalar(0.0);
@@ -1853,7 +1913,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 
     // Update specificHeat definition with the computed temperature
-    if (analysisHasThermal && fmod(step,deltaStep) == 0){
+    if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,deltaStep) == 0){
       for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         Teuchos::RCP<const Epetra_BlockMap> OwnedScalarPointMap = blockIt->getOwnedScalarPointMap();
         Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;
@@ -1867,7 +1927,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         }
       }
     }
-    
 
 
     // Check for NaNs in heat flow evaluation

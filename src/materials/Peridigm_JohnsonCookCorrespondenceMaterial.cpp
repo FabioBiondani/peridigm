@@ -58,9 +58,11 @@ using namespace std;
 PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
+    m_Beta(0.0),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
     m_equivalentPlasticStrainFieldId(-1),m_bondDamageFieldId(-1),
-    m_deltaTemperatureFieldId(-1)
+    m_deltaTemperatureFieldId(-1),
+    m_cumulativeHeatFieldId(-1)
 {
   if (params.isParameter("Constant A")){
       m_A  = params.get<double>("Constant A");
@@ -80,6 +82,11 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
       m_ReferenceTemperature = 0.0;
   }
   
+  if (params.isParameter("Beta"))
+      m_Beta = params.get<double>("Beta");
+  else
+      m_Beta = 1.0;
+
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
@@ -89,11 +96,14 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
   m_bondDamageFieldId                 = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
   m_deltaTemperatureFieldId           = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
   
+  m_cumulativeHeatFieldId       = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Cumulative_Adiabatic_Heat");
+
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
   m_fieldIds.push_back(m_deltaTemperatureFieldId);
+  m_fieldIds.push_back(m_cumulativeHeatFieldId);
 }
 
 PeridigmNS::JohnsonCookCorrespondenceMaterial::~JohnsonCookCorrespondenceMaterial()
@@ -147,27 +157,34 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double 
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
 
-  CORRESPONDENCE::updateJohnsonCookCauchyStress(unrotatedRateOfDeformation, 
-                                                unrotatedCauchyStressN, 
-                                                unrotatedCauchyStressNP1, 
-                                                vonMisesStressNP1,
-                                                equivalentPlasticStrainN, 
-                                                equivalentPlasticStrainNP1, 
-                                                numOwnedPoints, 
-                                                obj_bulkModulus, 
-                                                obj_shearModulus,
-                                                obj_alphaVol,
-                                                deltaTemperatureN,
-                                                deltaTemperatureNP1,
-                                                dt,
-                                                m_MeltingTemperature,
-                                                m_ReferenceTemperature,
-                                                m_A,
-                                                m_N,
-                                                m_B,
-                                                m_C,
-                                                m_M
-                                               );
+  CORRESPONDENCE::updateJohnsonCookCauchyStress(
+      unrotatedRateOfDeformation, 
+      unrotatedCauchyStressN, 
+      unrotatedCauchyStressNP1, 
+      vonMisesStressNP1,
+      equivalentPlasticStrainN, 
+      equivalentPlasticStrainNP1, 
+      numOwnedPoints, 
+      obj_bulkModulus, 
+      obj_shearModulus,
+      obj_alphaVol,
+      deltaTemperatureN,
+      deltaTemperatureNP1,
+      dt,
+      m_MeltingTemperature,
+      m_ReferenceTemperature,
+      m_A,
+      m_N,
+      m_B,
+      m_C,
+      m_M
+  );
   
-  
+  double *cumulativeHeatN, *cumulativeHeatNP1;
+  dataManager.getData(m_cumulativeHeatFieldId, PeridigmField::STEP_N)->ExtractView(&cumulativeHeatN);
+  dataManager.getData(m_cumulativeHeatFieldId, PeridigmField::STEP_NP1)->ExtractView(&cumulativeHeatNP1);
+
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID, ++cumulativeHeatN, ++cumulativeHeatNP1, ++vonMisesStressNP1, ++equivalentPlasticStrainN, ++equivalentPlasticStrainNP1){
+      *cumulativeHeatNP1 = *cumulativeHeatN + *vonMisesStressNP1 * (*equivalentPlasticStrainNP1 - *equivalentPlasticStrainN);
+  }
 }

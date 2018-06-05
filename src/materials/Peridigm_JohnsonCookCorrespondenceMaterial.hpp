@@ -93,6 +93,8 @@ namespace PeridigmNS {
     double m_C;
     double m_M;
 
+    double m_Beta;
+
     // field spec ids for all relevant data
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
@@ -100,7 +102,8 @@ namespace PeridigmNS {
     int m_equivalentPlasticStrainFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
-  };
+    int m_cumulativeHeatFieldId;
+};
 }
 
 #endif // PERIDIGM_JOHNSONCOOKCORRESPONDENCEMATERIAL_HPP

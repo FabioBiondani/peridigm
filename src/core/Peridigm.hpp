@@ -412,6 +412,9 @@ namespace PeridigmNS {
     //! Thermal flag
     bool analysisHasThermal; //MODIFIED NOTE
 
+    //! Adiabatic heating
+    bool hasAdiabaticHeating; //MODIFIED NOTE
+
     //! Robin boundary condition fot thermal shock flag
     bool hasThermalShock;
 
@@ -517,7 +520,10 @@ namespace PeridigmNS {
   	//! Global vector for heat flow
   	Teuchos::RCP<Epetra_Vector> internalHeatSource;
 
-  	//! Global vector for temperature change
+  	//! Global vector for heat flow
+  	Teuchos::RCP<Epetra_Vector> cumulativeHeat;
+
+    //! Global vector for temperature change
   	Teuchos::RCP<Epetra_Vector> deltaTemperature;
 
     //! Global vector for force
@@ -634,7 +640,7 @@ namespace PeridigmNS {
     int deltaTemperatureFieldId;
     int heatFlowFieldId;
     int internalHeatSourceFieldId;
-    int numThermalDoFs;
+    int cumulativeHeatFieldId;
     string textThermalDoFs;
 
     // field ids for all relevant data

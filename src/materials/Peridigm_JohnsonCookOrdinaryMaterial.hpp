@@ -136,6 +136,7 @@ namespace PeridigmNS {
     double m_C;
     double m_M;
 
+    double m_Beta;
 
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
@@ -158,6 +159,8 @@ namespace PeridigmNS {
 
     int m_specularBondPositionFieldId;
     int m_microPotentialFieldId;
+    
+    int m_cumulativeHeatFieldId;
     
   };
 }

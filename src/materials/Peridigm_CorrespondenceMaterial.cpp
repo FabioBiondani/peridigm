@@ -73,8 +73,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_specularBondPositionFieldId(-1),
     m_microPotentialFieldId(-1),
     m_singularityDetachment(true),
-    m_useSpecularBondPositions(false),
-    m_refinedHourglassForce(false)
+    m_useSpecularBondPositions(false)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);
@@ -94,9 +93,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   }
   if (params.isParameter("Use Specular Bond Position")){
       m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
-  }
-  if (params.isParameter("Refined Hourglass Suppression")){
-      m_refinedHourglassForce  = params.get<bool>("Refined Hourglass Suppression");
   }
   
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
@@ -497,8 +493,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   //       They are summed into the force vector below, and the force vector is assembled across processors,
   //       so the calculation runs correctly, but the hourglass output is off.
 
-  if (!m_refinedHourglassForce)
-      CORRESPONDENCE::computeHourglassForce(volume,
+  CORRESPONDENCE::computeHourglassForce(volume,
                                             horizon,
                                             modelCoordinates,
                                               coordinates,
@@ -509,18 +504,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                             numOwnedPoints,
                                             m_bulkModulus,
                                             m_hourglassCoefficient);
-  else
-      CORRESPONDENCE::computeRefinedHourglassForce(volume,
-                                                   horizon,
-                                                   modelCoordinates,
-                                                   coordinates,
-                                                   deformationGradient,
-                                                   hourglassForceDensity,
-                                                   bondDamage,
-                                                   neighborhoodList,
-                                                   numOwnedPoints,
-                                                   m_bulkModulus,
-                                                   m_hourglassCoefficient);
 
   // Sum the hourglass force densities into the force densities
   Teuchos::RCP<Epetra_Vector> forceDensityVector = dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1);

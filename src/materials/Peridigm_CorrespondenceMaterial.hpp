@@ -137,7 +137,6 @@ namespace PeridigmNS {
 
     bool m_singularityDetachment;
     bool m_useSpecularBondPositions;
-    bool m_refinedHourglassForce;
   };
 }
 

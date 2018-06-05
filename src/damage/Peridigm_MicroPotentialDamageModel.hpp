@@ -1,4 +1,4 @@
-/*! \file Peridigm_MicropotentialDamageModel.hpp */
+/*! \file Peridigm_MicroPotentialDamageModel.hpp */
 
 //@HEADER
 // ************************************************************************
@@ -104,7 +104,7 @@ namespace PeridigmNS {
     double m_Jintegral;
     Material::TempDepConst obj_Jintegral;
     std::string m_materialModel;
-    bool isCorrespondenceOrPalsMaterial;
+    bool alternativeCriterion;
     
     // field ids for all relevant data
     std::vector<int> m_fieldIds;

@@ -62,7 +62,7 @@ namespace CORRESPONDENCE {
 void computeViscousMaxwellCauchyStress
   (
    const double *unrotatedCauchyStressN,
-   double *unrotatedCauchyStressNP1,
+   const double *unrotatedCauchyStressNP1,
    const double *internalVariablesN,
    double *internalVariablesNP1,
    double *unrotatedViscousCauchyStress,

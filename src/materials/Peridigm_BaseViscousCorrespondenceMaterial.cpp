@@ -62,7 +62,7 @@ PeridigmNS::ViscousCorrespondenceMaterial::ViscousCorrespondenceMaterial(const T
   : ViscousMaterial(params),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_horizonFieldId(-1), m_volumeFieldId(-1), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1), m_damageFieldId(-1),
-    m_deformationGradientFieldId(-1), m_shapeTensorInverseFieldId(-1), m_rotationTensorFieldId(-1), m_partialStressFieldId(-1),
+    m_deformationGradientFieldId(-1), m_shapeTensorInverseFieldId(-1), m_rotationTensorFieldId(-1),
     m_unrotatedViscousCauchyStressFieldId(-1), m_viscousCauchyStressFieldId(-1),
     m_singularityFieldId(-1), m_singularityDetachment(true)
 {
@@ -79,7 +79,6 @@ PeridigmNS::ViscousCorrespondenceMaterial::ViscousCorrespondenceMaterial(const T
     m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
     m_shapeTensorInverseFieldId         = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
     m_rotationTensorFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
-    m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
 
     m_unrotatedViscousCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Viscous_Cauchy_Stress");
     m_viscousCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Viscous_Cauchy_Stress");
@@ -95,7 +94,6 @@ PeridigmNS::ViscousCorrespondenceMaterial::ViscousCorrespondenceMaterial(const T
 	m_fieldIds.push_back(m_deformationGradientFieldId);
 	m_fieldIds.push_back(m_shapeTensorInverseFieldId);
 	m_fieldIds.push_back(m_rotationTensorFieldId);
-	m_fieldIds.push_back(m_partialStressFieldId);
 
     m_fieldIds.push_back(m_unrotatedViscousCauchyStressFieldId);
     m_fieldIds.push_back(m_viscousCauchyStressFieldId);
@@ -178,9 +176,6 @@ PeridigmNS::ViscousCorrespondenceMaterial::computeForce(const double dt,
   double *forceDensity;
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&forceDensity);
 
-  double *partialStress;
-  dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&partialStress);
-
   double *delta = horizon;
   double* stress = viscousCauchyStressNP1;
 
@@ -189,7 +184,7 @@ PeridigmNS::ViscousCorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInv);
 
   double *modelCoordinatesPtr, *neighborModelCoordinatesPtr,
-  *forceDensityPtr, *neighborForceDensityPtr, *partialStressPtr;
+  *forceDensityPtr, *neighborForceDensityPtr;
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   double TX, TY, TZ, omega, vol, neighborVol, jacobianDeterminant;
   int numNeighbors, neighborIndex;
@@ -257,17 +252,6 @@ PeridigmNS::ViscousCorrespondenceMaterial::computeForce(const double dt,
       *(neighborForceDensityPtr+1)  -= TY * vol;
       *(neighborForceDensityPtr+2)  -= TZ * vol;
 
-      partialStressPtr = partialStress + 9*iID;
-      *(partialStressPtr)   += TX*undeformedBondX*neighborVol;
-      *(partialStressPtr+1) += TX*undeformedBondY*neighborVol;
-      *(partialStressPtr+2) += TX*undeformedBondZ*neighborVol;
-      *(partialStressPtr+3) += TY*undeformedBondX*neighborVol;
-      *(partialStressPtr+4) += TY*undeformedBondY*neighborVol;
-      *(partialStressPtr+5) += TY*undeformedBondZ*neighborVol;
-      *(partialStressPtr+6) += TZ*undeformedBondX*neighborVol;
-      *(partialStressPtr+7) += TZ*undeformedBondY*neighborVol;
-      *(partialStressPtr+8) += TZ*undeformedBondZ*neighborVol;
-      
     }
   }
 }

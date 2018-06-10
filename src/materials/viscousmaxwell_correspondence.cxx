@@ -57,7 +57,7 @@ namespace CORRESPONDENCE {
 void computeViscousMaxwellCauchyStress
   (
    const double *unrotatedCauchyStressN,
-   double *unrotatedCauchyStressNP1,
+   const double *unrotatedCauchyStressNP1,
    const double *internalVariablesN,
    double *internalVariablesNP1,
    double *unrotatedViscousCauchyStress,
@@ -70,12 +70,11 @@ void computeViscousMaxwellCauchyStress
 )
 {
     double m_tau(1.0), m_lambda(1.0);
-    double gamma(0.0), c1(0.0), decay(0.0), beta_i(0.0);
+    double c1(0.0), decay(0.0), beta_i(0.0);
     if (deltaTemperature==nullptr){
         m_tau = obj_tau.compute(0.0);
         m_lambda = obj_lambda.compute(0.0);
         if ((m_lambda!=0.0)&&(m_tau!=0.0)){
-            gamma = m_lambda/(1.+m_lambda);
             c1 = m_tau / dt;
             decay = exp(-1.0/c1);
             beta_i=1.-c1*(1.-decay);
@@ -84,13 +83,13 @@ void computeViscousMaxwellCauchyStress
     
     const double *deltaT    = deltaTemperature;
     const double* stressN   = unrotatedCauchyStressN;
-    double* stressNP1       = unrotatedCauchyStressNP1;
+    const double* stressNP1 = unrotatedCauchyStressNP1;
     const double* internalN = internalVariablesN;
     double* internalNP1     = internalVariablesNP1;
     double* vstress         = unrotatedViscousCauchyStress;
 
     double devstressN[9];
-    double deltadevstress[9];
+    double devstressNP1[9];
     double isostress;
 
     if ((m_lambda!=0.0)&&(m_tau!=0.0))
@@ -100,7 +99,6 @@ void computeViscousMaxwellCauchyStress
             m_tau = obj_tau.compute(*deltaT);
             m_lambda = obj_lambda.compute(*deltaT);
             if ((m_lambda==0.0)||(m_tau==0.0)) continue;
-            gamma = m_lambda/(1.+m_lambda);
             c1 = m_tau / dt;
             decay = exp(-1.0/c1);
             beta_i=1.-c1*(1.-decay);
@@ -108,7 +106,7 @@ void computeViscousMaxwellCauchyStress
 
         if (*damage==1.0) continue;
 
-        isostress = (stressN[0] + stressN[4] + stressN[8])/3.0;
+        isostress = ( stressN[0]   + stressN[4]   + stressN[8]   )/3.0;
 		for(int n=0;n<9;n++){
             devstressN[n] = stressN[n];
         }
@@ -116,19 +114,21 @@ void computeViscousMaxwellCauchyStress
         devstressN[4] -= isostress;
         devstressN[8] -= isostress;
 
-        isostress = (stressNP1[0]-stressN[0] + stressNP1[4]-stressN[4] + stressNP1[8]-stressN[8])/3.0;
+        isostress = ( stressNP1[0] + stressNP1[4] + stressNP1[8] )/3.0;
 		for(int n=0;n<9;n++){
-            deltadevstress[n] = stressNP1[n]-stressN[n];
+            devstressNP1[n] = stressNP1[n];
         }
-        deltadevstress[0] -= isostress;
-        deltadevstress[4] -= isostress;
-        deltadevstress[8] -= isostress;
+        devstressNP1[0] -= isostress;
+        devstressNP1[4] -= isostress;
+        devstressNP1[8] -= isostress;
 
         
         for(int n=0;n<9;n++){
-            *(internalNP1+n) = m_lambda * devstressN[n] * (1-decay) + gamma * *(internalNP1+n) * decay  + m_lambda * beta_i * deltadevstress[n];
+            *(internalNP1+n) = m_lambda * devstressN[n] * (1-decay) +
+                               *(internalN+n) * decay  +
+                               m_lambda * beta_i * (devstressNP1[n]-devstressN[n]);
             
-            *(vstress+n) = m_lambda * (devstressN[n]+deltadevstress[n]) - *(internalNP1+n);
+            *(vstress+n) = m_lambda * devstressNP1[n] - *(internalNP1+n);
         }
 	}
 }

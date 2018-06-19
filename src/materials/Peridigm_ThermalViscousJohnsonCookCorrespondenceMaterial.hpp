@@ -1,4 +1,4 @@
-//! \file Peridigm_StandardLinearSolidCorrespondenceMaterial.hpp
+//! \file Peridigm_ThermalViscousJohnsonCookCorrespondenceMaterial.hpp
 
 //@HEADER
 // ************************************************************************
@@ -45,25 +45,25 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_STANDARDLINEARSOLIDCORRESPONDENCEMATERIAL_HPP
-#define PERIDIGM_STANDARDLINEARSOLIDCORRESPONDENCEMATERIAL_HPP
+#ifndef PERIDIGM_THERMALVISCOUSJOHNSONCOOKCORRESPONDENCEMATERIAL_HPP
+#define PERIDIGM_THERMALVISCOUSJOHNSONCOOKCORRESPONDENCEMATERIAL_HPP
 
-#include "Peridigm_ViscousMaxwellCorrespondenceMaterial.hpp"
-#include "Peridigm_JohnsonCookCorrespondenceMaterial.hpp"
+#include "Peridigm_ThermalBondBasedMaterial.hpp"
+#include "Peridigm_ViscousJohnsonCookCorrespondenceMaterial.hpp"
 
 namespace PeridigmNS {
 
-  class StandardLinearSolidCorrespondenceMaterial : public JohnsonCookCorrespondenceMaterial, public ViscousMaxwellCorrespondenceMaterial {
+  class ThermalViscousJohnsonCookCorrespondenceMaterial : public ViscousJohnsonCookCorrespondenceMaterial, public ThermalBondBasedMaterial {
   public:
 
 	//! Constructor.
-    StandardLinearSolidCorrespondenceMaterial(const Teuchos::ParameterList & params);
+    ThermalViscousJohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList & params);
 
     //! Destructor.
-    virtual ~StandardLinearSolidCorrespondenceMaterial();
+    virtual ~ThermalViscousJohnsonCookCorrespondenceMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return( "Standard Linear Solid Correspondence" ); }
+    virtual std::string Name() const { return( ThermalBondBasedMaterial::Name() + " / " + ViscousJohnsonCookCorrespondenceMaterial::Name() ); }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the material.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
@@ -76,16 +76,9 @@ namespace PeridigmNS {
                const int* neighborhoodList,
                PeridigmNS::DataManager& dataManager);
 
-    //! Evaluate the internal force.
-    virtual void computeForce(const double dt,
-                              const int numOwnedPoints,
-                              const int* ownedIDs,
-                              const int* neighborhoodList,
-                              PeridigmNS::DataManager& dataManager) const;
-
   protected:
-	std::vector<int> m_fieldIds;    
+		std::vector<int> m_fieldIds;    
   };
 }
 
-#endif // PERIDIGM_STANDARDLINEARSOLIDCORRESPONDENCEMATERIAL_HPP
+#endif // PERIDIGM_THERMALVISCOUSJOHNSONCOOKCORRESPONDENCEMATERIAL_HPP

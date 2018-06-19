@@ -1,4 +1,4 @@
-//! \file Peridigm_StandardLinearSolidOrdinaryMaterial.hpp
+//! \file Peridigm_ViscousJohnsonCookOrdinaryMaterial.hpp
 
 //@HEADER
 // ************************************************************************
@@ -45,25 +45,25 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_STANDARDLINEARSOLIDORDINARYMATERIAL_HPP
-#define PERIDIGM_STANDARDLINEARSOLIDORDINARYMATERIAL_HPP
+#ifndef PERIDIGM_VISCOUSJOHNSONCOOKORDINARYMATERIAL_HPP
+#define PERIDIGM_VISCOUSJOHNSONCOOKORDINARYMATERIAL_HPP
 
 #include "Peridigm_ViscousMaxwellOrdinaryMaterial.hpp"
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 
 namespace PeridigmNS {
 
-  class StandardLinearSolidOrdinaryMaterial : public JohnsonCookOrdinaryMaterial, public ViscousMaxwellOrdinaryMaterial{
+  class ViscousJohnsonCookOrdinaryMaterial : public JohnsonCookOrdinaryMaterial, public ViscousMaxwellOrdinaryMaterial{
   public:
 
 	//! Constructor.
-    StandardLinearSolidOrdinaryMaterial(const Teuchos::ParameterList & params);
+    ViscousJohnsonCookOrdinaryMaterial(const Teuchos::ParameterList & params);
 
     //! Destructor.
-    virtual ~StandardLinearSolidOrdinaryMaterial();
+    virtual ~ViscousJohnsonCookOrdinaryMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return( "Standard Linear Solid Ordinary" ); }
+    virtual std::string Name() const { return( "Viscous Johnson-Cook Ordinary Material" ); }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the material.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
@@ -88,4 +88,4 @@ namespace PeridigmNS {
   };
 }
 
-#endif // PERIDIGM_STANDARDLINEARSOLIDORDINARYMATERIAL_HPP
+#endif // PERIDIGM_VISCOUSJOHNSONCOOKORDINARYMATERIAL_HPP

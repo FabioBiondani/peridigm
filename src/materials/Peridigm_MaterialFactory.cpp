@@ -66,8 +66,9 @@
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_JohnsonCookPalsMaterial.hpp"
 #include "Peridigm_ThermalJohnsonCookOrdinaryMaterial.hpp"
-#include "Peridigm_StandardLinearSolidOrdinaryMaterial.hpp"
-#include "Peridigm_StandardLinearSolidCorrespondenceMaterial.hpp"
+#include "Peridigm_ViscousJohnsonCookOrdinaryMaterial.hpp"
+#include "Peridigm_ViscousJohnsonCookCorrespondenceMaterial.hpp"
+#include "Peridigm_ThermalViscousJohnsonCookCorrespondenceMaterial.hpp"
 
 // #include "Peridigm_ThermalBB_JCCorrMaterial.hpp"
 #ifdef PERIDIGM_PV
@@ -153,10 +154,12 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new JohnsonCookPalsMaterial(materialParams) );
   else if (materialModelName == "Thermal Bond Based / Johnson-Cook Ordinary")
     materialModel = Teuchos::rcp( new ThermalJohnsonCookOrdinaryMaterial(materialParams) );
-  else if (materialModelName == "Standard Linear Solid Ordinary")
-    materialModel = Teuchos::rcp( new StandardLinearSolidOrdinaryMaterial(materialParams) );
-  else if (materialModelName == "Standard Linear Solid Correspondence")
-    materialModel = Teuchos::rcp( new StandardLinearSolidCorrespondenceMaterial(materialParams) );
+  else if (materialModelName == "Viscous Johnson-Cook Ordinary")
+    materialModel = Teuchos::rcp( new ViscousJohnsonCookOrdinaryMaterial(materialParams) );
+  else if (materialModelName == "Viscous Johnson-Cook Correspondence")
+    materialModel = Teuchos::rcp( new ViscousJohnsonCookCorrespondenceMaterial(materialParams) );
+  else if (materialModelName == "Thermal Bond Based / Viscous Johnson-Cook Correspondence")
+    materialModel = Teuchos::rcp( new ThermalViscousJohnsonCookCorrespondenceMaterial(materialParams) );
   else {
     std::string invalidMaterial("\n**** Unrecognized material model: ");
     invalidMaterial += materialModelName;

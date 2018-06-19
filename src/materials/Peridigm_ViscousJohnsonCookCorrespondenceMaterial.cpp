@@ -1,4 +1,4 @@
-/*! \file Peridigm_StandardLinearSolidCorrespondenceMaterial.cpp */
+/*! \file Peridigm_ViscousJohnsonCookCorrespondenceMaterial.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -47,7 +47,7 @@
 
 #include "Peridigm_JohnsonCookCorrespondenceMaterial.hpp"
 #include "Peridigm_ViscousMaxwellCorrespondenceMaterial.hpp"
-#include "Peridigm_StandardLinearSolidCorrespondenceMaterial.hpp"
+#include "Peridigm_ViscousJohnsonCookCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
@@ -57,7 +57,7 @@
 
 using namespace std;
 
-PeridigmNS::StandardLinearSolidCorrespondenceMaterial::StandardLinearSolidCorrespondenceMaterial(const Teuchos::ParameterList& params)
+PeridigmNS::ViscousJohnsonCookCorrespondenceMaterial::ViscousJohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : JohnsonCookCorrespondenceMaterial(params), ViscousMaxwellCorrespondenceMaterial(params)
 {
     m_fieldIds = JohnsonCookCorrespondenceMaterial::m_fieldIds;
@@ -75,11 +75,11 @@ PeridigmNS::StandardLinearSolidCorrespondenceMaterial::StandardLinearSolidCorres
     }
 }
 
-PeridigmNS::StandardLinearSolidCorrespondenceMaterial::~StandardLinearSolidCorrespondenceMaterial()
+PeridigmNS::ViscousJohnsonCookCorrespondenceMaterial::~ViscousJohnsonCookCorrespondenceMaterial()
 {}
 
 void
-PeridigmNS::StandardLinearSolidCorrespondenceMaterial::initialize(const double dt,
+PeridigmNS::ViscousJohnsonCookCorrespondenceMaterial::initialize(const double dt,
                                         const int numOwnedPoints,
                                         const int* ownedIDs,
                                         const int* neighborhoodList,
@@ -98,7 +98,7 @@ PeridigmNS::StandardLinearSolidCorrespondenceMaterial::initialize(const double d
 }
 
 void
-PeridigmNS::StandardLinearSolidCorrespondenceMaterial::computeForce(const double dt,
+PeridigmNS::ViscousJohnsonCookCorrespondenceMaterial::computeForce(const double dt,
                                                                   const int numOwnedPoints,
                                                                   const int* ownedIDs,
                                                                   const int* neighborhoodList,

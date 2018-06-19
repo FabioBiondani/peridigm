@@ -1,4 +1,4 @@
-/*! \file Peridigm_StandardLinearSolidOrdinaryMaterial.cpp */
+/*! \file Peridigm_ViscousJohnsonCookOrdinaryMaterial.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -47,7 +47,7 @@
 
 #include "Peridigm_JohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_ViscousMaxwellOrdinaryMaterial.hpp"
-#include "Peridigm_StandardLinearSolidOrdinaryMaterial.hpp"
+#include "Peridigm_ViscousJohnsonCookOrdinaryMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
@@ -57,7 +57,7 @@
 
 using namespace std;
 
-PeridigmNS::StandardLinearSolidOrdinaryMaterial::StandardLinearSolidOrdinaryMaterial(const Teuchos::ParameterList& params)
+PeridigmNS::ViscousJohnsonCookOrdinaryMaterial::ViscousJohnsonCookOrdinaryMaterial(const Teuchos::ParameterList& params)
   : JohnsonCookOrdinaryMaterial(params), ViscousMaxwellOrdinaryMaterial(params)
 {
     m_fieldIds = JohnsonCookOrdinaryMaterial::m_fieldIds;
@@ -75,11 +75,11 @@ PeridigmNS::StandardLinearSolidOrdinaryMaterial::StandardLinearSolidOrdinaryMate
     }
 }
 
-PeridigmNS::StandardLinearSolidOrdinaryMaterial::~StandardLinearSolidOrdinaryMaterial()
+PeridigmNS::ViscousJohnsonCookOrdinaryMaterial::~ViscousJohnsonCookOrdinaryMaterial()
 {}
 
 void
-PeridigmNS::StandardLinearSolidOrdinaryMaterial::initialize(const double dt,
+PeridigmNS::ViscousJohnsonCookOrdinaryMaterial::initialize(const double dt,
                                         const int numOwnedPoints,
                                         const int* ownedIDs,
                                         const int* neighborhoodList,
@@ -98,7 +98,7 @@ PeridigmNS::StandardLinearSolidOrdinaryMaterial::initialize(const double dt,
 }
 
 void
-PeridigmNS::StandardLinearSolidOrdinaryMaterial::computeForce(const double dt,
+PeridigmNS::ViscousJohnsonCookOrdinaryMaterial::computeForce(const double dt,
                                                                   const int numOwnedPoints,
                                                                   const int* ownedIDs,
                                                                   const int* neighborhoodList,

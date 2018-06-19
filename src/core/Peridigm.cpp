@@ -1490,6 +1490,67 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     nsteps = INT_MAX;
   }
 
+  // Compute the approximate critical time step for the thermal problem
+	double Tdt = 1.; // initialized to make the compiler happy.
+	int nTsteps = 1; // initialized to make the compiler happy.
+    double globalCriticalThermalTimeStep, Tdt_original, thermalSafetyFactor, deltaStep;
+    bool synchroTimeSteps(false);
+	if (analysisHasThermal||hasAdiabaticHeating){
+		double criticalThermalTimeStep = 1.0e50;
+		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+			double blockCriticalThermalTimeStep = ComputeCriticalThermalTimeStep(*peridigmComm, *blockIt);
+			if(blockCriticalThermalTimeStep < criticalThermalTimeStep)
+				criticalThermalTimeStep = blockCriticalThermalTimeStep;
+		}
+		peridigmComm->MinAll(&criticalThermalTimeStep, &globalCriticalThermalTimeStep, 1);
+		Tdt = globalCriticalThermalTimeStep; //The division by 100 is due to the exagerate difference between the mechanical time step and the thermal one
+		// Query for a user-supplied time step, which overrides the computed value
+		double userDefinedThermalTimeStep = 0.0;
+		if(verletParams->isParameter("Fixed Thermal dt")){
+			userDefinedThermalTimeStep = verletParams->get<double>("Fixed Thermal dt");
+			Tdt = userDefinedThermalTimeStep;
+		}
+// 		Multiply the time step by the user-supplied safety factor, if provided
+		thermalSafetyFactor = 1.0;
+		if(verletParams->isParameter("Thermal Safety Factor")){
+			thermalSafetyFactor = verletParams->get<double>("Thermal Safety Factor");
+			Tdt *= thermalSafetyFactor;
+		}
+		deltaStep = 1.0;
+		if(verletParams->isParameter("Tdt/dt")){
+			deltaStep = verletParams->get<double>("Tdt/dt");
+			Tdt = dt*deltaStep;
+		}
+
+        Tdt_original = Tdt;
+// 		workset->thermalTimeStep = Tdt;
+		nTsteps = static_cast<int>( ceil((timeFinal-timeInitial)/Tdt) );
+        if(verletParams->isParameter("Synchronize Mech on Thermal") && verletParams->get<bool>("Synchronize Mech on Thermal")){
+            synchroTimeSteps = true;
+            deltaStep=1;
+            nsteps=nTsteps;
+            Tdt = (timeFinal-timeInitial)/nTsteps;
+            dt = Tdt;
+        }
+        else{
+            deltaStep =  static_cast<int>( floor(nsteps/nTsteps) );
+            nTsteps = nsteps / deltaStep;
+            Tdt = (timeFinal-timeInitial)/nTsteps;
+        }
+
+
+// 		Check to make sure the number of time steps is sane
+		if(floor((timeFinal-timeInitial)/Tdt) > static_cast<double>(INT_MAX)){
+			if(peridigmComm->MyPID() == 0){
+				cout << "WARNING:  The number of time steps for the thermal problem exceed the" << endl;
+				cout << "          maximum allowable value for an integer." << endl;
+				cout << "          The number of steps will be reduced to " << INT_MAX << "." << endl;
+				cout << "          Any chance you botched the units in your input deck?\n" << endl;
+			}
+			nTsteps = INT_MAX;
+		}
+    }	
+
   // Write time step information to stdout
   if(peridigmComm->MyPID() == 0){
     cout << "Time step (seconds):" << endl;
@@ -1502,64 +1563,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       cout << "  Safety factor       " << safetyFactor << endl;
     else
       cout << "  Safety factor       not provided " << endl;
+    if (synchroTimeSteps)
+      cout << "  *** Mechanical time step synchronized on thermal time step. ***" << endl;
     cout << "  Time step           " << dt << "\n" << endl;
     cout << "Total number of time steps " << nsteps << "\n" << endl;
   }
-
-  // Compute the approximate critical time step for the thermal problem
-	double Tdt = 1.; // initialized to make the compiler happy.
-	int nTsteps = 1; // initialized to make the compiler happy.
-	int deltaStep = 1;
 	if (analysisHasThermal||hasAdiabaticHeating){
-		double criticalThermalTimeStep = 1.0e50;
-		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-			double blockCriticalThermalTimeStep = ComputeCriticalThermalTimeStep(*peridigmComm, *blockIt);
-			if(blockCriticalThermalTimeStep < criticalThermalTimeStep)
-				criticalThermalTimeStep = blockCriticalThermalTimeStep;
-		}
-		double globalCriticalThermalTimeStep;
-		peridigmComm->MinAll(&criticalThermalTimeStep, &globalCriticalThermalTimeStep, 1);
-		Tdt = globalCriticalThermalTimeStep; //The division by 100 is due to the exagerate difference between the mechanical time step and the thermal one
-		// Query for a user-supplied time step, which overrides the computed value
-		double userDefinedThermalTimeStep = 0.0;
-		if(verletParams->isParameter("Fixed Thermal dt")){
-			userDefinedThermalTimeStep = verletParams->get<double>("Fixed Thermal dt");
-			Tdt = userDefinedThermalTimeStep;
-		}
-// 		Multiply the time step by the user-supplied safety factor, if provided
-		double thermalSafetyFactor = 1.0;
-		if(verletParams->isParameter("Thermal Safety Factor")){
-			thermalSafetyFactor = verletParams->get<double>("Thermal Safety Factor");
-			Tdt *= thermalSafetyFactor;
-		}
-			double proportionalityFactor = 1.0;
-		if(verletParams->isParameter("Tdt/dt")){
-			proportionalityFactor = verletParams->get<double>("Tdt/dt");
-			Tdt = dt*proportionalityFactor;
-		}
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(Tdt<dt, "****Error:  Thermal time step can't be smaller than mechanical time step.\n");
-
-            
-
-// 		workset->thermalTimeStep = Tdt;
-		nTsteps = static_cast<int>( ceil((timeFinal-timeInitial)/Tdt) );
-        deltaStep =  static_cast<int>( floor(nsteps/nTsteps) );
-        nTsteps = nsteps / deltaStep;
-
-        double Tdt_original = Tdt;
-        Tdt = (timeFinal-timeInitial)/nTsteps;
-
-// 		Check to make sure the number of time steps is sane
-		if(floor((timeFinal-timeInitial)/Tdt) > static_cast<double>(INT_MAX)){
-			if(peridigmComm->MyPID() == 0){
-				cout << "WARNING:  The number of time steps for the thermal problem exceed the" << endl;
-				cout << "          maximum allowable value for an integer." << endl;
-				cout << "          The number of steps will be reduced to " << INT_MAX << "." << endl;
-				cout << "          Any chance you botched the units in your input deck?\n" << endl;
-			}
-			nTsteps = INT_MAX;
-		}
-
 // 		Write time step information to stdout
 		if(peridigmComm->MyPID() == 0){
 			cout << "  Thermal Time step (seconds):" << endl;
@@ -1573,16 +1582,20 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 			else
 				cout << "  Thermal Safety factor not provided " << endl;
 			if(verletParams->isParameter("Tdt/dt")){
-				cout << "  Proportionality factor between the mechanical " << endl;
-				cout << "  and the thermal time steps  " << proportionalityFactor << endl;
+				cout << "  Provided proportionality factor between the mechanical " << endl;
+				cout << "  and the thermal time steps  " << deltaStep << endl;
 			}
-			else
-				cout << "  Proportionality factor not provided " << endl;
-			cout << "  Thermal time step           " << Tdt << "\n" << endl;
-			cout << "  Total number of thermal time steps " << nTsteps << "\n" << endl;
-			cout << "  Ratio between time steps           " << deltaStep << "\n" << endl;
+			else if (~synchroTimeSteps)
+                cout << "  Proportionality factor not provided " << endl;
+            cout << "  Viable proportionality factor between the mechanical " << endl;
+			cout << "  and the thermal time steps  " << deltaStep << endl;
+			cout << "  Viable thermal time step           " << Tdt << "\n" << endl;
+			cout << "Total number of thermal time steps " << nTsteps << "\n" << endl;
 		}
-	}
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(Tdt<dt, "****Error:  Thermal time step can't be smaller than mechanical time step.\n");
+    }
+        
+
 
   // Pointer index into sub-vectors for use with BLAS
   double *xPtr, *uPtr, *yPtr, *vPtr, *aPtr;

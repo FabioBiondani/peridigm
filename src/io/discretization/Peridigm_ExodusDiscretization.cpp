@@ -1169,13 +1169,22 @@ void PeridigmNS::ExodusDiscretization::createBondOverlapMapAndOverlapNeighborsLi
     int* elementSizeList  = new int[oneDimensionalOverlapMap->NumMyElements()];
     int* myGlobalElements = new int[oneDimensionalOverlapMap->NumMyElements()];
     int  numOverlapBonds  = 0;
+    int  numPointsWithZeroNeighbors = 0;
+    int  numMyElements = 0;
     for(int i=0;i<oneDimensionalOverlapMap->NumMyElements();++i){
-        numOverlapBonds      += numNeighOverlap[i];
-        *(elementSizeList+i)  = numNeighOverlap[i];
-        *(myGlobalElements+i) = oneDimensionalOverlapMap->GID(i);
+        int numNeighbors = numNeighOverlap[i];
+        numOverlapBonds      += numNeighbors;
+        if (numNeighbors>0){
+            numMyElements++;
+            *(elementSizeList+i-numPointsWithZeroNeighbors)  = numNeighbors;
+            *(myGlobalElements+i-numPointsWithZeroNeighbors) = oneDimensionalOverlapMap->GID(i);
+        }
+        else
+            numPointsWithZeroNeighbors++;
     }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(numOverlapBonds == 0, "**** FATAL ERROR: No bonds in bondOverlapMap, should the HORIZON be greater??\n");
 
-    bondOverlapMap = Teuchos::rcp(new Epetra_BlockMap(-1, oneDimensionalOverlapMap->NumMyElements(), myGlobalElements, elementSizeList, 0, *comm));
+    bondOverlapMap = Teuchos::rcp(new Epetra_BlockMap(-1, numMyElements, myGlobalElements, elementSizeList, 0, *comm));
     delete[] myGlobalElements;
     delete[] elementSizeList;
 

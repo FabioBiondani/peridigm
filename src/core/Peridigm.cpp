@@ -161,7 +161,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   string thermalError;
   if(peridigmParams->isParameter("Multiphysics"))
   {
-  	std::cout<< "\n**** Multiphysics is selected.\n" << std::endl;
+    if(peridigmComm->MyPID() == 0)
+        std::cout<< "\n**** Multiphysics is selected.\n" << std::endl;
   	if(peridigmParams->get<int>("Multiphysics") == 1)
   	{
   		analysisHasMultiphysics = true;
@@ -182,13 +183,15 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   {
     if(peridigmParams->isParameter("Thermal")) //MODIFIED NOTE
     {
-        std::cout<< "\n**** Thermal is selected.\n" << std::endl;
+        if(peridigmComm->MyPID() == 0)
+            std::cout<< "\n**** Thermal is selected.\n" << std::endl;
         if(peridigmParams->get<bool>("Thermal") == true)
         {
             analysisHasMultiphysics = false;
             numMultiphysDoFs = 0;
             analysisHasThermal = true;
-            std::cout<< "\n**** Thermal is enabled, pending material model screening.\n" << std::endl;
+            if(peridigmComm->MyPID() == 0)
+                std::cout<< "\n**** Thermal is enabled, pending material model screening.\n" << std::endl;
             if(peridigmParams->isParameter("Thermal Shock"))
                 hasThermalShock = peridigmParams->get<bool>("Thermal Shock");
         }
@@ -209,7 +212,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         hasAdiabaticHeating = peridigmParams->get<bool>("Adiabatic Heating");
   }
   
-  if(peridigmParams->isParameter("Specular_Bonds")) if(peridigmParams->get<bool>("Specular_Bonds") == true) analysisHasSpecular=true;
+  if(peridigmParams->isParameter("Specular_Bonds")) if(peridigmParams->get<bool>("Specular_Bonds") == true){
+      analysisHasSpecular=true;
+      if(peridigmComm->MyPID() == 0)
+          std::cout<< "\n**** Specular Bonds are enabled.\n" << std::endl;
+  }
 
 
   // Initialize the influence function
@@ -442,7 +449,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasThermal && (materialModelName.find("Thermal") == std::string::npos)), "\n**** Error, material model is not thermal compatible.\n");
     // The following: If we have not tried to enable thermal, yet are attempting to use a thermal material model, raise an exception.
     // TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasThermal && (materialModelName.find("Thermal") != std::string::npos)), "\n**** Error, thermal must be enabled at the top level of the input deck.\n");
-    if((!analysisHasThermal) && (materialModelName.find("Thermal") != std::string::npos)) cout << "\n**** Warning, should thermal be enabled at the top level of the input deck??\n";
+    if((!analysisHasThermal) && (materialModelName.find("Thermal") != std::string::npos)) 
+        if(peridigmComm->MyPID() == 0)
+            cout << "\n**** Warning, should thermal be enabled at the top level of the input deck??\n";
 
     // Is the material name that of one designed for multiphysics when multiphysics is enabled?
 
@@ -1533,7 +1542,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
             dt = Tdt;
         }
         else{
-            deltaStep =  static_cast<int>( floor(nsteps/nTsteps) );
+            deltaStep = floor(nsteps/nTsteps) ;
+            nsteps = ceil(nsteps/deltaStep)*deltaStep;
+            dt = (timeFinal-timeInitial)/nsteps;
             nTsteps = nsteps / deltaStep;
             Tdt = (timeFinal-timeInitial)/nTsteps;
         }

@@ -55,7 +55,6 @@
 #include <iostream>
 #include "JohnsonCook.h"
 
-
 namespace CORRESPONDENCE {
 
 
@@ -135,7 +134,7 @@ const double constM
         
         // temperatures
         hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
-        if(hmlgT>=1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << endl;
+        if(hmlgT>=1.0) std::cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << std::endl;
 
         //Tempdouble = *Temperature;
         bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);
@@ -204,7 +203,7 @@ const double constM
 
         vmStressTrial = sqrt(3.0/2.0*tempScalar);
         
-        if ((hmlgT<0.) && (constM<1.)) pow_hmlgT_M=hmlgT;
+        if ((hmlgT<=0.) && (constM<1.)) pow_hmlgT_M=hmlgT;
         else pow_hmlgT_M=pow(hmlgT,constM);
         if (*eqpsN>0.) pow_eqps_n = +(pow(*eqpsN,constN));
         else pow_eqps_n = 0.;

@@ -134,7 +134,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
       break;
       case INITIAL_TEMPERATURE:
     	{
-     		std::cerr << "\nAn initial temperature has been defined\n" << std::endl;
+//      		std::cerr << "\nAn initial temperature has been defined\n" << std::endl;
     		Teuchos::RCP<Epetra_Vector> toVector = peridigm->getDeltaTemperature();
     		bcPtr = Teuchos::rcp(new DirichletBC(name,bcParams,toVector,peridigm,false));
     		initialConditions.push_back(bcPtr);
@@ -142,7 +142,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
     	break;
     	case PRESCRIBED_TEMPERATURE:
     	{
-     		std::cerr << "\nA prescribed temperature has been defined\n" << std::endl;
+//      		std::cerr << "\nA prescribed temperature has been defined\n" << std::endl;
     		Teuchos::RCP<Epetra_Vector> toVector = peridigm->getDeltaTemperature();
     		bcPtr = Teuchos::rcp(new DirichletBC(name,bcParams,toVector,peridigm,false));
     		boundaryConditions.push_back(bcPtr);
@@ -150,7 +150,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
     	break;
       case INITIAL_HEAT_FLOW:
       {
-        std::cerr << "\nAn initial heat flow has been defined\n" << std::endl;
+//         std::cerr << "\nAn initial heat flow has been defined\n" << std::endl;
         Teuchos::RCP<Epetra_Vector> toVector = peridigm->getHeatFlow();
         bcPtr = Teuchos::rcp(new DirichletBC(name,bcParams,toVector,peridigm,false));
         initialConditions.push_back(bcPtr);
@@ -158,7 +158,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
       break;
       case PRESCRIBED_HEAT_FLOW:
       {
-        std::cerr << "\nA prescribed heat flow has been defined\n" << std::endl;
+//         std::cerr << "\nA prescribed heat flow has been defined\n" << std::endl;
         Teuchos::RCP<Epetra_Vector> toVector = peridigm->getHeatFlow();
         bcPtr = Teuchos::rcp(new DirichletIncrementBC(name,bcParams,toVector,peridigm,false,1.0,0.0));
         boundaryConditions.push_back(bcPtr);
@@ -166,7 +166,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
       break;
       case INITIAL_INTERNAL_HEAT_SOURCE:
       {
-        std::cerr << "\nAn initial heat source has been defined\n" << std::endl;
+//         std::cerr << "\nAn initial heat source has been defined\n" << std::endl;
         Teuchos::RCP<Epetra_Vector> toVector = peridigm->getInternalHeatSource();
         bcPtr = Teuchos::rcp(new DirichletBC(name,bcParams,toVector,peridigm,false));
         boundaryConditions.push_back(bcPtr);
@@ -174,7 +174,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initialize(Teuchos::RCP<Dis
       break;
       case PRESCRIBED_INTERNAL_HEAT_SOURCE:
       {
-        std::cerr << "\nA prescribed heat source has been defined\n" << std::endl;
+//         std::cerr << "\nA prescribed heat source has been defined\n" << std::endl;
         Teuchos::RCP<Epetra_Vector> toVector = peridigm->getInternalHeatSource();
         bcPtr = Teuchos::rcp(new DirichletBC(name,bcParams,toVector,peridigm,false));
         boundaryConditions.push_back(bcPtr);

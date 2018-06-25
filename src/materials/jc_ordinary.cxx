@@ -206,7 +206,7 @@ const double constM
 
         vmStressTrial = sqrt(6*MU*Wd);
         
-        if ((hmlgT<0.) && (constM<1.)) pow_hmlgT_M=hmlgT;
+        if ((hmlgT<=0.) && (constM<1.)) pow_hmlgT_M=hmlgT;
         else pow_hmlgT_M=pow(hmlgT,constM);
         if (*eqpsN>0.) pow_eqps_n = +(pow(*eqpsN,constN));
         else pow_eqps_n = 0.;

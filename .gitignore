@@ -25,6 +25,10 @@ test/performance/twist_and_pull/twist_and_pull_gold.e
 /GCC_4.7.2_OPT_SYMBOLS/
 /GCC_4.7.2_DBG/
 
-#CMakeFiles Folders and CMakeLists Files
-CMakeFiles
-CMakeLists.txt
+# CMakeFiles Folders and CMakeLists Files
+
+
+# .e Files
+*.e
+
+

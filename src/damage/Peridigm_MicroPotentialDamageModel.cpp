@@ -54,7 +54,7 @@ using namespace std;
 PeridigmNS::MicropotentialDamageModel::MicropotentialDamageModel(const Teuchos::ParameterList& params)
   : DamageModel(params), m_Jintegral(0.0),m_materialModel(""), alternativeCriterion(false), m_modelCoordinatesFieldId(-1), m_horizonFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1),m_microPotentialFieldId(-1), m_specularBondPositionFieldId(-1),m_volumeRatioFieldId(-1),m_volumeFieldId(-1)
 {
-  obj_Jintegral.set(params,"J_integral");
+  obj_Jintegral.set(params,"Critical J_integral");
   m_Jintegral= obj_Jintegral.compute(0.0);
 
   m_materialModel = params.get<string>("Material Model");

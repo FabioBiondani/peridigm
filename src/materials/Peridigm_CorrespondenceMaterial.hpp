@@ -134,9 +134,11 @@ namespace PeridigmNS {
     int m_partialStressFieldId;
     int m_specularBondPositionFieldId;
     int m_microPotentialFieldId;
+    int m_deltaTemperatureFieldId;
 
     bool m_singularityDetachment;
     bool m_useSpecularBondPositions;
+    bool m_applyThermalStrains;
   };
 }
 

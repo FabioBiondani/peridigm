@@ -1504,32 +1504,42 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 	int nTsteps = 1; // initialized to make the compiler happy.
     double globalCriticalThermalTimeStep, Tdt_original, thermalSafetyFactor, deltaStep;
     bool synchroTimeSteps(false);
-	if (analysisHasThermal||hasAdiabaticHeating){
-		double criticalThermalTimeStep = 1.0e50;
-		for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-			double blockCriticalThermalTimeStep = ComputeCriticalThermalTimeStep(*peridigmComm, *blockIt);
-			if(blockCriticalThermalTimeStep < criticalThermalTimeStep)
-				criticalThermalTimeStep = blockCriticalThermalTimeStep;
-		}
-		peridigmComm->MinAll(&criticalThermalTimeStep, &globalCriticalThermalTimeStep, 1);
-		Tdt = globalCriticalThermalTimeStep; //The division by 100 is due to the exagerate difference between the mechanical time step and the thermal one
-		// Query for a user-supplied time step, which overrides the computed value
-		double userDefinedThermalTimeStep = 0.0;
-		if(verletParams->isParameter("Fixed Thermal dt")){
-			userDefinedThermalTimeStep = verletParams->get<double>("Fixed Thermal dt");
-			Tdt = userDefinedThermalTimeStep;
-		}
-// 		Multiply the time step by the user-supplied safety factor, if provided
-		thermalSafetyFactor = 1.0;
-		if(verletParams->isParameter("Thermal Safety Factor")){
-			thermalSafetyFactor = verletParams->get<double>("Thermal Safety Factor");
-			Tdt *= thermalSafetyFactor;
-		}
-		deltaStep = 1.0;
-		if(verletParams->isParameter("Tdt/dt")){
-			deltaStep = verletParams->get<double>("Tdt/dt");
-			Tdt = dt*deltaStep;
-		}
+	if ((analysisHasThermal)||(hasAdiabaticHeating)){
+        if (analysisHasThermal){
+            double criticalThermalTimeStep = 1.0e50;
+            for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+                double blockCriticalThermalTimeStep = ComputeCriticalThermalTimeStep(*peridigmComm, *blockIt);
+                if(blockCriticalThermalTimeStep < criticalThermalTimeStep)
+                    criticalThermalTimeStep = blockCriticalThermalTimeStep;
+            }
+            peridigmComm->MinAll(&criticalThermalTimeStep, &globalCriticalThermalTimeStep, 1);
+            Tdt = globalCriticalThermalTimeStep; //The division by 100 is due to the exagerate difference between the mechanical time step and the thermal one
+            // Query for a user-supplied time step, which overrides the computed value
+            double userDefinedThermalTimeStep = 0.0;
+            if(verletParams->isParameter("Fixed Thermal dt")){
+                userDefinedThermalTimeStep = verletParams->get<double>("Fixed Thermal dt");
+                Tdt = userDefinedThermalTimeStep;
+            }
+    // 		Multiply the time step by the user-supplied safety factor, if provided
+            thermalSafetyFactor = 1.0;
+            if(verletParams->isParameter("Thermal Safety Factor")){
+                thermalSafetyFactor = verletParams->get<double>("Thermal Safety Factor");
+                Tdt *= thermalSafetyFactor;
+            }
+            deltaStep = 1.0;
+            if(verletParams->isParameter("Tdt/dt")){
+                deltaStep = verletParams->get<double>("Tdt/dt");
+                Tdt = dt*deltaStep;
+            }
+        }
+        else
+        {
+            if(verletParams->isParameter("Tdt/dt")){
+                deltaStep = verletParams->get<double>("Tdt/dt");
+                Tdt = dt*deltaStep;
+            }else
+                Tdt=dt;
+        }
 
         Tdt_original = Tdt;
 // 		workset->thermalTimeStep = Tdt;
@@ -1543,6 +1553,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         }
         else{
             deltaStep = floor(nsteps/nTsteps) ;
+            if (deltaStep==0) deltaStep=1;
             nsteps = ceil(nsteps/deltaStep)*deltaStep;
             dt = (timeFinal-timeInitial)/nsteps;
             nTsteps = nsteps / deltaStep;
@@ -1560,7 +1571,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 			}
 			nTsteps = INT_MAX;
 		}
-    }	
+    }
 
   // Write time step information to stdout
   if(peridigmComm->MyPID() == 0){
@@ -1840,12 +1851,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
-    if (hasAdiabaticHeating && fmod(step,deltaStep) == 0)
+    if (hasAdiabaticHeating && fmod(step,deltaStep) == 0){
         for (int j=0; j<cumulativeHeat->MyLength(); j++){
 //             if (j==0) cout << "Cumulative  " << cumulativeHeatPtr[j] << endl;
             deltaTemperaturePtr[j] += cumulativeHeatPtr[j]/((*density)[j]*(*specificHeat)[j]);
         }
-
+    }
 
     if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,deltaStep) == 0){
         PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");

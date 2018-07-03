@@ -135,6 +135,7 @@ namespace PeridigmNS {
     double m_B;
     double m_C;
     double m_M;
+    double m_doteqps0;
 
     double m_Beta;
 

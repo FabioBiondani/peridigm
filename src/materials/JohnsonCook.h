@@ -62,6 +62,7 @@ const double constN,
 const double constB,
 const double constC,
 const double pow_hmlgT_M,
+const double teqps0,
 const double dt
 );
 

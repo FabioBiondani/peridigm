@@ -65,7 +65,7 @@ PeridigmNS::JohnsonCookPalsMaterial::JohnsonCookPalsMaterial(const Teuchos::Para
   : Material(params),
     m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_horizon(0.0),
     m_OMEGA_0(&PeridigmInfluenceFunction::one), m_SIGMA_0(&PeridigmInfluenceFunction::one),
-    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
+    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),m_doteqps0(1.0),
     m_volumeFieldId(-1), m_weightedVolumeFieldId(-1), m_normalizedWeightedVolumeFieldId(-1),
     m_dilatationFieldId(-1), m_palsPressureFieldId(-1),
     m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1),
@@ -94,6 +94,8 @@ PeridigmNS::JohnsonCookPalsMaterial::JohnsonCookPalsMaterial(const Teuchos::Para
       m_M  = params.get<double>("Constant M");
       m_MeltingTemperature = params.get<double>("Melting Temperature");
       m_ReferenceTemperature = params.get<double>("Reference Temperature");
+      if (params.isParameter("Reference Strain Rate"))
+          m_doteqps0 = params.get<double>("Reference Strain Rate");
   } else {
       m_A = 1e200;
       m_N = 0.0;
@@ -447,7 +449,8 @@ PeridigmNS::JohnsonCookPalsMaterial::computeForce(const double dt,
         m_N,
         m_B,
         m_C,
-        m_M
+        m_M,
+        m_doteqps0
 	);
 
 

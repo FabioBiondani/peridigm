@@ -72,7 +72,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
 );
 }
 

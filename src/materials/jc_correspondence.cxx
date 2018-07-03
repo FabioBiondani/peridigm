@@ -81,7 +81,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
 )
 {
     const ScalarT* rateOfDef = unrotatedRateOfDeformation;
@@ -131,7 +132,6 @@ const double constM
         ++eqpsN,   ++eqpsNP1,
         ++deltaTemperatureN,    ++deltaTemperatureNP1
         ){
-        
         // temperatures
         hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
         if(hmlgT>=1.0) std::cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << std::endl;
@@ -227,6 +227,7 @@ const double constM
                 constB,
                 constC,
                 pow_hmlgT_M,
+                doteps0,
                 dt
             );
             
@@ -283,7 +284,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
 );
 
 /* Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -308,7 +310,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
 );
 
 }

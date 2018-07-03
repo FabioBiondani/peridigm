@@ -54,7 +54,8 @@ void computeInternalForceJohnsonCookPals
     const double constN,
     const double constB,
     const double constC,
-    const double constM
+    const double constM,
+    const double doteps0
 )
 {
 	/*
@@ -170,7 +171,7 @@ void computeInternalForceJohnsonCookPals
         if( vmStressTrial - yieldStress >= 0 ) {
             MATERIAL_EVALUATION::JohnsonCookSolve(
                 vmStressTrial,eqpsN,eqpsNP1,&yieldStress,
-                SHEAR_MODULUS,constA,constN,constB,constC,pow_hmlgT_M,dt);
+                SHEAR_MODULUS,constA,constN,constB,constC,pow_hmlgT_M,doteps0,dt);
 
             lambda = *eqpsNP1-*eqpsN ;
 

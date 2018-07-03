@@ -94,7 +94,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
 )
 {
 
@@ -218,7 +219,7 @@ const double constM
         if( vmStressTrial - yieldStress >= 0 ) {
             MATERIAL_EVALUATION::JohnsonCookSolve(
                 vmStressTrial,eqpsN,eqpsNP1,&yieldStress,
-                MU,constA,constN,constB,constC,pow_hmlgT_M,dt);
+                MU,constA,constN,constB,constC,pow_hmlgT_M,doteps0,dt);
 
             lambda = *eqpsNP1-*eqpsN ;
 
@@ -362,7 +363,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
  );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -400,7 +402,8 @@ const double constA,
 const double constN,
 const double constB,
 const double constC,
-const double constM
+const double constM,
+const double doteps0
 );
 
 }

@@ -61,7 +61,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
     m_bulkModulus(0.0), m_shearModulus(0.0), m_alpha(0.0),  m_density(0.0), m_horizon(0.0),
     m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false), m_useSpecularBondPosition(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
-    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
+    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),m_doteqps0(1.0),
     m_Beta(0.0),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
     m_coordinatesFieldId(-1), m_velocitiesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1), m_surfaceCorrectionFactorFieldId(-1),
@@ -87,6 +87,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
       m_M  = params.get<double>("Constant M");
       m_MeltingTemperature = params.get<double>("Melting Temperature");
       m_ReferenceTemperature = params.get<double>("Reference Temperature");
+      if (params.isParameter("Reference Strain Rate"))
+          m_doteqps0 = params.get<double>("Reference Strain Rate");
   } else {
       m_A = 1e200;
       m_N = 0.0;
@@ -279,7 +281,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       m_N,
       m_B,
       m_C,
-      m_M
+      m_M,
+      m_doteqps0
   );
 
   double *cumulativeHeatN, *cumulativeHeatNP1;

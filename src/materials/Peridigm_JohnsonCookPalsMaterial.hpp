@@ -88,6 +88,7 @@ public:
     double m_B;
     double m_C;
     double m_M;
+    double m_doteqps0;
 
    // field spec ids for all relevant data
    std::vector<int> m_fieldIds;

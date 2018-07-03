@@ -57,7 +57,7 @@ using namespace std;
 
 PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
-    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),
+    m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),m_doteqps0(1.0),
     m_Beta(0.0),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1),
     m_equivalentPlasticStrainFieldId(-1),m_bondDamageFieldId(-1),
@@ -72,6 +72,8 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
       m_M  = params.get<double>("Constant M");
       m_MeltingTemperature = params.get<double>("Melting Temperature");
       m_ReferenceTemperature = params.get<double>("Reference Temperature");
+      if (params.isParameter("Reference Strain Rate"))
+          m_doteqps0 = params.get<double>("Reference Strain Rate");
   } else {
       m_A = 1e200;
       m_N = 0.0;
@@ -84,6 +86,8 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
   
   if (params.isParameter("Beta"))
       m_Beta = params.get<double>("Beta");
+  else if (params.isParameter("Beta Taylor-Quinney"))
+      m_Beta = params.get<double>("Beta Taylor-Quinney");
   else
       m_Beta = 1.0;
 
@@ -177,7 +181,8 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double 
       m_N,
       m_B,
       m_C,
-      m_M
+      m_M,
+      m_doteqps0
   );
   
   double *cumulativeHeatN, *cumulativeHeatNP1;

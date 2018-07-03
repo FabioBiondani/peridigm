@@ -67,6 +67,7 @@ const double constN,
 const double constB,
 const double constC,
 const double pow_hmlgT_M,
+const double teqps0,
 const double dt
 )
 {
@@ -87,8 +88,8 @@ const double dt
     
     ScalarT pow_eqps_nM1;
     ScalarT pow_eqps_n;
-    ScalarT pow_1teqps_C;
-    ScalarT pow_1teqps_CM1;
+    ScalarT log_teqps_teqps0;
+    ScalarT teqps_lambda_teqps;
     
     ScalarT yieldStress_lambda;
     
@@ -115,25 +116,26 @@ const double dt
         if (*eqpsNP1>0.){pow_eqps_nM1 = +(pow(*eqpsNP1,constN-1.0));}
         else if(*eqpsNP1<0.){pow_eqps_nM1 = +(pow(-*eqpsNP1,constN-1.0));}
         
-        pow_1teqps_C = 0.;
-        if (1.0+teqps>0.){pow_1teqps_C = +(pow(1.0+teqps,constC));}
-        else if (1.0+teqps<0.){pow_1teqps_C = +(pow(-1.0-teqps,constC));}
+        log_teqps_teqps0 = 0.;
+        if (teqps>0.)
+            log_teqps_teqps0 = log(teqps/teqps0);
+        else
+            log_teqps_teqps0 = log(1e-3/teqps0);
         
-        pow_1teqps_CM1 = 0.;
-        if (1.0+teqps>0.){pow_1teqps_CM1 = +(pow(1.0+teqps,constC-1.0));}
-        else if (1.0+teqps<0.){pow_1teqps_CM1 = +(pow(-1.0-teqps,constC-1.0));}
-        
-        
+        teqps_lambda_teqps = 0.;
+        if (teqps>0.)
+            teqps_lambda_teqps=teqps_lambda/teqps;
+        else
+            teqps_lambda_teqps=teqps_lambda;
+
         *yieldStress =
-        (constA+constB*pow_eqps_n)*
-        pow_1teqps_C*
+        (constA+constB*pow_eqps_n)*(1.0+constC*log_teqps_teqps0)*
         (1-pow_hmlgT_M);
         
         yieldStress_lambda = 
-        pow_1teqps_CM1*
-        (1-pow_hmlgT_M)*
-        ( +(constB*constN*pow_eqps_nM1)*(1+teqps)
-        +(constA+constB*pow_eqps_n)*constC*teqps_lambda   );
+        ( +(constB*constN*pow_eqps_nM1)*(1.0+constC*log_teqps_teqps0)
+        + (constA+constB*pow_eqps_n)*constC*teqps_lambda_teqps )*
+        (1-pow_hmlgT_M);
         
         yieldFunction = (vmStressTrial - 3.*shearModulus*lambda - (*yieldStress))/constA; // adimensional
         yieldFunction_lambda = (-3*shearModulus-yieldStress_lambda)/constA;
@@ -141,13 +143,12 @@ const double dt
         if (it==max_it){
             std::cout << "WARNING: NOT-CONVERGED PLASTIC STRAIN LOOP:" <<  "   yieldFunction=" << yieldFunction << "   lambda=" << lambda << "   trialstress=" << vmStressTrial << std::endl;
             yieldFunction=0.0;
+            lambda=0.0;
             *eqpsNP1= *eqpsN; // equivalent plastic strain
-//             std::cout << "  vmStressTrial=" << vmStressTrial ;
-//             std::cout << "\n";
         }
     }
     if (lambda<0.0) {
-        std::cout << "WARNING: PLASTIC STRAIN LOOP CONVERGED TO A NEGATIVE PLASTIC STRAIN" << std::endl << "         setting lambda to zero." << std::endl ;
+//         std::cout << "WARNING: PLASTIC STRAIN LOOP CONVERGED TO A NEGATIVE PLASTIC STRAIN" << std::endl << "         setting lambda to zero." << std::endl ;
         *eqpsNP1= *eqpsN; // equivalent plastic strain
     }
 }
@@ -165,6 +166,7 @@ const double constN,
 const double constB,
 const double constC,
 const double pow_hmlgT_M,
+const double teqps0,
 const double dt
 );
 
@@ -181,6 +183,7 @@ const double constN,
 const double constB,
 const double constC,
 const double pow_hmlgT_M,
+const double teqps0,
 const double dt
 );
 

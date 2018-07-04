@@ -161,7 +161,7 @@ void PeridigmNS::Compute_Nearest_Point_Data::initialize( Teuchos::RCP< std::vect
   // If ties were found, print a warning
   localData[0] = static_cast<int>(foundTies);
   epetraComm()->SumAll(&localData[0], &globalData[0], 1);
-  if(globalData[0] > 0 && epetraComm->MyPID() == 0){
+  if((globalData[0] > 0 && epetraComm->MyPID() == 0)&&m_verbose){
     std::cout << "**** Warning:  The Nearest_Neighbor_Data compute class found multiple nearest neighbors." << std::endl;
     std::cout << "****           The element with the smallest global ID will be selected for tracking.\n" << std::endl;
   }

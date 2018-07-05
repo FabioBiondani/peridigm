@@ -220,7 +220,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_VonMisesStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
 
   // Extract pointers to the underlying data
-  double *x, *y, *ydot, *cellVolume, *weightedVolume, *dilatation, *bondDamage, *scf, *force, *deltaTemperature;
+  double *x, *y, *ydot, *cellVolume, *weightedVolume, *dilatation, *bondDamage, *scf, *force, *deltaTemperatureN, *deltaTemperatureNP1;
 
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
@@ -231,10 +231,11 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   dataManager.getData(m_surfaceCorrectionFactorFieldId, PeridigmField::STEP_NONE)->ExtractView(&scf);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
-  deltaTemperature = NULL;
-  if(m_applyThermalStrains)
-    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
-  
+  deltaTemperatureN = NULL;deltaTemperatureNP1 = NULL;
+  if(m_applyThermalStrains){
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
+  }  
   double *sigmaVM;  
   dataManager.getData(m_VonMisesStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&sigmaVM);
   
@@ -253,7 +254,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       specu=nullptr;miPotNP1=nullptr;
   }
 
-  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,obj_alphaVol,deltaTemperature);
+  MATERIAL_EVALUATION::computeDilatation(x,y,weightedVolume,cellVolume,bondDamage,dilatation,neighborhoodList,numOwnedPoints,m_horizon,m_OMEGA,obj_alphaVol,deltaTemperatureNP1);
   MATERIAL_EVALUATION::computeInternalForceJohnsonCookOrdinary(
       x,
       y,
@@ -272,7 +273,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       eqpsN,
       eqpsNP1,
       deviatoricForceDensity,
-      deltaTemperature,
+      deltaTemperatureN,
+      deltaTemperatureNP1,
       m_useSpecularBondPositions,
       specu,
       miPotNP1,

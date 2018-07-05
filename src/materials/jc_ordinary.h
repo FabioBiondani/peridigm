@@ -74,6 +74,7 @@ const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
 const double* deltaTemperature,
+const double* deltaTemperatureNP1,
 
 const bool useSpecularBondPosition,
 const double* specularBondPosition,

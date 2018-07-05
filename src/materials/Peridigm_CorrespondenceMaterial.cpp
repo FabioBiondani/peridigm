@@ -414,7 +414,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
   // Loop over the material points and convert the Cauchy stress into pairwise peridynamic force densities
   const int *neighborListPtr = neighborhoodList;
-  double *deltaTemperatureNP1overlap=deltaTemperatureNP1;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID, 
           ++delta, defGrad+=9, stress+=9, shapeTensorInv+=9, ++damage, ++singu, deltaTemperatureN++, deltaTemperatureNP1++){
 
@@ -517,9 +516,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
           int specuId = int(*specu);
           double deltaMiPot = (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
           if (m_CritJintegral!=0.0 && m_applyThermalStrains){
-            double localT = *deltaTemperatureNP1;
-            double neighT = *(deltaTemperatureNP1overlap+neighborIndex);
-            double bond_CritJintegral = obj_CritJintegral.compute((localT+neighT)/2.0);
+            double bond_CritJintegral = obj_CritJintegral.compute(*deltaTemperatureNP1);
             
             deltaMiPot *= (m_CritJintegral/bond_CritJintegral);
           }

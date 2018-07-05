@@ -113,7 +113,6 @@ const double doteps0
     const ScalarT *yOwned = yOverlap;
     const ScalarT *ydotOwned = ydotOverlap;
     const double *deltaT = deltaTemperature;
-    const double *deltaToverlap = deltaTemperature;
     const double *m = mOwned;
     const double *v = volumeOverlap;
     const double *scf = scfOwned;
@@ -271,9 +270,7 @@ const double doteps0
 
                         ScalarT deltaMiPot = ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
                         if (m_CritJintegral0!=0.0 && deltaTemperature){
-                            double localT = *deltaT;
-                            double neighT = deltaToverlap[neighId];
-                            double bond_CritJintegral = obj_CritJintegral.compute((localT+neighT)/2.0);
+                            double bond_CritJintegral = obj_CritJintegral.compute(*deltaT);
                             
                             deltaMiPot *= (m_CritJintegral0/bond_CritJintegral);
                         }
@@ -330,9 +327,7 @@ const double doteps0
 
                     ScalarT deltaMiPot = ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
                     if (m_CritJintegral0!=0.0 && deltaTemperature){
-                        double localT = *deltaT;
-                        double neighT = deltaToverlap[neighId];
-                        double bond_CritJintegral = obj_CritJintegral.compute((localT+neighT)/2.0);
+                        double bond_CritJintegral = obj_CritJintegral.compute(*deltaT);
                         
                         deltaMiPot *= (m_CritJintegral0/bond_CritJintegral);
                     }

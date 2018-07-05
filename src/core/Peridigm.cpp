@@ -460,15 +460,10 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     TEUCHOS_TEST_FOR_EXCEPT_MSG(matParams.isParameter("Horizon") , "\n**** Error, Horizon is an invalid material parameter.\n");
     if(constantHorizon)
       matParams.set("Horizon", blockHorizon);
-    matParams.set("Use Specular Bond Position",analysisHasSpecular);
 
     // Assign the finite difference probe length
     if(!matParams.isParameter("Finite Difference Probe Length"))
       matParams.set("Finite Difference Probe Length", defaultFiniteDifferenceProbeLength);
-
-    // Instantiate the material model for this block
-    Teuchos::RCP<PeridigmNS::Material> materialModel = materialFactory.create(matParams);
-    blockIt->setMaterialModel(materialModel);
 
     // Set the damage model (if any)
     double currentValue = 0.0;
@@ -479,6 +474,18 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     if(damageModelName != "None"){
       Teuchos::ParameterList damageParams = damageModelParams.sublist(damageModelName, true);
       damageParams.set("Material Model",materialModelName);
+
+      // send temperature dependent Critical J-integral to material models in order to scale the micropotential increment
+      if(damageParams.isParameter("Critical J-integral")&&analysisHasSpecular){
+          string strCritJ;
+          if (damageParams.isType<string>("Critical J_integral")){
+              if(peridigmComm->MyPID() == 0)
+                cout << "\n**** Detected temperature dependent Critical J_integral\n" << endl;
+              strCritJ = damageParams.get<string>("Critical J_integral");
+              matParams.set("Critical J_integral",strCritJ);
+          }
+      }
+
       Teuchos::RCP<PeridigmNS::DamageModel> damageModel = damageModelFactory.create(damageParams);
       blockIt->setDamageModel(damageModel);
       if(damageModel->Name() =="Interface Aware"){
@@ -490,6 +497,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         CSDamageModel->evaluateParserDmg(currentValue, previousValue, timeCurrent, timePrevious);
       }
     }
+
+    matParams.set("Use Specular Bond Position",analysisHasSpecular);
+
+    // Instantiate the material model for this block
+    Teuchos::RCP<PeridigmNS::Material> materialModel = materialFactory.create(matParams);
+    blockIt->setMaterialModel(materialModel);
   }
 
   // Checking if calculations using specular bonds positions are needed

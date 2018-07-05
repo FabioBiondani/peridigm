@@ -75,7 +75,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_deltaTemperatureFieldId(-1),
     m_singularityDetachment(true),
     m_useSpecularBondPositions(false),
-    m_applyThermalStrains(false)
+    m_applyThermalStrains(false),
+    m_CritJintegral(0.0)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);
@@ -94,11 +95,16 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   }
 
   if (params.isParameter("Singularity Detachment")){
-      m_singularityDetachment  = params.get<bool>("Singularity Detachment");
+    m_singularityDetachment  = params.get<bool>("Singularity Detachment");
   }
   if (params.isParameter("Use Specular Bond Position")){
-      m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
+    m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
   }
+  if (m_useSpecularBondPositions && params.isParameter("Critical J_integral")){
+    obj_CritJintegral.set(params,"Critical J_integral");
+    m_CritJintegral = obj_CritJintegral.compute(0.0);
+  }else
+    m_CritJintegral=0.0;
   
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
 //   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
@@ -408,6 +414,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
   // Loop over the material points and convert the Cauchy stress into pairwise peridynamic force densities
   const int *neighborListPtr = neighborhoodList;
+  double *deltaTemperatureNP1overlap=deltaTemperatureNP1;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID, 
           ++delta, defGrad+=9, stress+=9, shapeTensorInv+=9, ++damage, ++singu, deltaTemperatureN++, deltaTemperatureNP1++){
 
@@ -448,6 +455,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     velocitiesPtr       = velocities       + 3*iID;
 
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondIndex++, specu++, miPotNP1++){
+      if(bondDamage[bondIndex]==1.)
+          continue;
 
       neighborIndex = *neighborListPtr;
       neighborModelCoordinatesPtr = modelCoordinates + 3*neighborIndex;
@@ -491,6 +500,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       *(partialStressPtr+8) += TZ*undeformedBondZ*neighborVol;
       
       if (m_useSpecularBondPositions){
+          
+
           velocityBondX = *(neighborVelocitiesPtr)   - *(velocitiesPtr);
           velocityBondY = *(neighborVelocitiesPtr+1) - *(velocitiesPtr+1);
           velocityBondZ = *(neighborVelocitiesPtr+2) - *(velocitiesPtr+2);
@@ -504,8 +515,16 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
           }
 
           int specuId = int(*specu);
-          *miPotNP1+=                (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
-          miPotNP1overlap[specuId]+= (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
+          double deltaMiPot = (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
+          if (m_CritJintegral!=0.0 && m_applyThermalStrains){
+            double localT = *deltaTemperatureNP1;
+            double neighT = *(deltaTemperatureNP1overlap+neighborIndex);
+            double bond_CritJintegral = obj_CritJintegral.compute((localT+neighT)/2.0);
+            
+            deltaMiPot *= (m_CritJintegral/bond_CritJintegral);
+          }
+          *miPotNP1+=                deltaMiPot;
+          miPotNP1overlap[specuId]+= deltaMiPot;
       }
     }
   }

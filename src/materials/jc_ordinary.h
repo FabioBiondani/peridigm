@@ -74,10 +74,12 @@ const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
 const double* deltaTemperature,
- 
+
 const bool useSpecularBondPosition,
 const double* specularBondPosition,
 ScalarT* microPotentialNP1,
+double m_CritJintegral,
+PeridigmNS::Material::TempDepConst obj_CritJintegral,
 
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,

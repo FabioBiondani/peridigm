@@ -50,6 +50,7 @@
 
 #include "Peridigm_Material.hpp"
 #include "Peridigm_InfluenceFunction.hpp"
+#include <boost/math/constants/constants.hpp>
 
 namespace PeridigmNS {
 
@@ -99,6 +100,7 @@ namespace PeridigmNS {
 
   protected:
 
+    const double m_pi = boost::math::constants::pi<double>();
     // material parameters
     double m_bulkModulus;
     double m_shearModulus;
@@ -139,6 +141,9 @@ namespace PeridigmNS {
     bool m_singularityDetachment;
     bool m_useSpecularBondPositions;
     bool m_applyThermalStrains;
+
+    TempDepConst obj_CritJintegral;
+    double m_CritJintegral;
   };
 }
 

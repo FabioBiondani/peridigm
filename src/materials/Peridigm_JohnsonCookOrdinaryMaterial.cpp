@@ -59,7 +59,7 @@ using namespace std;
 PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuchos::ParameterList& params)
   : Material(params),
     m_bulkModulus(0.0), m_shearModulus(0.0), m_alpha(0.0),  m_density(0.0), m_horizon(0.0),
-    m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false), m_useSpecularBondPosition(false),
+    m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false), m_useSpecularBondPositions(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),m_doteqps0(1.0),
     m_Beta(0.0),
@@ -69,7 +69,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
     m_VonMisesStressFieldId(-1),
     m_deviatoricPlasticExtensionFieldId(-1),m_equivalentPlasticStrainFieldId(-1),m_deviatoricForceDensityFieldId(-1),
     m_specularBondPositionFieldId(-1),m_microPotentialFieldId(-1),
-    m_cumulativeHeatFieldId(-1)
+    m_cumulativeHeatFieldId(-1),
+    m_CritJintegral(.0)
 {
   //! \todo Add meaningful asserts on material properties.
   obj_bulkModulus.set(params);
@@ -105,8 +106,13 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
       m_Beta = 1.0;
 
   if(params.isParameter("Use Specular Bond Position")){
-      m_useSpecularBondPosition  = params.get<bool>("Use Specular Bond Position");
+      m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
   }
+  if (m_useSpecularBondPositions && params.isParameter("Critical J_integral")){
+    obj_CritJintegral.set(params,"Critical J_integral");
+    m_CritJintegral = obj_CritJintegral.compute(0.0);
+  }else
+    m_CritJintegral=0.0;
 
   if(params.isParameter("Thermal Expansion Coefficient")){
     obj_alphaVol.set(params,"Thermal Expansion Coefficient");
@@ -139,7 +145,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
 
   m_cumulativeHeatFieldId       = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Cumulative_Adiabatic_Heat");
 
-  if(m_useSpecularBondPosition){
+  if(m_useSpecularBondPositions){
       m_specularBondPositionFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Specular_Bond_Position");
       m_microPotentialFieldId       = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Micro-Potential");
   }
@@ -157,7 +163,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   if(m_applyThermalStrains)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
   
-  if(m_useSpecularBondPosition){
+  if(m_useSpecularBondPositions){
       m_fieldIds.push_back(m_specularBondPositionFieldId);
       m_fieldIds.push_back(m_microPotentialFieldId);
   }
@@ -240,7 +246,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_deviatoricForceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&deviatoricForceDensity);
 
   double *specu, *miPotNP1;
-  if(m_useSpecularBondPosition){
+  if(m_useSpecularBondPositions){
       dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
       dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_NP1)->ExtractView(&miPotNP1);
   } else {
@@ -267,9 +273,11 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       eqpsNP1,
       deviatoricForceDensity,
       deltaTemperature,
-      m_useSpecularBondPosition,
+      m_useSpecularBondPositions,
       specu,
       miPotNP1,
+      m_CritJintegral,
+      obj_CritJintegral,
       obj_bulkModulus,
       obj_shearModulus,
       obj_alphaVol,

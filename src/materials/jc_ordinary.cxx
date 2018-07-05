@@ -83,6 +83,8 @@ const double* deltaTemperature,
 const bool useSpecularBondPosition,
 const double* specularBondPosition,
 ScalarT* microPotentialNP1,
+double m_CritJintegral0,
+PeridigmNS::Material::TempDepConst obj_CritJintegral,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
@@ -111,6 +113,7 @@ const double doteps0
     const ScalarT *yOwned = yOverlap;
     const ScalarT *ydotOwned = ydotOverlap;
     const double *deltaT = deltaTemperature;
+    const double *deltaToverlap = deltaTemperature;
     const double *m = mOwned;
     const double *v = volumeOverlap;
     const double *scf = scfOwned;
@@ -179,10 +182,10 @@ const double doteps0
         for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++,edpN++,edpNP1++,td++){
             *edpNP1=*edpN;
 
-            int localId = *neighPtr;
-            cellVolume = v[localId];
-            const double *XP = &xOverlap[3*localId];
-            const ScalarT *YP = &yOverlap[3*localId];
+            int neighId = *neighPtr;
+            cellVolume = v[neighId];
+            const double *XP = &xOverlap[3*neighId];
+            const ScalarT *YP = &yOverlap[3*neighId];
             X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
             zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
             Y_dx = YP[0]-Y[0];  
@@ -233,10 +236,10 @@ const double doteps0
 //                 Wd=0.0;
                 for(int n=0;n<numNeigh;n++,neighPtr_++,bondDamage_++,edpN_++,edpNP1_++,td_++,specu++,miPotNP1++){
 
-                    int localId = *neighPtr_;
-                    cellVolume = v[localId];
-                    const double *XP = &xOverlap[3*localId];
-                    const ScalarT *YP = &yOverlap[3*localId];
+                    int neighId = *neighPtr_;
+                    cellVolume = v[neighId];
+                    const double *XP = &xOverlap[3*neighId];
+                    const ScalarT *YP = &yOverlap[3*neighId];
                     X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
                     Y_dx = YP[0]-Y[0];  
                     Y_dy = YP[1]-Y[1];  
@@ -254,20 +257,29 @@ const double doteps0
                     *(fOwned+0) += fx*cellVolume;
                     *(fOwned+1) += fy*cellVolume;
                     *(fOwned+2) += fz*cellVolume;
-                    fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-                    fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-                    fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+                    fInternalOverlap[3*neighId+0] -= fx*selfCellVolume;
+                    fInternalOverlap[3*neighId+1] -= fy*selfCellVolume;
+                    fInternalOverlap[3*neighId+2] -= fz*selfCellVolume;
 
                     *edpNP1_ = *edpN_ + *m/5.0 *(*td_)/omega / (*vmStress) * lambda ;
 
 
                     if(useSpecularBondPosition){
                         int specuId = int(*specu);
-                        const ScalarT *YdotP = &ydotOverlap[3*localId];
+                        const ScalarT *YdotP = &ydotOverlap[3*neighId];
                         Ydot_dx = *YdotP - *Ydot; Ydot_dy = *(YdotP+1) - *(Ydot+1);  Ydot_dz = *(YdotP+2) - *(Ydot+2);
 
-                        *miPotNP1+=                 ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
-                        miPotNP1_Overlap[specuId]+= ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
+                        ScalarT deltaMiPot = ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
+                        if (m_CritJintegral0!=0.0 && deltaTemperature){
+                            double localT = *deltaT;
+                            double neighT = deltaToverlap[neighId];
+                            double bond_CritJintegral = obj_CritJintegral.compute((localT+neighT)/2.0);
+                            
+                            deltaMiPot *= (m_CritJintegral0/bond_CritJintegral);
+                        }
+
+                        *miPotNP1+=                 deltaMiPot;
+                        miPotNP1_Overlap[specuId]+= deltaMiPot;
                     }
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
@@ -287,10 +299,10 @@ const double doteps0
 
             for(int n=0; n<numNeigh; n++,neighPtr_++,bondDamage_++,edpN_++,edpNP1_++,td_++,specu++,miPotNP1++) {
 
-                int localId = *neighPtr_;
-                cellVolume = v[localId];
-                const double *XP = &xOverlap[3*localId];
-                const ScalarT *YP = &yOverlap[3*localId];
+                int neighId = *neighPtr_;
+                cellVolume = v[neighId];
+                const double *XP = &xOverlap[3*neighId];
+                const ScalarT *YP = &yOverlap[3*neighId];
                 X_dx = XP[0]-X[0];  X_dy = XP[1]-X[1];  X_dz = XP[2]-X[2];
                 Y_dx = YP[0]-Y[0];
                 Y_dy = YP[1]-Y[1];
@@ -307,17 +319,26 @@ const double doteps0
                 *(fOwned+0) += fx*cellVolume;
                 *(fOwned+1) += fy*cellVolume;
                 *(fOwned+2) += fz*cellVolume;
-                fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-                fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-                fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+                fInternalOverlap[3*neighId+0] -= fx*selfCellVolume;
+                fInternalOverlap[3*neighId+1] -= fy*selfCellVolume;
+                fInternalOverlap[3*neighId+2] -= fz*selfCellVolume;
 
                 if(useSpecularBondPosition){
                     int specuId = int(*specu);
-                    const ScalarT *YdotP = &ydotOverlap[3*localId];
+                    const ScalarT *YdotP = &ydotOverlap[3*neighId];
                     Ydot_dx = *YdotP - *Ydot; Ydot_dy = *(YdotP+1) - *(Ydot+1);  Ydot_dz = *(YdotP+2) - *(Ydot+2);
 
-                    *miPotNP1+=                 ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
-                    miPotNP1_Overlap[specuId]+= ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
+                    ScalarT deltaMiPot = ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
+                    if (m_CritJintegral0!=0.0 && deltaTemperature){
+                        double localT = *deltaT;
+                        double neighT = deltaToverlap[neighId];
+                        double bond_CritJintegral = obj_CritJintegral.compute((localT+neighT)/2.0);
+                        
+                        deltaMiPot *= (m_CritJintegral0/bond_CritJintegral);
+                    }
+
+                    *miPotNP1+=                 deltaMiPot;
+                    miPotNP1_Overlap[specuId]+= deltaMiPot;
                 }
 
             }
@@ -352,6 +373,8 @@ const double* deltaTemperature,
 const bool useSpecularBondPosition,
 const double* specularBondPosition,
 double* microPotentialNP1,
+double m_CritJintegral0,
+PeridigmNS::Material::TempDepConst obj_CritJintegral,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
@@ -391,6 +414,8 @@ const double* deltaTemperature,
 const bool useSpecularBondPosition,
 const double* specularBondPosition,
 Sacado::Fad::DFad<double>* microPotentialNP1,
+double m_CritJintegral0,
+PeridigmNS::Material::TempDepConst obj_CritJintegral,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,

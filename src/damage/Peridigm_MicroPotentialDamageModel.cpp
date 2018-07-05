@@ -52,12 +52,10 @@
 using namespace std;
 
 PeridigmNS::MicropotentialDamageModel::MicropotentialDamageModel(const Teuchos::ParameterList& params)
-  : DamageModel(params), m_Jintegral(0.0),m_materialModel(""), alternativeCriterion(false), m_modelCoordinatesFieldId(-1), m_horizonFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1),m_microPotentialFieldId(-1), m_specularBondPositionFieldId(-1),m_volumeRatioFieldId(-1),m_volumeFieldId(-1)
+  : DamageModel(params), m_CritJintegral(0.0), alternativeCriterion(false), m_modelCoordinatesFieldId(-1), m_horizonFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_microPotentialFieldId(-1), m_specularBondPositionFieldId(-1)
 {
-  obj_Jintegral.set(params,"Critical J_integral");
-  m_Jintegral= obj_Jintegral.compute(0.0);
-
-  m_materialModel = params.get<string>("Material Model");
+  obj_CritJintegral.set(params,"Critical J_integral");
+  m_CritJintegral= obj_CritJintegral.compute(0.0);
 
   if (params.isParameter("Alternative MicroPotential Criterion"))
       alternativeCriterion  = params.get<bool>("Alternative MicroPotential Criterion");
@@ -68,22 +66,16 @@ PeridigmNS::MicropotentialDamageModel::MicropotentialDamageModel(const Teuchos::
   m_horizonFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
-  m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
   m_microPotentialFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Micro-Potential");
   m_specularBondPositionFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Specular_Bond_Position");
-  m_volumeRatioFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume Ratio");
-  m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
 
 
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
-  m_fieldIds.push_back(m_deltaTemperatureFieldId);
   m_fieldIds.push_back(m_microPotentialFieldId);
   m_fieldIds.push_back(m_specularBondPositionFieldId);
-  m_fieldIds.push_back(m_volumeRatioFieldId);
-  m_fieldIds.push_back(m_volumeFieldId);
 }
 
 PeridigmNS::MicropotentialDamageModel::~MicropotentialDamageModel()
@@ -130,7 +122,6 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageNP1);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
   dataManager.getData(m_microPotentialFieldId, PeridigmField::STEP_N)->ExtractView(&miPot);
   dataManager.getData(m_specularBondPositionFieldId, PeridigmField::STEP_NONE)->ExtractView(&specu);
 
@@ -138,7 +129,6 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
   int neighborhoodListIndex(0), bondIndex(0);
   int nodeId, numNeighbors, neighborID, iID, iNID;
   double nodeInitialX[3], initialDistance(0.0);
-  double bond_Jintegral;
 
   // Set the bond damage to the previous value
   *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
@@ -151,9 +141,11 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 	nodeInitialX[0] = x[nodeId*3];
 	nodeInitialX[1] = x[nodeId*3+1];
 	nodeInitialX[2] = x[nodeId*3+2];
-    double localT = *(deltaTemperature+nodeId);
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
-	for(iNID=0 ; iNID<numNeighbors ; ++iNID){
+    
+    double local_horizon = *(horizon+nodeId);
+    double temp = 4.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon);
+    for(iNID=0 ; iNID<numNeighbors ; ++iNID){
 
         if(bondDamageN[bondIndex]==1.0){
             neighborhoodListIndex += 1;
@@ -165,18 +157,11 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 	    neighborID = neighborhoodList[neighborhoodListIndex];
         if(alternativeCriterion)
             initialDistance = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1],x[neighborID*3+2]);
-        double neighT = *(deltaTemperature+neighborID);
-        bond_Jintegral = obj_Jintegral.compute((localT+neighT)/2.0);
         
-        double local_horizon = *(horizon+nodeId);
-        double temp;
+        double m_criticalMicroPotential = temp*m_CritJintegral;
         if(alternativeCriterion)
-            temp = 6.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance*initialDistance;
-        else
-            temp = 4.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon);
-//             temp = 5.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance;
-        
-        double m_criticalMicroPotential = temp*bond_Jintegral;
+            m_criticalMicroPotential *= 3./2. /(local_horizon*local_horizon)*initialDistance*initialDistance;
+//             6.0/(m_pi*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon*local_horizon)*initialDistance*initialDistance;
 
         double bondMicroPotential = miPot[bondIndex] ;
 

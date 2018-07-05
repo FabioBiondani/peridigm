@@ -101,9 +101,8 @@ namespace PeridigmNS {
 	}
 
     const double m_pi = boost::math::constants::pi<double>();
-    double m_Jintegral;
-    Material::TempDepConst obj_Jintegral;
-    std::string m_materialModel;
+    double m_CritJintegral;
+    Material::TempDepConst obj_CritJintegral;
     bool alternativeCriterion;
     
     // field ids for all relevant data
@@ -112,11 +111,8 @@ namespace PeridigmNS {
     int m_horizonFieldId;
     int m_damageFieldId;
     int m_bondDamageFieldId;
-    int m_deltaTemperatureFieldId;
     int m_microPotentialFieldId;
     int m_specularBondPositionFieldId;
-    int m_volumeRatioFieldId;
-    int m_volumeFieldId;
   };
 
 }

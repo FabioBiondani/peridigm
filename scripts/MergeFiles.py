@@ -73,12 +73,51 @@ if __name__ == "__main__":
     files_to_join = list(set(files_to_join))
     files_to_join.sort()
 
-    # First merge all distributed exodus databases for each time stamp
+    # Delete empty exodus databases and rename with new number of processors
+    ratio=10
     for file in files_to_join:
+      maxsize=0
+      for i in range(0,int(num_proc)):
+        filename=file+".e."+num_proc+"."+str(i)
+        if not os.path.exists(filename):
+          break
+        statinfo = os.stat(filename)
+        filesize=statinfo.st_size
+        if filesize>maxsize:
+          maxsize=filesize
+
+      new_num_proc=0
+      for i in range(0,int(num_proc)):
+        filename=file+".e."+num_proc+"."+str(i)
+        if not os.path.exists(filename):
+          break
+        statinfo = os.stat(filename)
+        filesize=statinfo.st_size
+        if filesize>=maxsize/ratio:
+          new_num_proc=new_num_proc+1
+      new_num_proc=str(new_num_proc)
+
+      j=0
+      if int(new_num_proc)<int(num_proc):
+        for i in range(0,int(num_proc)):
+          filename=file+".e."+num_proc+"."+str(i)
+          if not os.path.exists(filename):
+            print filename + " does not exist."
+            break
+          statinfo = os.stat(filename)
+          filesize=statinfo.st_size
+          if filesize>=maxsize/ratio:
+            os.rename(filename,file+".e."+new_num_proc+"."+str(j))
+            j=j+1
+          else:
+            os.remove(filename)
+
+    # First merge all distributed exodus databases for each time stamp
+
       if is_exe(path+"epu"):
-        command = [path+"epu", "-p", num_proc, file]
+        command = [path+"epu", "-p", new_num_proc, file]
       elif which("epu") != None:
-        command = ["epu", "-p", num_proc, file]
+        command = ["epu", "-p", new_num_proc, file]
       else:
         print("Error: epu not found! Please execute this script from 'scripts' in your Peridigm build directory or put 'epu' in your path. 'epu' can be found in your Trilinos install 'bin' directory.")
         sys.exit(-1)

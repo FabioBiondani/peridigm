@@ -138,7 +138,15 @@ namespace PeridigmNS {
 
     //! Field id for element id.
     int elementIdFieldId;
-  };
+
+    // For code coupling simulations, there can be a situation where there
+    // are no peridynamic nodes on a processor.  This seems to cause
+    // issues with Exodus, so just bail.
+    bool haveData = true;
+
+    // First block to be cutoff from output
+    int cutOffBlock;
+};
   
 }
  

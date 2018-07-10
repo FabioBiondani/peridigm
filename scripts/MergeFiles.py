@@ -74,11 +74,11 @@ if __name__ == "__main__":
     files_to_join.sort()
 
     # Delete empty exodus databases and rename with new number of processors
-    ratio=10
+    ratio=100
     for file in files_to_join:
       maxsize=0
       for i in range(0,int(num_proc)):
-        filename=file+".e."+num_proc+"."+str(i)
+        filename=file+".e."+num_proc+"."+str(i).zfill(len(str(num_proc)))
         if not os.path.exists(filename):
           break
         statinfo = os.stat(filename)
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
       new_num_proc=0
       for i in range(0,int(num_proc)):
-        filename=file+".e."+num_proc+"."+str(i)
+        filename=file+".e."+num_proc+"."+str(i).zfill(len(str(num_proc)))
         if not os.path.exists(filename):
           break
         statinfo = os.stat(filename)
@@ -100,14 +100,14 @@ if __name__ == "__main__":
       j=0
       if int(new_num_proc)<int(num_proc):
         for i in range(0,int(num_proc)):
-          filename=file+".e."+num_proc+"."+str(i)
+          filename=file+".e."+num_proc+"."+str(i).zfill(len(str(num_proc)))
           if not os.path.exists(filename):
             print filename + " does not exist."
             break
           statinfo = os.stat(filename)
           filesize=statinfo.st_size
           if filesize>=maxsize/ratio:
-            os.rename(filename,file+".e."+new_num_proc+"."+str(j))
+            os.rename(filename,file+".e."+new_num_proc+"."+str(j)).zfill(len(str(new_num_proc)))
             j=j+1
           else:
             os.remove(filename)

@@ -107,7 +107,7 @@ if __name__ == "__main__":
           statinfo = os.stat(filename)
           filesize=statinfo.st_size
           if filesize>=maxsize/ratio:
-            os.rename(filename,file+".e."+new_num_proc+"."+str(j)).zfill(len(str(new_num_proc)))
+            os.rename(filename,file+".e."+new_num_proc+"."+str(j).zfill(len(str(new_num_proc))))
             j=j+1
           else:
             os.remove(filename)

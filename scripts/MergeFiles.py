@@ -41,6 +41,10 @@ if __name__ == "__main__":
     path = sys.argv[0];
     base_name = sys.argv[1]
     num_proc = sys.argv[2]
+    if len(sys.argv) == 3:
+        ratio = 100
+    else:
+        ratio = float(sys.argv[3])
 
     result = 0
     
@@ -74,7 +78,6 @@ if __name__ == "__main__":
     files_to_join.sort()
 
     # Delete empty exodus databases and rename with new number of processors
-    ratio=100
     for file in files_to_join:
       maxsize=0
       for i in range(0,int(num_proc)):
@@ -95,6 +98,7 @@ if __name__ == "__main__":
         filesize=statinfo.st_size
         if filesize>=maxsize/ratio:
           new_num_proc=new_num_proc+1
+        print ratio
       new_num_proc=str(new_num_proc)
 
       j=0

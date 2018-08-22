@@ -98,7 +98,6 @@ if __name__ == "__main__":
         filesize=statinfo.st_size
         if filesize>=maxsize/ratio:
           new_num_proc=new_num_proc+1
-        print ratio
       new_num_proc=str(new_num_proc)
 
       j=0

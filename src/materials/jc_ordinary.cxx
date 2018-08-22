@@ -108,7 +108,8 @@ const double doteps0
     double K = obj_bulkModulus.compute(0.0);
     double MU = obj_shearModulus.compute(0.0);
     double thermalExpansionCoefficient;
-    if(deltaTemperatureN) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
+    const double *deltaT = deltaTemperatureN;
+    if(deltaT) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
 
     const double *xOwned = xOverlap;
     const ScalarT *yOwned = yOverlap;
@@ -160,7 +161,7 @@ const double doteps0
 
     for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, ydotOwned +=3, fOwned+=3, vmStress++, eqpsN++, eqpsNP1++, deltaTemperatureN++, deltaTemperatureNP1++, m++, theta++, scf++){
         
-        if(deltaTemperatureN){
+        if(deltaT){
             hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
             K    = obj_bulkModulus.compute(*deltaTemperatureNP1);
             MU   = obj_shearModulus.compute(*deltaTemperatureNP1);
@@ -192,7 +193,7 @@ const double doteps0
             Y_dz = YP[2]-Y[2];
             dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
             e = dY - zeta;
-            if(deltaTemperatureN) e -= thermalExpansionCoefficient*(*deltaTemperatureNP1)*zeta;
+            if(deltaT) e -= thermalExpansionCoefficient*(*deltaTemperatureNP1)*zeta;
             omega = scalarInfluenceFunction(zeta,horizon);
             ed = e - *theta/3*zeta - *edpNP1; // deviatoric Extension
 
@@ -280,7 +281,7 @@ const double doteps0
                     }
 //                     // compute deviatoric energy density
 //                     e = dY - zeta;
-//                     if(deltaTemperatureN) e -= thermalExpansionCoefficient*(*deltaTemperatureNP1)*zeta;
+//                     if(deltaT) e -= thermalExpansionCoefficient*(*deltaTemperatureNP1)*zeta;
 //                     ed = e - *theta/3*zeta - *edpNP1_; // deviatoric Extension
 //                     Wd += (1.0-*bondDamage_)* alpha/2 * ed * omega * ed * cellVolume;
                 }

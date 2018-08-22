@@ -54,9 +54,9 @@ void PeridigmNS::Timer::printTimingData(ostream &out){
     for(unsigned int i=0 ; i<names.size() ; ++i){
       out << "  ";
       out.width(nameLength + 2); out << left << names[i];
-      out.width(indent); out << right << minTimes[i];
-      out.width(indent); out << right << maxTimes[i];
-      out.width(indent); out << right << totalTimes[i]/nProc;
+      out.width(indent); out << right << setprecision(6) << minTimes[i];
+      out.width(indent); out << right << setprecision(6) << maxTimes[i];
+      out.width(indent); out << right << setprecision(6) << totalTimes[i]/nProc;
       out << endl;
     }
     out << endl;
@@ -67,7 +67,7 @@ void PeridigmNS::Timer::printTimingData(ostream &out){
     for(unsigned int i=0 ; i<names.size() ; ++i){
       out << "  ";
       out.width(nameLength + 2); out << left << names[i];
-      out.width(indent); out << right << minTimes[i];
+      out.width(indent); out << right << setprecision(6) << minTimes[i];
       out << endl;
     }
     out << endl;

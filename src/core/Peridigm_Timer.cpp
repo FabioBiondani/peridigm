@@ -50,24 +50,24 @@ void PeridigmNS::Timer::printTimingData(ostream &out){
     out.width(indent); out << right << "Max";
     out.width(indent); out << right << "Ave";
     out << endl;
-    out.precision(2);
+    out.precision(6);
     for(unsigned int i=0 ; i<names.size() ; ++i){
       out << "  ";
       out.width(nameLength + 2); out << left << names[i];
-      out.width(indent); out << right << setprecision(6) << minTimes[i];
-      out.width(indent); out << right << setprecision(6) << maxTimes[i];
-      out.width(indent); out << right << setprecision(6) << totalTimes[i]/nProc;
+      out.width(indent); out << right << minTimes[i];
+      out.width(indent); out << right << maxTimes[i];
+      out.width(indent); out << right << totalTimes[i]/nProc;
       out << endl;
     }
     out << endl;
   }
   else if(nProc == 1){
     out << "Wallclock Time (seconds):" << endl;
-    out.precision(2);
+    out.precision(6);
     for(unsigned int i=0 ; i<names.size() ; ++i){
       out << "  ";
       out.width(nameLength + 2); out << left << names[i];
-      out.width(indent); out << right << setprecision(6) << minTimes[i];
+      out.width(indent); out << right << minTimes[i];
       out << endl;
     }
     out << endl;

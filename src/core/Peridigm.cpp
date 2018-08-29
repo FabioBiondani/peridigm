@@ -183,15 +183,13 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   {
     if(peridigmParams->isParameter("Thermal")) //MODIFIED NOTE
     {
-        if(peridigmComm->MyPID() == 0)
-            std::cout<< "\n**** Thermal is selected.\n" << std::endl;
         if(peridigmParams->get<bool>("Thermal") == true)
         {
+            if(peridigmComm->MyPID() == 0)
+                std::cout<< "\n**** Thermal is enabled.\n" << std::endl;
             analysisHasMultiphysics = false;
             numMultiphysDoFs = 0;
             analysisHasThermal = true;
-            if(peridigmComm->MyPID() == 0)
-                std::cout<< "\n**** Thermal is enabled, pending material model screening.\n" << std::endl;
             if(peridigmParams->isParameter("Thermal Shock"))
                 hasThermalShock = peridigmParams->get<bool>("Thermal Shock");
         }
@@ -209,7 +207,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         analysisHasThermal = false;
     }
     if(peridigmParams->isParameter("Adiabatic Heating")) //MODIFIED NOTE
+    {
+        if(peridigmComm->MyPID() == 0)
+            std::cout<< "\n**** Adiabatic Heating is enabled.\n" << std::endl;
         hasAdiabaticHeating = peridigmParams->get<bool>("Adiabatic Heating");
+    }
   }
   
   if(peridigmParams->isParameter("Specular_Bonds")) if(peridigmParams->get<bool>("Specular_Bonds") == true){
@@ -449,7 +451,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     TEUCHOS_TEST_FOR_EXCEPT_MSG((analysisHasThermal && (materialModelName.find("Thermal") == std::string::npos)), "\n**** Error, material model is not thermal compatible.\n");
     // The following: If we have not tried to enable thermal, yet are attempting to use a thermal material model, raise an exception.
     // TEUCHOS_TEST_FOR_EXCEPT_MSG((!analysisHasThermal && (materialModelName.find("Thermal") != std::string::npos)), "\n**** Error, thermal must be enabled at the top level of the input deck.\n");
-    if((!analysisHasThermal) && (materialModelName.find("Thermal") != std::string::npos)) 
+    if((!analysisHasThermal && !hasAdiabaticHeating) && (materialModelName.find("Thermal") != std::string::npos)) 
         if(peridigmComm->MyPID() == 0)
             cout << "\n**** Warning, should thermal be enabled at the top level of the input deck??\n";
 
@@ -1515,7 +1517,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   // Compute the approximate critical time step for the thermal problem
 	double Tdt = 1.; // initialized to make the compiler happy.
 	int nTsteps = 1; // initialized to make the compiler happy.
-    double globalCriticalThermalTimeStep, Tdt_original, thermalSafetyFactor, deltaStep;
+    double globalCriticalThermalTimeStep, Tdt_original, thermalSafetyFactor;
+    int Tdt_dt = 1;
     bool synchroTimeSteps(false);
 	if ((analysisHasThermal)||(hasAdiabaticHeating)){
         if (analysisHasThermal){
@@ -1539,17 +1542,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
                 thermalSafetyFactor = verletParams->get<double>("Thermal Safety Factor");
                 Tdt *= thermalSafetyFactor;
             }
-            deltaStep = 1.0;
             if(verletParams->isParameter("Tdt/dt")){
-                deltaStep = verletParams->get<double>("Tdt/dt");
-                Tdt = dt*deltaStep;
+                Tdt_dt = verletParams->get<int>("Tdt/dt");
+                Tdt = dt*Tdt_dt;
             }
         }
         else
         {
             if(verletParams->isParameter("Tdt/dt")){
-                deltaStep = verletParams->get<double>("Tdt/dt");
-                Tdt = dt*deltaStep;
+                Tdt_dt = verletParams->get<int>("Tdt/dt");
+                Tdt = dt*Tdt_dt;
             }else
                 Tdt=dt;
         }
@@ -1559,17 +1561,17 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 		nTsteps = static_cast<int>( ceil((timeFinal-timeInitial)/Tdt) );
         if(verletParams->isParameter("Synchronize Mech on Thermal") && verletParams->get<bool>("Synchronize Mech on Thermal")){
             synchroTimeSteps = true;
-            deltaStep=1;
+            Tdt_dt=1;
             nsteps=nTsteps;
             Tdt = (timeFinal-timeInitial)/nTsteps;
             dt = Tdt;
         }
         else{
-            deltaStep = floor(nsteps/nTsteps) ;
-            if (deltaStep==0) deltaStep=1;
-            nsteps = ceil(nsteps/deltaStep)*deltaStep;
+            Tdt_dt = floor(nsteps/nTsteps) ;
+            if (Tdt_dt==0) Tdt_dt=1;
+            nsteps = ceil(nsteps/Tdt_dt)*Tdt_dt;
             dt = (timeFinal-timeInitial)/nsteps;
-            nTsteps = nsteps / deltaStep;
+            nTsteps = nsteps / Tdt_dt;
             Tdt = (timeFinal-timeInitial)/nTsteps;
         }
 
@@ -1618,12 +1620,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 				cout << "  Thermal Safety factor not provided " << endl;
 			if(verletParams->isParameter("Tdt/dt")){
 				cout << "  Provided proportionality factor between the mechanical " << endl;
-				cout << "  and the thermal time steps  " << deltaStep << endl;
+				cout << "  and the thermal time steps  " << verletParams->get<int>("Tdt/dt") << endl;
 			}
 			else if (~synchroTimeSteps)
                 cout << "  Proportionality factor not provided " << endl;
             cout << "  Viable proportionality factor between the mechanical " << endl;
-			cout << "  and the thermal time steps  " << deltaStep << endl;
+			cout << "  and the thermal time steps  " << Tdt_dt << endl;
 			cout << "  Viable thermal time step           " << Tdt << "\n" << endl;
 			cout << "Total number of thermal time steps " << nTsteps << "\n" << endl;
 		}
@@ -1851,7 +1853,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // TODO The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
     
-    if(analysisHasThermal && fmod(step,deltaStep) == 0){
+    if(analysisHasThermal && fmod(step,Tdt_dt) == 0){
       if (hasThermalShock){
         for (size_t i=0; i<localThermalShockNodeList.size(); i++){
           int j = localThermalShockNodeList[i];
@@ -1864,14 +1866,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
-    if (hasAdiabaticHeating && fmod(step,deltaStep) == 0){
+    if (hasAdiabaticHeating && fmod(step,Tdt_dt) == 0){
         for (int j=0; j<cumulativeHeat->MyLength(); j++){
 //             if (j==0) cout << "Cumulative  " << cumulativeHeatPtr[j] << endl;
             deltaTemperaturePtr[j] += cumulativeHeatPtr[j]/((*density)[j]*(*specificHeat)[j]);
         }
     }
 
-    if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,deltaStep) == 0){
+    if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,Tdt_dt) == 0){
         PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
         boundaryAndInitialConditionManager->applyTemperatureBCs(timeCurrent, timePrevious);
         PeridigmNS::Timer::self().stopTimer("Apply Kinematic B.C.");
@@ -1886,7 +1888,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->importData(*deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
       if(analysisHasSpecular)
           blockIt->importData(*microPotential, microPotentialFieldId, PeridigmField::STEP_N, Insert);
-      if ((hasAdiabaticHeating)&&(fmod(step,deltaStep)==0))
+      if ((hasAdiabaticHeating)&&(fmod(step,Tdt_dt)==0))
       {
         cumulativeHeat -> PutScalar(0.0);
         blockIt->importData(*cumulativeHeat, cumulativeHeatFieldId, PeridigmField::STEP_N, Insert);
@@ -1919,7 +1921,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Copy force from the data manager to the mothership vector
     force->PutScalar(0.0);
-    if(analysisHasThermal && fmod(step,deltaStep) == 0){
+    if(analysisHasThermal && fmod(step,Tdt_dt) == 0){
 
 // 			Copy heat flow from the data manager to the mothership vector
 			PeridigmNS::Timer::self().startTimer("Heat Flow");
@@ -1936,7 +1938,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       scratch->PutScalar(0.0);
       blockIt->exportData(*scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
       force->Update(1.0, *scratch, 1.0);
-      if(analysisHasThermal && fmod(step,deltaStep) == 0){
+      if(analysisHasThermal && fmod(step,Tdt_dt) == 0){
 					scratchOneD->PutScalar(0.0);
 					blockIt->exportData(*scratchOneD, heatFlowFieldId, PeridigmField::STEP_NP1, Add);
 					heatFlow->Update(1.0, *scratchOneD, 1.0);
@@ -1961,7 +1963,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
 
     // Update specificHeat definition with the computed temperature
-    if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,deltaStep) == 0){
+    if ((analysisHasThermal||hasAdiabaticHeating) && fmod(step,Tdt_dt) == 0){
       for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         Teuchos::RCP<const Epetra_BlockMap> OwnedScalarPointMap = blockIt->getOwnedScalarPointMap();
         Teuchos::ParameterList matparams = blockIt->getMaterialModel()->matparams;

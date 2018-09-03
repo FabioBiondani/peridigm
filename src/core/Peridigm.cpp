@@ -1502,7 +1502,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   
   double dt_original = dt;
   dt = (timeFinal-timeInitial)/nsteps;
-  double dt2 = dt/2.0;
 
   // Check to make sure the number of time steps is sane
   if(floor((timeFinal-timeInitial)/dt) > static_cast<double>(INT_MAX)){
@@ -1689,7 +1688,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         }
         TEUCHOS_TEST_FOR_EXCEPT_MSG(Tdt<dt, "****Error:  Thermal time step can't be smaller than mechanical time step.\n");
     }
-        
+  double dt2 = dt/2.0;
+ 
 
 
   // Pointer index into sub-vectors for use with BLAS

@@ -206,7 +206,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         numMultiphysDoFs = 0;
         analysisHasThermal = false;
     }
-    if(peridigmParams->isParameter("Adiabatic Heating")) //MODIFIED NOTE
+    if(peridigmParams->isParameter("Adiabatic Heating")) if(peridigmParams->get<bool>("Adiabatic Heating") == true) //MODIFIED NOTE
     {
         if(peridigmComm->MyPID() == 0)
             std::cout<< "\n**** Adiabatic Heating is enabled.\n" << std::endl;

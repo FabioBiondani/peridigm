@@ -1497,7 +1497,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double timeInitial = solverParams->get("Initial Time", 0.0);
   double timeFinal   = solverParams->get("Final Time", 1.0);
   double timeCurrent = timeInitial;
-  workset->timeStep = dt;
   int nsteps = static_cast<int>( ceil((timeFinal-timeInitial)/dt) );
   
   double dt_original = dt;
@@ -1688,6 +1687,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         }
         TEUCHOS_TEST_FOR_EXCEPT_MSG(Tdt<dt, "****Error:  Thermal time step can't be smaller than mechanical time step.\n");
     }
+    
+  workset->timeStep = dt;
   double dt2 = dt/2.0;
  
 

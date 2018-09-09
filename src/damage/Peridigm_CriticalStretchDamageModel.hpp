@@ -101,6 +101,7 @@ namespace PeridigmNS {
     double m_criticalStretch;
     double m_alpha;
     bool m_applyThermalStrains;
+    bool m_onBoundary;
 
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
@@ -108,8 +109,8 @@ namespace PeridigmNS {
     int m_coordinatesFieldId;
     int m_damageFieldId;
     int m_bondDamageFieldId;
-//     int m_bondsLeftFieldId;
     int m_deltaTemperatureFieldId;
+    int m_blockIdFieldId;
   };
 
 }

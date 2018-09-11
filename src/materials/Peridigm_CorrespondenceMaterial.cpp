@@ -91,7 +91,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if(params.isParameter("Thermal Expansion Coefficient")){
     obj_alphaVol.set(params,"Thermal Expansion Coefficient");
     m_alphaVol= obj_alphaVol.compute(0.0);
-    m_applyThermalStrains = true;
   }
 
   if (params.isParameter("Singularity Detachment")){
@@ -112,6 +111,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
 //   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticCorrespondence material model.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
+  if (fieldManager.hasField("Temperature_Change")||params.isParameter("Thermal Expansion Coefficient"))
+    m_applyThermalStrains = true;
   m_horizonFieldId                    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   m_volumeFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_modelCoordinatesFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");

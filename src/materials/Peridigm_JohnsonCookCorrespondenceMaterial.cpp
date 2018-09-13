@@ -84,14 +84,10 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
       m_ReferenceTemperature = 0.0;
   }
   
-  if (params.isParameter("Beta")){
+  if (params.isParameter("Beta"))
       m_Beta = params.get<double>("Beta");
-      m_applyThermalStrains = true;
-  }
-  else if (params.isParameter("Beta Taylor-Quinney")){
+  else if (params.isParameter("Beta Taylor-Quinney"))
       m_Beta = params.get<double>("Beta Taylor-Quinney");
-      m_applyThermalStrains = true;
-  }
   else
       m_Beta = 1.0;
 
@@ -101,7 +97,7 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
   m_vonMisesStressFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_bondDamageFieldId                 = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
-  if (m_applyThermalStrains)
+  if (m_temperatureDependence||m_applyThermalStrains)
     m_deltaTemperatureFieldId           = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
   m_cumulativeHeatFieldId       = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Cumulative_Adiabatic_Heat");
 
@@ -109,7 +105,7 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::JohnsonCookCorrespondenceMaterial
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
-  if (m_applyThermalStrains)
+  if (m_deltaTemperatureFieldId!=-1)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
   m_fieldIds.push_back(m_cumulativeHeatFieldId);
 }
@@ -161,9 +157,11 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double 
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
 
-  double *deltaTemperatureN, *deltaTemperatureNP1;
-  dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
-  dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
+  double *deltaTemperatureN(NULL), *deltaTemperatureNP1(NULL);
+  if (m_deltaTemperatureFieldId!=-1){
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
+  }
 
   CORRESPONDENCE::updateJohnsonCookCauchyStress(
       unrotatedRateOfDeformation, 
@@ -176,6 +174,8 @@ PeridigmNS::JohnsonCookCorrespondenceMaterial::computeCauchyStress(const double 
       obj_bulkModulus, 
       obj_shearModulus,
       obj_alphaVol,
+      m_applyThermalStrains,
+      m_temperatureDependence,
       deltaTemperatureN,
       deltaTemperatureNP1,
       dt,

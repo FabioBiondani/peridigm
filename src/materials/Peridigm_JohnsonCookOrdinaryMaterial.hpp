@@ -124,8 +124,9 @@ namespace PeridigmNS {
     double m_density;
     double m_horizon;
     bool m_applySurfaceCorrectionFactor;
-    bool m_applyThermalStrains;
     bool m_useSpecularBondPositions;
+    bool m_temperatureDependence;
+    bool m_applyThermalStrains;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
     
     double m_MeltingTemperature;

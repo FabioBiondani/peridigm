@@ -54,7 +54,7 @@
 using namespace std;
 
 PeridigmNS::ViscousMaxwellCorrespondenceMaterial::ViscousMaxwellCorrespondenceMaterial(const Teuchos::ParameterList& params)
-  : ViscousCorrespondenceMaterial(params), m_internalVariablesFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_deltaTemperatureFieldId(-1)
+  : ViscousCorrespondenceMaterial(params), m_analysisHasThermal(false), m_internalVariablesFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_deltaTemperatureFieldId(-1)
 {
   obj_bulkModulus.set(params);
   obj_shearModulus.set(params);
@@ -62,13 +62,17 @@ PeridigmNS::ViscousMaxwellCorrespondenceMaterial::ViscousMaxwellCorrespondenceMa
   obj_tau.set(params,"Relaxation Time");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
+  if (fieldManager.hasField("Temperature_Change")||params.isParameter("Thermal Expansion Coefficient"))
+    m_analysisHasThermal = true;
   m_unrotatedCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_internalVariablesFieldId     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Internal_Variables");
-  m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
+  if (m_analysisHasThermal)
+    m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
 
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);  
-  m_fieldIds.push_back(m_internalVariablesFieldId);  
-  m_fieldIds.push_back(m_deltaTemperatureFieldId);  
+  m_fieldIds.push_back(m_internalVariablesFieldId);
+  if(m_analysisHasThermal)
+    m_fieldIds.push_back(m_deltaTemperatureFieldId);  
 }
 
 PeridigmNS::ViscousMaxwellCorrespondenceMaterial::~ViscousMaxwellCorrespondenceMaterial()
@@ -91,8 +95,9 @@ PeridigmNS::ViscousMaxwellCorrespondenceMaterial::computeCauchyStress(const doub
   dataManager.getData(m_internalVariablesFieldId, PeridigmField::STEP_NP1)->ExtractView(&internalVariablesNP1);
   double *damage;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
-  double *deltaTemperature;
-  dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
+  double *deltaTemperature(NULL);
+  if (m_analysisHasThermal)
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperature);
 
   CORRESPONDENCE::computeViscousMaxwellCauchyStress(unrotatedCauchyStressN,
                                                     unrotatedCauchyStressNP1,

@@ -79,6 +79,8 @@ ScalarT* deviatoricPlasticExtensionNP1,
 const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const bool useSpecularBondPosition,
@@ -109,7 +111,7 @@ const double doteps0
     double MU = obj_shearModulus.compute(0.0);
     double thermalExpansionCoefficient;
     const double *deltaT = deltaTemperatureN;
-    if(deltaT) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
+    if(applyThermalStrains) thermalExpansionCoefficient = obj_alphaVol.compute(0.0);
 
     const double *xOwned = xOverlap;
     const ScalarT *yOwned = yOverlap;
@@ -133,7 +135,7 @@ const double doteps0
     ScalarT *miPotNP1 = microPotentialNP1;
     ScalarT *miPotNP1_Overlap = microPotentialNP1;
     
-    double hmlgT;
+    double hmlgT(0.0);
     
     ScalarT vmStressTrial;
     
@@ -163,12 +165,14 @@ const double doteps0
         
         if(deltaT){
             hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
+            if(hmlgT>=1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << endl;
+        }
+        if(temperatureDependence){
             K    = obj_bulkModulus.compute(*deltaTemperatureNP1);
             MU   = obj_shearModulus.compute(*deltaTemperatureNP1);
-            thermalExpansionCoefficient = obj_alphaVol.compute(*deltaTemperatureNP1);
+            if(applyThermalStrains)
+                thermalExpansionCoefficient = (obj_alphaVol.compute(*deltaTemperatureN)+obj_alphaVol.compute(*deltaTemperatureNP1))/2;
         }
-        else hmlgT=0.0;
-        if(hmlgT>=1.0) cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << endl;
 
         int numNeigh = *neighPtr; neighPtr++; neighPtr_++;
         const double *X = xOwned;
@@ -193,7 +197,7 @@ const double doteps0
             Y_dz = YP[2]-Y[2];
             dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
             e = dY - zeta;
-            if(deltaT) e -= thermalExpansionCoefficient*(*deltaTemperatureNP1)*zeta;
+            if(applyThermalStrains) e -= thermalExpansionCoefficient*(*deltaTemperatureNP1)*zeta;
             omega = scalarInfluenceFunction(zeta,horizon);
             ed = e - *theta/3*zeta - *edpNP1; // deviatoric Extension
 
@@ -269,10 +273,15 @@ const double doteps0
                         const ScalarT *YdotP = &ydotOverlap[3*neighId];
                         Ydot_dx = *YdotP - *Ydot; Ydot_dy = *(YdotP+1) - *(Ydot+1);  Ydot_dz = *(YdotP+2) - *(Ydot+2);
 
+                        if (applyThermalStrains){
+                            double dotThermalExpansion = thermalExpansionCoefficient * (*deltaTemperatureNP1- *deltaTemperatureN)/dt;
+                            Ydot_dx -= X_dx * dotThermalExpansion ;
+                            Ydot_dy -= X_dy * dotThermalExpansion ;
+                            Ydot_dz -= X_dz * dotThermalExpansion ;
+                        }
                         ScalarT deltaMiPot = ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
-                        if (m_CritJintegral0!=0.0 && deltaTemperatureN){
+                        if (m_CritJintegral0!=0.0 && temperatureDependence){
                             double bond_CritJintegral = obj_CritJintegral.compute(*deltaTemperatureNP1);
-                            
                             deltaMiPot *= (m_CritJintegral0/bond_CritJintegral);
                         }
 
@@ -325,17 +334,15 @@ const double doteps0
                     int specuId = int(*specu);
                     const ScalarT *YdotP = &ydotOverlap[3*neighId];
                     Ydot_dx = *YdotP - *Ydot; Ydot_dy = *(YdotP+1) - *(Ydot+1);  Ydot_dz = *(YdotP+2) - *(Ydot+2);
-                    if (deltaTemperatureN){
-                        double alphaN   = obj_alphaVol.compute(*deltaTemperatureN);
-                        double alphaNP1 = obj_alphaVol.compute(*deltaTemperatureNP1);
-                        double dotThermalExpansion = (alphaN+alphaNP1)/2 * (*deltaTemperatureNP1- *deltaTemperatureN)/dt;
+                    if (applyThermalStrains){
+                        double dotThermalExpansion = thermalExpansionCoefficient * (*deltaTemperatureNP1- *deltaTemperatureN)/dt;
                         Ydot_dx -= X_dx * dotThermalExpansion ;
                         Ydot_dy -= X_dy * dotThermalExpansion ;
                         Ydot_dz -= X_dz * dotThermalExpansion ;
                     }
 
                     ScalarT deltaMiPot = ( fx*Ydot_dx + fy*Ydot_dy + fz*Ydot_dz ) * dt;
-                    if (m_CritJintegral0!=0.0 && deltaTemperatureN){
+                    if (m_CritJintegral0!=0.0 && temperatureDependence){
                         double bond_CritJintegral = obj_CritJintegral.compute(*deltaTemperatureNP1);
                         
                         deltaMiPot *= (m_CritJintegral0/bond_CritJintegral);
@@ -373,6 +380,8 @@ double* deviatoricPlasticExtensionNP1,
 const double* EquivalentPlasticStrainN,
 double* EquivalentPlasticStrainNP1,
 double* deviatoricForceDensity,
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const bool useSpecularBondPosition,
@@ -415,6 +424,8 @@ Sacado::Fad::DFad<double>* deviatoricPlasticExtensionNP1,
 const Sacado::Fad::DFad<double>* EquivalentPlasticStrainN,
 Sacado::Fad::DFad<double>* EquivalentPlasticStrainNP1,
 Sacado::Fad::DFad<double>* deviatoricForceDensity,
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const bool useSpecularBondPosition,

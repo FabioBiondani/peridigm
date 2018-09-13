@@ -75,6 +75,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_deltaTemperatureFieldId(-1),
     m_singularityDetachment(true),
     m_useSpecularBondPositions(false),
+    m_temperatureDependence(false),
     m_applyThermalStrains(false),
     m_CritJintegral(0.0)
 {
@@ -88,17 +89,17 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_density = params.get<double>("Density");
   m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
 
-  if(params.isParameter("Thermal Expansion Coefficient")){
-    obj_alphaVol.set(params,"Thermal Expansion Coefficient");
-    m_alphaVol= obj_alphaVol.compute(0.0);
-  }
+  obj_alphaVol.set(params,"Thermal Expansion Coefficient");
+  m_alphaVol= obj_alphaVol.compute(0.0);
 
-  if (params.isParameter("Singularity Detachment")){
+  if (params.isParameter("Singularity Detachment"))
     m_singularityDetachment  = params.get<bool>("Singularity Detachment");
-  }
-  if (params.isParameter("Use Specular Bond Position")){
+  if (params.isParameter("Use Specular Bond Position"))
     m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
-  }
+  if(params.isParameter("Temperature Dependence"))
+    m_temperatureDependence  = params.get<bool>("Temperature Dependence");
+  if(params.isParameter("Thermal Expansion Coefficient"))
+    m_applyThermalStrains = true;
   if (m_useSpecularBondPositions && params.isParameter("Critical J_integral")){
     obj_CritJintegral.set(params,"Critical J_integral");
     m_CritJintegral = obj_CritJintegral.compute(0.0);
@@ -111,8 +112,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
 //   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticCorrespondence material model.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
-  if (fieldManager.hasField("Temperature_Change")||params.isParameter("Thermal Expansion Coefficient"))
-    m_applyThermalStrains = true;
   m_horizonFieldId                    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   m_volumeFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_modelCoordinatesFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -137,10 +136,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_specularBondPositionFieldId       = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Specular_Bond_Position");
       m_microPotentialFieldId             = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Micro-Potential");
   }
-  if(m_applyThermalStrains)
+  if(m_temperatureDependence||m_applyThermalStrains)
     m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature_Change");
 
-  
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
@@ -165,7 +163,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_fieldIds.push_back(m_specularBondPositionFieldId);
       m_fieldIds.push_back(m_microPotentialFieldId);
   }
-  if(m_applyThermalStrains)
+  if(m_deltaTemperatureFieldId!=-1)
       m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
@@ -277,7 +275,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_velocitiesFieldId, PeridigmField::STEP_NP1)->ExtractView(&velocities);
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
-  if(m_applyThermalStrains){
+  if(m_deltaTemperatureFieldId!=-1){
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   }else{
@@ -398,7 +396,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   *forceDensityPtr, *neighborForceDensityPtr, *partialStressPtr;
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   double velocityBondX, velocityBondY, velocityBondZ;
-  double alphaN, alphaNP1, dotThermalExpansion;
+  double alphaN, alphaNP1, alpha(m_alphaVol), dotThermalExpansion;
   double TX, TY, TZ, omega, vol, neighborVol, jacobianDeterminant;
   int numNeighbors, neighborIndex;
   int bondIndex(0);
@@ -412,7 +410,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   double* defGradInv = &defGradInvVector[0];
   double* piolaStress = &piolaStressVector[0];
   double* temp = &tempVector[0];
-
+  
   // Loop over the material points and convert the Cauchy stress into pairwise peridynamic force densities
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID, 
@@ -500,15 +498,16 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       *(partialStressPtr+8) += TZ*undeformedBondZ*neighborVol;
       
       if (m_useSpecularBondPositions){
-          
-
           velocityBondX = *(neighborVelocitiesPtr)   - *(velocitiesPtr);
           velocityBondY = *(neighborVelocitiesPtr+1) - *(velocitiesPtr+1);
           velocityBondZ = *(neighborVelocitiesPtr+2) - *(velocitiesPtr+2);
           if (m_applyThermalStrains){
-              alphaN   = obj_alphaVol.compute(*deltaTemperatureN);
-              alphaNP1 = obj_alphaVol.compute(*deltaTemperatureNP1);
-              dotThermalExpansion = (alphaN+alphaNP1)/2 * (*deltaTemperatureNP1- *deltaTemperatureN)/dt;
+              if(m_temperatureDependence){
+                alphaN   = obj_alphaVol.compute(*deltaTemperatureN);
+                alphaNP1 = obj_alphaVol.compute(*deltaTemperatureNP1);
+                alpha = (alphaN+alphaNP1)/2;
+              }
+              dotThermalExpansion = alpha * (*deltaTemperatureNP1- *deltaTemperatureN)/dt;
               velocityBondX -= undeformedBondX * dotThermalExpansion ;
               velocityBondY -= undeformedBondY * dotThermalExpansion ;
               velocityBondZ -= undeformedBondZ * dotThermalExpansion ;
@@ -516,7 +515,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
           int specuId = int(*specu);
           double deltaMiPot = (TX*velocityBondX + TY*velocityBondY + TZ*velocityBondZ) * dt;
-          if (m_CritJintegral!=0.0 && m_applyThermalStrains){
+          if (m_CritJintegral!=0.0 && m_temperatureDependence){
             double bond_CritJintegral = obj_CritJintegral.compute(*deltaTemperatureNP1);
             
             deltaMiPot *= (m_CritJintegral/bond_CritJintegral);

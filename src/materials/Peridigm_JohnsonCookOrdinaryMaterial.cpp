@@ -59,7 +59,7 @@ using namespace std;
 PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuchos::ParameterList& params)
   : Material(params),
     m_bulkModulus(0.0), m_shearModulus(0.0), m_alpha(0.0),  m_density(0.0), m_horizon(0.0),
-    m_applySurfaceCorrectionFactor(false), m_applyThermalStrains(false), m_useSpecularBondPositions(false),
+    m_applySurfaceCorrectionFactor(false), m_useSpecularBondPositions(false), m_temperatureDependence(false), m_applyThermalStrains(false),
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_MeltingTemperature(0.0),m_ReferenceTemperature(0.0),m_A(0.0),m_N(0.0),m_B(0.0),m_C(0.0),m_M(0.0),m_doteqps0(1.0),
     m_Beta(0.0),
@@ -79,6 +79,9 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   m_shearModulus = obj_shearModulus.compute(0.0);
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
+
+  obj_alphaVol.set(params,"Thermal Expansion Coefficient");
+  m_alpha = obj_alphaVol.compute(0.0);
   
   if (params.isParameter("Constant A")){
       m_A  = params.get<double>("Constant A");
@@ -105,20 +108,17 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   else
       m_Beta = 1.0;
 
-  if(params.isParameter("Use Specular Bond Position")){
+  if(params.isParameter("Use Specular Bond Position"))
       m_useSpecularBondPositions  = params.get<bool>("Use Specular Bond Position");
-  }
+  if(params.isParameter("Temperature Dependence"))
+    m_temperatureDependence  = params.get<bool>("Temperature Dependence");
+  if(params.isParameter("Thermal Expansion Coefficient"))
+    m_applyThermalStrains = true;
   if (m_useSpecularBondPositions && params.isParameter("Critical J_integral")){
     obj_CritJintegral.set(params,"Critical J_integral");
     m_CritJintegral = obj_CritJintegral.compute(0.0);
   }else
     m_CritJintegral=0.0;
-
-  if(params.isParameter("Thermal Expansion Coefficient")){
-    obj_alphaVol.set(params,"Thermal Expansion Coefficient");
-    m_alpha= obj_alphaVol.compute(0.0);
-    m_applyThermalStrains = true;
-  }
 
   if(params.isParameter("Apply Shear Correction Factor"))
     m_applySurfaceCorrectionFactor = params.get<bool>("Apply Shear Correction Factor");
@@ -134,7 +134,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   m_forceDensityFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::TWO_STEP, "Force_Density");
   m_bondDamageFieldId              = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Bond_Damage");
   m_surfaceCorrectionFactorFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Surface_Correction_Factor");
-  if(m_applyThermalStrains)
+  if(m_temperatureDependence||params.isParameter("Thermal Expansion Coefficient"))
     m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature_Change");
 
   m_VonMisesStressFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Von_Mises_Stress");
@@ -160,9 +160,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::JohnsonCookOrdinaryMaterial(const Teuch
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_surfaceCorrectionFactorFieldId);
-  if(m_applyThermalStrains)
+  if(m_deltaTemperatureFieldId!=-1)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
-  
   if(m_useSpecularBondPositions){
       m_fieldIds.push_back(m_specularBondPositionFieldId);
       m_fieldIds.push_back(m_microPotentialFieldId);
@@ -232,7 +231,7 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_surfaceCorrectionFactorFieldId, PeridigmField::STEP_NONE)->ExtractView(&scf);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
   deltaTemperatureN = NULL;deltaTemperatureNP1 = NULL;
-  if(m_applyThermalStrains){
+  if(m_deltaTemperatureFieldId!=-1){
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   }  
@@ -273,6 +272,8 @@ PeridigmNS::JohnsonCookOrdinaryMaterial::computeForce(const double dt,
       eqpsN,
       eqpsNP1,
       deviatoricForceDensity,
+      m_applyThermalStrains,
+      m_temperatureDependence,
       deltaTemperatureN,
       deltaTemperatureNP1,
       m_useSpecularBondPositions,

@@ -72,6 +72,8 @@ const int numPoints,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const double dt,
@@ -85,6 +87,7 @@ const double constM,
 const double doteps0
 )
 {
+    const double *deltaT = deltaTemperatureN;
     const ScalarT* rateOfDef = unrotatedRateOfDeformation;
     const ScalarT* stressN = cauchyStressN;
     ScalarT* stressNP1 = cauchyStressNP1;
@@ -114,17 +117,25 @@ const double doteps0
     ScalarT yieldStress;
     
     ScalarT pow_eqps_n;
-    double hmlgT;
+    double hmlgT(0.);
     double pow_hmlgT_M;
     
+
     double bulkModN;
     double shearModN;
     double alphaN;
     double bulkModNP1;
     double shearModNP1;
     double alphaNP1;
-//     double YoungModNP1;
-//     double PoissRatNP1;
+    double alpha;
+
+    if (!temperatureDependence){
+        bulkModN    =obj_bulkModulus.compute(0.);
+        shearModN   =obj_shearModulus.compute(0.);
+        bulkModNP1  =obj_bulkModulus.compute(0.);
+        shearModNP1 =obj_shearModulus.compute(0.);
+        alpha       =obj_alphaVol.compute(0.);
+    }
     
     double ThermalExpansionStrain;
     
@@ -133,16 +144,25 @@ const double doteps0
         ++deltaTemperatureN,    ++deltaTemperatureNP1
         ){
         // temperatures
-        hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
-        if(hmlgT>=1.0) std::cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << std::endl;
 
         //Tempdouble = *Temperature;
-        bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);
-        shearModN   =obj_shearModulus.compute(*deltaTemperatureN);
-        alphaN      =obj_alphaVol.compute(*deltaTemperatureN);
-        bulkModNP1  =obj_bulkModulus.compute(*deltaTemperatureNP1);
-        shearModNP1 =obj_shearModulus.compute(*deltaTemperatureNP1);
-        alphaNP1    =obj_alphaVol.compute(*deltaTemperatureNP1);
+        double shearModRatio(1.);
+        double bulkModRatio(1.);
+        if(deltaT){
+            hmlgT = (*deltaTemperatureNP1 - ReferenceTemperature) / (MeltingTemperature - ReferenceTemperature) ; // Homologous Temperature
+            if(hmlgT>=1.0) std::cout << "ERROR: HOMOLOGOUS TEMPERATURE IS GREATER THAN ONE" << std::endl;
+        }
+        if(temperatureDependence){
+            bulkModN    =obj_bulkModulus.compute(*deltaTemperatureN);
+            shearModN   =obj_shearModulus.compute(*deltaTemperatureN);
+            alphaN      =obj_alphaVol.compute(*deltaTemperatureN);
+            bulkModNP1  =obj_bulkModulus.compute(*deltaTemperatureNP1);
+            shearModNP1 =obj_shearModulus.compute(*deltaTemperatureNP1);
+            alphaNP1    =obj_alphaVol.compute(*deltaTemperatureNP1);
+            shearModRatio = shearModNP1/shearModN;
+            bulkModRatio = bulkModNP1/bulkModN;
+            alpha = (alphaNP1+alphaN)/2;
+        }
 
         //strainInc = dt * rateOfDef
         for (int i = 0; i < 9; i++) {
@@ -150,10 +170,12 @@ const double doteps0
         }
         
         // Thermal isovolumetric expansion
-        ThermalExpansionStrain = (alphaNP1+alphaN)/2* (*deltaTemperatureNP1-(*deltaTemperatureN));
-        strainInc[0] -= ThermalExpansionStrain;
-        strainInc[4] -= ThermalExpansionStrain;
-        strainInc[8] -= ThermalExpansionStrain;
+        if(applyThermalStrains){
+            ThermalExpansionStrain = alpha* (*deltaTemperatureNP1-(*deltaTemperatureN));
+            strainInc[0] -= ThermalExpansionStrain;
+            strainInc[4] -= ThermalExpansionStrain;
+            strainInc[8] -= ThermalExpansionStrain;
+        }
 
         for (int i = 0; i < 9; i++) {
             deviatoricStrainInc[i] = strainInc[i];
@@ -167,8 +189,7 @@ const double doteps0
         deviatoricStrainInc[4] -= dilatationInc/3.0;
         deviatoricStrainInc[8] -= dilatationInc/3.0;
 
-        
-        
+
         hydroStressN=(*(stressN) + *(stressN+4) + *(stressN+8))/3.0;
         for (int i = 0; i < 9; i++) {
             *(deviatoricStressN+i) = *(stressN+i);
@@ -179,10 +200,11 @@ const double doteps0
         
         
         //Compute an elastic ``trial stress''
+        
         for (int i = 0; i < 9; i++) {
-            *(deviatoricStressNP1+i) = *(deviatoricStressN+i)*shearModNP1/shearModN + deviatoricStrainInc[i]*2.0*shearModNP1;
+            *(deviatoricStressNP1+i) = *(deviatoricStressN+i)*shearModRatio + deviatoricStrainInc[i]*2.0*shearModNP1;
         }
-        hydroStressNP1=hydroStressN*bulkModNP1/bulkModN+bulkModNP1*dilatationInc;
+        hydroStressNP1=hydroStressN*bulkModRatio+bulkModNP1*dilatationInc;
         
         
         for (int i = 0; i < 9; i++) {
@@ -193,7 +215,7 @@ const double doteps0
         *(stressNP1+8) += hydroStressNP1;
 
 
-        // Compute \sigma_ij * \sigma_ij
+        // Compute s_ij * s_ij
         tempScalar = 0.0;
         for (int j = 0; j < 3; j++) {
             for (int i = 0; i < 3; i++) {
@@ -275,6 +297,8 @@ const int numPoints,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const double dt,
@@ -301,6 +325,8 @@ const int numPoints,
 PeridigmNS::Material::BulkMod obj_bulkModulus,
 PeridigmNS::Material::ShearMod obj_shearModulus,
 PeridigmNS::Material::TempDepConst obj_alphaVol,
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperatureN,
 const double* deltaTemperatureNP1,
 const double dt,

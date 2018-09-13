@@ -116,7 +116,7 @@ PeridigmNS::MicropotentialDamageModel::computeDamage(const double dt,
 {
   double *x;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-  double *horizon, *damageN, *damageNP1, *bondDamageN, *bondDamageNP1, *deltaTemperature, *miPot, *specu;
+  double *horizon, *damageN, *damageNP1, *bondDamageN, *bondDamageNP1, *miPot, *specu;
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_N)->ExtractView(&damageN);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageNP1);

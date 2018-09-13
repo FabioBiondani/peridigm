@@ -140,6 +140,7 @@ namespace PeridigmNS {
 
     bool m_singularityDetachment;
     bool m_useSpecularBondPositions;
+    bool m_temperatureDependence;
     bool m_applyThermalStrains;
 
     TempDepConst obj_CritJintegral;

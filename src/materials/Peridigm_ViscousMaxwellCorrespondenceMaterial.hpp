@@ -76,6 +76,7 @@ namespace PeridigmNS {
 
   protected:
 
+    bool m_analysisHasThermal;
     int m_internalVariablesFieldId;
     int m_unrotatedCauchyStressFieldId;
     int m_deltaTemperatureFieldId;

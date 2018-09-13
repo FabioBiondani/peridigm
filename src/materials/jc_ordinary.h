@@ -73,6 +73,9 @@ ScalarT* deviatoricPlasticExtensionNP1,
 const ScalarT* EquivalentPlasticStrainN,
 ScalarT* EquivalentPlasticStrainNP1,
 ScalarT* deviatoricForceDensity,
+
+const bool applyThermalStrains,
+const bool temperatureDependence,
 const double* deltaTemperature,
 const double* deltaTemperatureNP1,
 

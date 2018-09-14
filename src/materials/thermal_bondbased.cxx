@@ -69,13 +69,14 @@ void computeBondBasedHeatFlow
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
 	double horizon,
 	ScalarT* deltaTemperatureOverlap,
+    bool temperatureDependence,
 	ScalarT* TCF
 )
 {
 	/*
 	 * Compute processor local contribution to internal heat flux
 	 */
-	double K_T ;
+	double K_T = obj_thermalConductivity.compute(0.0);
     double microConductivity;
 	const double PI_G = boost::math::constants::pi<double>();
 	const double *xOwned = xOverlap;
@@ -104,7 +105,8 @@ void computeBondBasedHeatFlow
         
 //      local thermal conductivity
         deltaTdouble = convT2double(*deltaT);
-        K_T = obj_thermalConductivity.compute(deltaTdouble);
+        if(temperatureDependence)
+            K_T = obj_thermalConductivity.compute(deltaTdouble);
         
         microConductivity = 6 * K_T /( PI_G * horizon*horizon*horizon*horizon);
         
@@ -144,6 +146,7 @@ template void computeBondBasedHeatFlow<double>
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
     double horizon,
 	double* deltaTemperatureOverlap,
+    bool temperatureDependence,
 	double* TCF
 );
 
@@ -160,6 +163,7 @@ template void computeBondBasedHeatFlow<Sacado::Fad::DFad<double> >
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
 	double horizon,
 	Sacado::Fad::DFad<double>* deltaTemperatureOverlap,
+    bool temperatureDependence,
 	Sacado::Fad::DFad<double>* TCF
 );
 

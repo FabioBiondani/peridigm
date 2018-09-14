@@ -56,7 +56,7 @@
 
 PeridigmNS::ViscousMaxwellOrdinaryMaterial::ViscousMaxwellOrdinaryMaterial(const Teuchos::ParameterList & params)
  : ViscousMaterial(params),
-   m_horizon(0.0), m_applyThermalStrains(false),
+   m_horizon(0.0), m_applyThermalStrains(false),m_temperatureDependence(false),
    m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
    m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
    m_coordinatesFieldId(-1), m_deltaTemperatureFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1), m_deviatoricBackExtensionFieldId(-1)
@@ -71,6 +71,8 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::ViscousMaxwellOrdinaryMaterial(const
     obj_alphaVol.set(params,"Thermal Expansion Coefficient");
     m_applyThermalStrains = true;
   }
+  if(params.isParameter("Temperature Dependence"))
+    m_temperatureDependence  = params.get<bool>("Temperature Dependence");
 
   m_horizon = params.get<double>("Horizon");
 
@@ -86,7 +88,7 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::ViscousMaxwellOrdinaryMaterial(const
   m_forceDensityFieldId                = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
   m_bondDamageFieldId                  = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
   m_deviatoricBackExtensionFieldId     = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Deviatoric_Back_Extension");
-  if(m_applyThermalStrains)
+  if(m_applyThermalStrains||m_temperatureDependence)
     m_deltaTemperatureFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Temperature_Change");
 
   m_fieldIds.push_back(m_volumeFieldId);
@@ -98,7 +100,7 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::ViscousMaxwellOrdinaryMaterial(const
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_deviatoricBackExtensionFieldId);
-  if(m_applyThermalStrains)
+  if(m_deltaTemperatureFieldId!=1)
       m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
@@ -134,7 +136,7 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::computeForce(const double dt,
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
   deltaTemperatureN = NULL; deltaTemperatureNP1 = NULL;
-  if(m_applyThermalStrains){
+  if(m_deltaTemperatureFieldId!=-1){
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_N)->ExtractView(&deltaTemperatureN);
     dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&deltaTemperatureNP1);
   }
@@ -160,6 +162,7 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::computeForce(const double dt,
                                                           obj_lambda,
                                                           obj_tau,
                                                           obj_alphaVol,
+                                                          m_temperatureDependence,
                                                           deltaTemperatureN,
                                                           deltaTemperatureNP1
                                                          );

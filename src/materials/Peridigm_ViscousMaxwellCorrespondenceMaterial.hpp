@@ -86,6 +86,7 @@ namespace PeridigmNS {
     Material::ShearMod obj_shearModulus;
     Material::TempDepConst obj_lambda;
     Material::TempDepConst obj_tau;
+    bool m_temperatureDependence;
   };
 }
 

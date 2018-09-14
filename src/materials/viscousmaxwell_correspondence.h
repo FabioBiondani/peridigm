@@ -68,6 +68,7 @@ void computeViscousMaxwellCauchyStress
    double *unrotatedViscousCauchyStress,
    const double* damage,
    const double* deltaTemperature,
+   bool temperatureDependence,
    int numOwnedPoints,
    PeridigmNS::Material::TempDepConst obj_lambda,
    PeridigmNS::Material::TempDepConst obj_tau,

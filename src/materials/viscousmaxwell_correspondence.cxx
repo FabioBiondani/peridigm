@@ -63,6 +63,7 @@ void computeViscousMaxwellCauchyStress
    double *unrotatedViscousCauchyStress,
    const double* damage,
    const double* deltaTemperature,
+   bool temperatureDependence,
    int numOwnedPoints,
    PeridigmNS::Material::TempDepConst obj_lambda,
    PeridigmNS::Material::TempDepConst obj_tau,
@@ -71,14 +72,12 @@ void computeViscousMaxwellCauchyStress
 {
     double m_tau(1.0), m_lambda(1.0);
     double c1(0.0), decay(0.0), beta_i(0.0);
-    if (deltaTemperature==nullptr){
-        m_tau = obj_tau.compute(0.0);
-        m_lambda = obj_lambda.compute(0.0);
-        if ((m_lambda!=0.0)&&(m_tau!=0.0)){
-            c1 = m_tau / dt;
-            decay = exp(-1.0/c1);
-            beta_i=1.-c1*(1.-decay);
-        }
+    m_tau = obj_tau.compute(0.0);
+    m_lambda = obj_lambda.compute(0.0);
+    if ((m_lambda!=0.0)&&(m_tau!=0.0)){
+        c1 = m_tau / dt;
+        decay = exp(-1.0/c1);
+        beta_i=1.-c1*(1.-decay);
     }
     
     const double *deltaT    = deltaTemperature;
@@ -95,7 +94,7 @@ void computeViscousMaxwellCauchyStress
     if ((m_lambda!=0.0)&&(m_tau!=0.0))
 	for(int p=0;p<numOwnedPoints;p++, deltaT++, damage++, stressN+=9, stressNP1+=9, internalN+=9, internalNP1+=9, vstress+=9){
 
-        if(deltaTemperature){
+        if(temperatureDependence){
             m_tau = obj_tau.compute(*deltaT);
             m_lambda = obj_lambda.compute(*deltaT);
             if ((m_lambda==0.0)||(m_tau==0.0)) continue;

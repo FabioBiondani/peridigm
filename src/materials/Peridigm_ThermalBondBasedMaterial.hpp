@@ -111,6 +111,7 @@
         int m_horizonFieldId;
         
         bool boolTCF;
+        bool m_temperatureDependence;
 	};
 }
 

@@ -66,7 +66,7 @@ PeridigmNS::ThermalBondBasedMaterial::ThermalBondBasedMaterial(const Teuchos::Pa
 	m_volumeFieldId(-1), m_damageFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
 	m_coordinatesFieldId(-1), m_bondDamageFieldId(-1),
 	m_heatFlowFieldId(-1),m_deltaTemperatureFieldId(-1),
-	m_thermalCorrectionFactorFieldId(-1),m_horizonFieldId(-1),boolTCF(false)
+	m_thermalCorrectionFactorFieldId(-1),m_horizonFieldId(-1),boolTCF(false),m_temperatureDependence(false)
 {
   //! TODO Add meaningful asserts on material properties.
 	m_horizon = params.get<double>("Horizon");
@@ -75,6 +75,8 @@ PeridigmNS::ThermalBondBasedMaterial::ThermalBondBasedMaterial(const Teuchos::Pa
     obj_termCond.set(params,"Thermal Conductivity");
 	if(m_thermalShock) obj_convectionConstant.set(params,"Convection Constant");
 
+    if(params.isParameter("Temperature Dependence"))
+      m_temperatureDependence  = params.get<bool>("Temperature Dependence");
     if (params.isParameter("Thermal Correction Factor"))
         boolTCF  = params.get<bool>("Thermal Correction Factor");
 
@@ -191,5 +193,6 @@ PeridigmNS::ThermalBondBasedMaterial::computeHeatFlow(	const double dt,
 											obj_termCond,
 											m_horizon,
 											deltaTemperature,
+                                            m_temperatureDependence,
                                             TCF);
 }

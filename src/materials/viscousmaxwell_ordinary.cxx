@@ -76,23 +76,24 @@ void computeInternalForceViscousMaxwell
    PeridigmNS::Material::TempDepConst obj_lambda,
    PeridigmNS::Material::TempDepConst obj_tau,
    PeridigmNS::Material::TempDepConst obj_alphaVol,
+   bool temperatureDependence,
    const double* deltaTemperatureN,
    const double* deltaTemperatureNP1
 )
 {
 
-    double MU(0.0), m_tau(1.0), m_lambda(1.0), m_alphaVolN(0.0) , m_alphaVolNP1(0.0);
+    double MU(0.0), tau(1.0), lambda(1.0), alphaVolN(0.0) , alphaVolNP1(0.0);
     double c1(0.0), decay(0.0), beta_i(0.0);
-    if (deltaTemperatureN==nullptr){
-        MU = obj_shearModulus.compute(0.0);
-        m_tau = obj_tau.compute(0.0);
-        m_lambda = obj_lambda.compute(0.0);
-        if ((m_lambda!=0.0)&&(m_tau!=0.0)){
-            c1 = m_tau / dt;
-            decay = exp(-1.0/c1);
-            beta_i=1.-c1*(1.-decay);
-        }
+    MU = obj_shearModulus.compute(0.0);
+    tau = obj_tau.compute(0.0);
+    lambda = obj_lambda.compute(0.0);
+    if ((lambda!=0.0)&&(tau!=0.0)){
+        c1 = tau / dt;
+        decay = exp(-1.0/c1);
+        beta_i=1.-c1*(1.-decay);
     }
+    alphaVolN   = obj_alphaVol.compute(0.0);
+    alphaVolNP1 = alphaVolN;
     
 
 	/*
@@ -113,21 +114,21 @@ void computeInternalForceViscousMaxwell
 
 	const int *neighPtr = localNeighborList;
 	double cellVolume, dx, dy, dz, zeta, dYN, dYNP1, t, td, edN, edNP1, delta_ed;
-    if ((m_lambda!=0.0)&&(m_tau!=0.0))
+    if ((lambda!=0.0)&&(tau!=0.0))
 	for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yNOwned +=3, yNP1Owned +=3, fOwned+=3, m++, thetaN++, thetaNP1++, deltaT_N++, deltaT_NP1++){
 
-        if(deltaTemperatureN){
+        if(temperatureDependence){
             MU   = obj_shearModulus.compute(*deltaT_NP1);
-            m_tau = obj_tau.compute(*deltaT_NP1);
-            m_lambda = obj_lambda.compute(*deltaT_NP1);
-            if ((m_lambda==0.0)||(m_tau==0.0)) continue;
+            tau = obj_tau.compute(*deltaT_NP1);
+            lambda = obj_lambda.compute(*deltaT_NP1);
+            if ((lambda==0.0)||(tau==0.0)) continue;
             
-            c1 = m_tau / dt;
+            c1 = tau / dt;
             decay = exp(-1.0/c1);
             beta_i=1.-c1*(1.-decay);
             
-            m_alphaVolN   = obj_alphaVol.compute(*deltaT_N);
-            m_alphaVolNP1 = obj_alphaVol.compute(*deltaT_NP1);
+            alphaVolN   = obj_alphaVol.compute(*deltaT_N);
+            alphaVolNP1 = obj_alphaVol.compute(*deltaT_NP1);
         }
 
         int numNeigh = *neighPtr; neighPtr++;
@@ -170,7 +171,7 @@ void computeInternalForceViscousMaxwell
 			/*
 			 */
 			edN = (dYN - zeta) - eiN;
-            if(deltaTemperatureN) edN -= m_alphaVolN*(*deltaT_N)*zeta;
+            if(deltaTemperatureN) edN -= alphaVolN*(*deltaT_N)*zeta;
 
             
 			/*
@@ -181,7 +182,7 @@ void computeInternalForceViscousMaxwell
 			dz = YPNP1[2]-YNP1[2];
 			dYNP1 = sqrt(dx*dx+dy*dy+dz*dz);
 			edNP1 = (dYNP1 - zeta) - eiNP1;
-            if(deltaTemperatureN) edNP1 -= m_alphaVolNP1*(*deltaT_NP1)*zeta;
+            if(deltaTemperatureN) edNP1 -= alphaVolNP1*(*deltaT_NP1)*zeta;
 
 			/*
 			 * Increment to deviatoric extension state
@@ -196,7 +197,7 @@ void computeInternalForceViscousMaxwell
 			 * Compute deviatoric force state
 			 */
             omega = scalarInfluenceFunction(zeta,horizon);
-			td = m_lambda * alpha * omega * ( edNP1 - *edbNP1 );
+			td = lambda * alpha * omega * ( edNP1 - *edbNP1 );
 
             /*
 			 * Note that damage has already been applied once to 'td' (through ed) above.

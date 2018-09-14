@@ -54,16 +54,18 @@
 using namespace std;
 
 PeridigmNS::ViscousMaxwellCorrespondenceMaterial::ViscousMaxwellCorrespondenceMaterial(const Teuchos::ParameterList& params)
-  : ViscousCorrespondenceMaterial(params), m_analysisHasThermal(false), m_internalVariablesFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_deltaTemperatureFieldId(-1)
+  : ViscousCorrespondenceMaterial(params), m_analysisHasThermal(false), m_internalVariablesFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_deltaTemperatureFieldId(-1),m_temperatureDependence(false)
 {
   obj_bulkModulus.set(params);
   obj_shearModulus.set(params);
   obj_lambda.set(params,"Maxwell Model Stiffness Ratio");
   obj_tau.set(params,"Relaxation Time");
+  if(params.isParameter("Temperature Dependence"))
+    m_temperatureDependence  = params.get<bool>("Temperature Dependence");
+  if (m_temperatureDependence||params.isParameter("Thermal Expansion Coefficient"))
+    m_analysisHasThermal = true;
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
-  if (fieldManager.hasField("Temperature_Change")||params.isParameter("Thermal Expansion Coefficient"))
-    m_analysisHasThermal = true;
   m_unrotatedCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_internalVariablesFieldId     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Internal_Variables");
   if (m_analysisHasThermal)
@@ -106,6 +108,7 @@ PeridigmNS::ViscousMaxwellCorrespondenceMaterial::computeCauchyStress(const doub
                                                     unrotatedViscousCauchyStress,
                                                     damage,
                                                     deltaTemperature,
+                                                    m_temperatureDependence,
                                                     numOwnedPoints,
                                                     obj_lambda,
                                                     obj_tau,

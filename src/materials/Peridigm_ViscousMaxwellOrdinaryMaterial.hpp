@@ -95,6 +95,7 @@ namespace PeridigmNS {
     Material::TempDepConst obj_alphaVol;
     double m_horizon;
     bool m_applyThermalStrains;
+    bool m_temperatureDependence;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
 
     // field ids for all relevant data
@@ -109,6 +110,7 @@ namespace PeridigmNS {
     int m_forceDensityFieldId;
     int m_bondDamageFieldId;
     int m_deviatoricBackExtensionFieldId;
+    
   };
 }
 

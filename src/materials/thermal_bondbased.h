@@ -65,6 +65,7 @@ void computeBondBasedHeatFlow
     PeridigmNS::Material::TempDepConst obj_thermalConductivity,
     double horizon,
 	ScalarT* deltaTemperature,
+    bool temperatureDependence,
 	ScalarT* TCF
 );
 

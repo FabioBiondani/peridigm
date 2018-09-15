@@ -80,6 +80,7 @@ void computeInternalForceViscousMaxwell
    PeridigmNS::Material::TempDepConst obj_lambda,
    PeridigmNS::Material::TempDepConst obj_tau,
    PeridigmNS::Material::TempDepConst obj_alphaVol,
+   bool applyThermalStrains,
    bool temperatureDependence,
    const double* deltaTemperatureN,
    const double* deltaTemperatureNP1

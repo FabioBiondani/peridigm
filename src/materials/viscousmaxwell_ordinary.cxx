@@ -76,6 +76,7 @@ void computeInternalForceViscousMaxwell
    PeridigmNS::Material::TempDepConst obj_lambda,
    PeridigmNS::Material::TempDepConst obj_tau,
    PeridigmNS::Material::TempDepConst obj_alphaVol,
+   bool applyThermalStrains,
    bool temperatureDependence,
    const double* deltaTemperatureN,
    const double* deltaTemperatureNP1
@@ -92,8 +93,10 @@ void computeInternalForceViscousMaxwell
         decay = exp(-1.0/c1);
         beta_i=1.-c1*(1.-decay);
     }
-    alphaVolN   = obj_alphaVol.compute(0.0);
-    alphaVolNP1 = alphaVolN;
+    if(applyThermalStrains){
+        alphaVolN   = obj_alphaVol.compute(0.0);
+        alphaVolNP1 = alphaVolN;
+    }
     
 
 	/*
@@ -126,9 +129,10 @@ void computeInternalForceViscousMaxwell
             c1 = tau / dt;
             decay = exp(-1.0/c1);
             beta_i=1.-c1*(1.-decay);
-            
-            alphaVolN   = obj_alphaVol.compute(*deltaT_N);
-            alphaVolNP1 = obj_alphaVol.compute(*deltaT_NP1);
+            if(applyThermalStrains){
+                alphaVolN   = obj_alphaVol.compute(*deltaT_N);
+                alphaVolNP1 = obj_alphaVol.compute(*deltaT_NP1);
+            }
         }
 
         int numNeigh = *neighPtr; neighPtr++;
@@ -171,7 +175,7 @@ void computeInternalForceViscousMaxwell
 			/*
 			 */
 			edN = (dYN - zeta) - eiN;
-            if(deltaTemperatureN) edN -= alphaVolN*(*deltaT_N)*zeta;
+            if(applyThermalStrains) edN -= alphaVolN*(*deltaT_N)*zeta;
 
             
 			/*
@@ -182,7 +186,7 @@ void computeInternalForceViscousMaxwell
 			dz = YPNP1[2]-YNP1[2];
 			dYNP1 = sqrt(dx*dx+dy*dy+dz*dz);
 			edNP1 = (dYNP1 - zeta) - eiNP1;
-            if(deltaTemperatureN) edNP1 -= alphaVolNP1*(*deltaT_NP1)*zeta;
+            if(applyThermalStrains) edNP1 -= alphaVolNP1*(*deltaT_NP1)*zeta;
 
 			/*
 			 * Increment to deviatoric extension state

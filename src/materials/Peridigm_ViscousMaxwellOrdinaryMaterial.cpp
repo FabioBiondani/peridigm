@@ -100,7 +100,7 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::ViscousMaxwellOrdinaryMaterial(const
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_deviatoricBackExtensionFieldId);
-  if(m_deltaTemperatureFieldId!=1)
+  if(m_deltaTemperatureFieldId!=-1)
       m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
@@ -162,6 +162,7 @@ PeridigmNS::ViscousMaxwellOrdinaryMaterial::computeForce(const double dt,
                                                           obj_lambda,
                                                           obj_tau,
                                                           obj_alphaVol,
+                                                          m_applyThermalStrains,
                                                           m_temperatureDependence,
                                                           deltaTemperatureN,
                                                           deltaTemperatureNP1

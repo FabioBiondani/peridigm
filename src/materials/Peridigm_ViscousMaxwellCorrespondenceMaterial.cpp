@@ -74,7 +74,7 @@ PeridigmNS::ViscousMaxwellCorrespondenceMaterial::ViscousMaxwellCorrespondenceMa
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);  
   m_fieldIds.push_back(m_internalVariablesFieldId);
   if(m_analysisHasThermal)
-    m_fieldIds.push_back(m_deltaTemperatureFieldId);  
+    m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
 
 PeridigmNS::ViscousMaxwellCorrespondenceMaterial::~ViscousMaxwellCorrespondenceMaterial()

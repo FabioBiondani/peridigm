@@ -86,6 +86,12 @@ static double gaussian(double zeta, double horizon)
   return exp(-xi2/h2);
 }
 
+static double cubic(double zeta, double horizon)
+{
+  double rat=zeta/horizon;
+  return rat*rat*(2*rat-3)+1;
+}
+
 }
 
 class InfluenceFunction {
@@ -111,6 +117,9 @@ public:
     else if(influenceFunctionString == "Gaussian"){
       p = &PeridigmInfluenceFunction::gaussian;
     }
+    else if(influenceFunctionString == "Cubic"){
+      p = &PeridigmInfluenceFunction::cubic;
+    }
     else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  InfluenceFunction::getInfluenceFunction(string), invalid influence function\n");
     }
@@ -128,6 +137,9 @@ public:
     }
     else if(influenceFunctionString == "Gaussian"){
       m_influenceFunction = &PeridigmInfluenceFunction::gaussian;
+    }
+    else if(influenceFunctionString == "Cubic"){
+      m_influenceFunction = &PeridigmInfluenceFunction::cubic;
     }
     else{
       // Assume that unrecognized strings are user-defined influence functions.

@@ -469,16 +469,19 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
   rtcFunction->addVar("double", "value");
   rtcFunction->addVar("double", "T");
 
+  temperatureDependence=false;
   if( params.isParameter("Bulk Modulus") ){
-    bulkModulusDefined = true;
     if (params.isType<double>("Bulk Modulus")){
         dbl = params.get<double>("Bulk Modulus");
         strs << dbl;
         bulkModulusStr = strs.str();
         strs.str("");
     }
-    else bulkModulusStr = params.get<string>("Bulk Modulus");
-    
+    else{
+        bulkModulusStr = params.get<string>("Bulk Modulus");
+        temperatureDependence = true;
+    }
+    bulkModulusDefined = true;
   }
   if( params.isParameter("Shear Modulus") ){
     if (params.isType<double>("Shear Modulus")){
@@ -487,7 +490,10 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         shearModulusStr = strs.str();
         strs.str("");
     }
-    else shearModulusStr = params.get<string>("Shear Modulus");
+    else{
+        shearModulusStr = params.get<string>("Shear Modulus");
+        temperatureDependence = true;
+    }
     shearModulusDefined = true;
   }
   if( params.isParameter("Young's Modulus") ){
@@ -497,7 +503,10 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         youngsModulusStr = strs.str();
         strs.str("");
     }
-    else youngsModulusStr = params.get<string>("Young's Modulus");
+    else{
+        youngsModulusStr = params.get<string>("Young's Modulus");
+        temperatureDependence = true;
+    }
     youngsModulusDefined = true;
   }
   if( params.isParameter("Poisson's Ratio") ){
@@ -507,7 +516,10 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
         poissonsRatioStr = strs.str();
         strs.str("");
     }
-    else poissonsRatioStr = params.get<string>("Poisson's Ratio");
+    else{
+        poissonsRatioStr = params.get<string>("Poisson's Ratio");
+        temperatureDependence = true;
+    }
     poissonsRatioDefined = true;
   }
 
@@ -551,14 +563,23 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::ShearMod::creat
     msg += "**** " + rtcFunction->getErrors() + "\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
   }
-  
+  if(!temperatureDependence){
+    success = rtcFunction->execute();
+    if(!success){
+        string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+        msg += "**** " + rtcFunction->getErrors() + "\n";
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+    }
+//             cout << "value= " << rtcFunction->getValueOfVar("value") << endl;
+    doubleValue = rtcFunction->getValueOfVar("value");
+  }
   return rtcFunction;
 }
 Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::create_rtc()
 {
   string ConstStr, rtcFunctionString;
   
-  double dbl; std::ostringstream strs;
+  std::ostringstream strs;
 
   Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
   rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(2, "rtcShear"));
@@ -567,12 +588,16 @@ Teuchos::RCP<PG_RuntimeCompiler::Function> PeridigmNS::Material::TempDepConst::c
 
   if( params.isParameter(ConstName) ){
     if (params.isType<double>(ConstName)){
-        dbl = params.get<double>(ConstName);
-        strs << dbl;
+        temperatureDependence=false;
+        doubleValue = params.get<double>(ConstName);
+        strs << doubleValue;
         ConstStr = strs.str();
         strs.str("");
     }
-    else ConstStr = params.get<string>(ConstName);
+    else{
+        temperatureDependence=true;
+        ConstStr = params.get<string>(ConstName);
+    }
   }else{
       ConstStr="0.0";
       cout<<  "WARNING: " << ConstName << " not defined, assuming null value"  << "\n" ;

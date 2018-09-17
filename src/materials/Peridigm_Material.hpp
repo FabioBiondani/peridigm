@@ -180,6 +180,8 @@ namespace PeridigmNS {
       protected:
         Teuchos::ParameterList params;
         double Multiplier;
+        double doubleValue;
+        bool temperatureDependence;
         virtual Teuchos::RCP<PG_RuntimeCompiler::Function> create_rtc() = 0;
         Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunction;
       public:
@@ -210,6 +212,7 @@ namespace PeridigmNS {
         void setFunction(Teuchos::RCP<PG_RuntimeCompiler::Function> rtcFunctionInput)
         {
             rtcFunction = rtcFunctionInput;
+            temperatureDependence=true;
         }
         
         Teuchos::RCP<PG_RuntimeCompiler::Function> get()
@@ -218,20 +221,23 @@ namespace PeridigmNS {
         }
         
         double compute(double Temperature) const {
-            bool success = rtcFunction->varValueFill(1,Temperature);
-            if(!success){
-                string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-                msg += "**** " + rtcFunction->getErrors() + "\n";
-                TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
-            }
-            success = rtcFunction->execute();
-            if(!success){
-                string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
-                msg += "**** " + rtcFunction->getErrors() + "\n";
-                TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
-            }
-//             cout << "value= " << rtcFunction->getValueOfVar("value") << endl;
-            return rtcFunction->getValueOfVar("value");
+            if(temperatureDependence){
+                bool success = rtcFunction->varValueFill(1,Temperature);
+                if(!success){
+                    string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+                    msg += "**** " + rtcFunction->getErrors() + "\n";
+                    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+                }
+                success = rtcFunction->execute();
+                if(!success){
+                    string msg = "\n**** Error:  rtcFunction->varValueFill(1,0.0) returned error code in PeridigmNS::Material::classModuli::rtc().\n";
+                    msg += "**** " + rtcFunction->getErrors() + "\n";
+                    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+                }
+    //             cout << "value= " << rtcFunction->getValueOfVar("value") << endl;
+                return rtcFunction->getValueOfVar("value");
+            }else
+                return doubleValue;
         }
         
         

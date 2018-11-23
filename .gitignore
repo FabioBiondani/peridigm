@@ -31,4 +31,8 @@ test/performance/twist_and_pull/twist_and_pull_gold.e
 # .e Files
 *.e
 
+# .directory
+*.directory
 
+#build directory
+/build*
